@@ -1,0 +1,32 @@
+[project]
+name = "kata-framework"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "pytest>=8.0.0",
+    "torch>=2.0.0",
+    "numpy>=2.0.0",
+    "einops>=0.7.0",
+    "jaxtyping>=0.2.0",
+    "toml>=0.10.2",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.3.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "exercises"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
+
+[tool.pyright]
+typeCheckingMode = "strict"

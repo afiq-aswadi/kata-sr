@@ -1,0 +1,1 @@
+"""Kata exercises directory."""

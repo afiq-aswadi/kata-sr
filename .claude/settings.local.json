@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -c 'cd /Users/afiqabdillah/kata-spaced-repetition/katas && uvx ty check .')",
+      "Bash(bash -c:*)",
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
+      "Bash(cargo test:*)",
+      "Bash(uv sync:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\")",
+      "Bash(cargo build:*)",
+      "Bash(cargo doc:*)",
+      "Bash(source $HOME/.cargo/env)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
