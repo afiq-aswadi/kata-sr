@@ -1,6 +1,5 @@
 """DFS/BFS implementation kata."""
 
-from collections import deque
 
 
 def dfs(graph: dict[int, list[int]], start: int) -> list[int]:

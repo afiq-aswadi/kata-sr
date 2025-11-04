@@ -31,7 +31,9 @@ class MultiHeadAttention(nn.Module):
         self.w_o = nn.Linear(d_model, d_model)
 
     def forward(
-        self, x: Float[torch.Tensor, "batch seq d_model"]
+        self,
+        x: Float[torch.Tensor, "batch seq d_model"],
+        mask: torch.Tensor | None = None,
     ) -> Float[torch.Tensor, "batch seq d_model"]:
         """Forward pass.
 
@@ -50,6 +52,16 @@ class MultiHeadAttention(nn.Module):
 
         # compute scaled dot-product attention scores
         scores = einsum(q, k, "b h i d, b h j d -> b h i j") / (self.d_head**0.5)
+
+        if mask is not None:
+            mask_bool = mask.to(dtype=torch.bool)
+            if mask_bool.dim() == 2:
+                mask_expanded = mask_bool.unsqueeze(0).unsqueeze(0)
+            elif mask_bool.dim() == 3:
+                mask_expanded = mask_bool.unsqueeze(1)
+            else:
+                raise ValueError("mask must be 2D (seq, seq) or 3D (batch, seq, seq)")
+            scores = scores.masked_fill(mask_expanded, torch.finfo(scores.dtype).min)
 
         # apply softmax to get attention weights
         attn_weights = torch.softmax(scores, dim=-1)

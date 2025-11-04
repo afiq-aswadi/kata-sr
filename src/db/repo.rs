@@ -10,9 +10,9 @@ use crate::core::scheduler::SM2State;
 use chrono::{DateTime, LocalResult, TimeZone, Utc};
 use rusqlite::types::Type;
 use rusqlite::{params, Connection, Result, Row};
-use thiserror::Error;
 use std::collections::HashMap;
 use std::path::Path;
+use thiserror::Error;
 
 /// Main repository interface for database operations.
 ///
@@ -482,6 +482,135 @@ impl KataRepository {
         )?;
         Ok(())
     }
+
+    /// Calculates the current streak of consecutive days with completed sessions.
+    ///
+    /// Counts backwards from today, stopping at the first day with no completed sessions.
+    /// Returns 0 if no sessions were completed today.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let streak = repo.get_current_streak()?;
+    /// println!("Current streak: {} days", streak);
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_current_streak(&self) -> Result<i32> {
+        // get all distinct dates with completed sessions, ordered descending
+        let mut stmt = self.conn.prepare(
+            "SELECT DISTINCT date(completed_at, 'unixepoch') as review_date
+             FROM sessions
+             WHERE completed_at IS NOT NULL
+             ORDER BY review_date DESC",
+        )?;
+
+        let dates: Vec<String> = stmt
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<Vec<_>>>()?;
+
+        if dates.is_empty() {
+            return Ok(0);
+        }
+
+        // get today's date in YYYY-MM-DD format
+        let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+
+        // if no sessions today, streak is 0
+        if dates[0] != today {
+            return Ok(0);
+        }
+
+        // count consecutive days
+        let mut streak = 1;
+        let mut current_date = chrono::Utc::now().date_naive();
+
+        for date_str in dates.iter().skip(1) {
+            // parse the date string
+            let date = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+                .map_err(|_| rusqlite::Error::InvalidQuery)?;
+
+            // check if it's the previous day
+            let expected_date = current_date - chrono::Duration::days(1);
+            if date == expected_date {
+                streak += 1;
+                current_date = date;
+            } else {
+                break;
+            }
+        }
+
+        Ok(streak)
+    }
+
+    /// Counts the number of completed sessions today.
+    ///
+    /// Only counts sessions where completed_at is not NULL.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let count = repo.get_reviews_count_today()?;
+    /// println!("Reviews completed today: {}", count);
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_reviews_count_today(&self) -> Result<i32> {
+        let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+
+        let count: i32 = self.conn.query_row(
+            "SELECT COUNT(*)
+             FROM sessions
+             WHERE completed_at IS NOT NULL
+               AND date(completed_at, 'unixepoch') = ?1",
+            [today],
+            |row| row.get(0),
+        )?;
+
+        Ok(count)
+    }
+
+    /// Calculates success rate over the last n days.
+    ///
+    /// Success is defined as quality_rating >= 2 (Good or Easy).
+    /// Returns 0.0 if there are no completed sessions in the time period.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - Number of days to look back
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let success_rate = repo.get_success_rate_last_n_days(7)?;
+    /// println!("Success rate (last 7 days): {:.1}%", success_rate * 100.0);
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_success_rate_last_n_days(&self, n: usize) -> Result<f64> {
+        let cutoff_date = (chrono::Utc::now() - chrono::Duration::days(n as i64))
+            .format("%Y-%m-%d")
+            .to_string();
+
+        let (total, successful): (i32, i32) = self.conn.query_row(
+            "SELECT COUNT(*) as total,
+                    COALESCE(SUM(CASE WHEN quality_rating >= 2 THEN 1 ELSE 0 END), 0) as successful
+             FROM sessions
+             WHERE completed_at IS NOT NULL
+               AND date(completed_at, 'unixepoch') >= ?1",
+            [cutoff_date],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+
+        if total == 0 {
+            Ok(0.0)
+        } else {
+            Ok(successful as f64 / total as f64)
+        }
+    }
 }
 
 /// Full kata record from the database.
@@ -621,16 +750,16 @@ fn convert_timestamp(
 ) -> Result<DateTime<Utc>> {
     match Utc.timestamp_opt(value, 0) {
         LocalResult::Single(dt) => Ok(dt),
-        LocalResult::None | LocalResult::Ambiguous(_, _) => Err(
-            rusqlite::Error::FromSqlConversionFailure(
+        LocalResult::None | LocalResult::Ambiguous(_, _) => {
+            Err(rusqlite::Error::FromSqlConversionFailure(
                 column_index,
                 Type::Integer,
                 Box::new(TimestampConversionError {
                     column: column_name,
                     value,
                 }),
-            ),
-        ),
+            ))
+        }
     }
 }
 
@@ -825,5 +954,243 @@ mod tests {
         let counts = HashMap::new();
 
         assert!(!graph.is_unlocked(kata2_id, &counts));
+    }
+
+    #[test]
+    fn test_get_current_streak_no_sessions() {
+        let repo = setup_test_repo();
+        let streak = repo.get_current_streak().unwrap();
+        assert_eq!(streak, 0);
+    }
+
+    #[test]
+    fn test_get_current_streak_with_sessions() {
+        let repo = setup_test_repo();
+        let kata_id = repo
+            .create_kata(
+                &NewKata {
+                    name: "streak_kata".to_string(),
+                    category: "test".to_string(),
+                    description: "Streak test".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        // create sessions for today and yesterday
+        let now = Utc::now();
+        let yesterday = now - chrono::Duration::days(1);
+
+        for timestamp in [now, yesterday] {
+            let session = NewSession {
+                kata_id,
+                started_at: timestamp,
+                completed_at: Some(timestamp),
+                test_results_json: None,
+                num_passed: None,
+                num_failed: None,
+                num_skipped: None,
+                duration_ms: None,
+                quality_rating: Some(2),
+            };
+            repo.create_session(&session).unwrap();
+        }
+
+        let streak = repo.get_current_streak().unwrap();
+        assert_eq!(streak, 2);
+    }
+
+    #[test]
+    fn test_get_current_streak_broken() {
+        let repo = setup_test_repo();
+        let kata_id = repo
+            .create_kata(
+                &NewKata {
+                    name: "broken_streak_kata".to_string(),
+                    category: "test".to_string(),
+                    description: "Broken streak test".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        // create session 2 days ago, but not today or yesterday
+        let two_days_ago = Utc::now() - chrono::Duration::days(2);
+
+        let session = NewSession {
+            kata_id,
+            started_at: two_days_ago,
+            completed_at: Some(two_days_ago),
+            test_results_json: None,
+            num_passed: None,
+            num_failed: None,
+            num_skipped: None,
+            duration_ms: None,
+            quality_rating: Some(2),
+        };
+        repo.create_session(&session).unwrap();
+
+        let streak = repo.get_current_streak().unwrap();
+        assert_eq!(streak, 0);
+    }
+
+    #[test]
+    fn test_get_reviews_count_today_no_sessions() {
+        let repo = setup_test_repo();
+        let count = repo.get_reviews_count_today().unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_get_reviews_count_today_with_sessions() {
+        let repo = setup_test_repo();
+        let kata_id = repo
+            .create_kata(
+                &NewKata {
+                    name: "review_count_kata".to_string(),
+                    category: "test".to_string(),
+                    description: "Review count test".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        // create 3 sessions today
+        for _ in 0..3 {
+            let session = NewSession {
+                kata_id,
+                started_at: Utc::now(),
+                completed_at: Some(Utc::now()),
+                test_results_json: None,
+                num_passed: None,
+                num_failed: None,
+                num_skipped: None,
+                duration_ms: None,
+                quality_rating: Some(2),
+            };
+            repo.create_session(&session).unwrap();
+        }
+
+        // create 1 session yesterday (should not count)
+        let yesterday = Utc::now() - chrono::Duration::days(1);
+        let session = NewSession {
+            kata_id,
+            started_at: yesterday,
+            completed_at: Some(yesterday),
+            test_results_json: None,
+            num_passed: None,
+            num_failed: None,
+            num_skipped: None,
+            duration_ms: None,
+            quality_rating: Some(2),
+        };
+        repo.create_session(&session).unwrap();
+
+        let count = repo.get_reviews_count_today().unwrap();
+        assert_eq!(count, 3);
+    }
+
+    #[test]
+    fn test_get_success_rate_last_n_days_no_sessions() {
+        let repo = setup_test_repo();
+        let rate = repo.get_success_rate_last_n_days(7).unwrap();
+        assert_eq!(rate, 0.0);
+    }
+
+    #[test]
+    fn test_get_success_rate_last_n_days_with_sessions() {
+        let repo = setup_test_repo();
+        let kata_id = repo
+            .create_kata(
+                &NewKata {
+                    name: "success_rate_kata".to_string(),
+                    category: "test".to_string(),
+                    description: "Success rate test".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        // create sessions with different quality ratings
+        // 2 successful (rating >= 2), 2 failed (rating < 2)
+        for rating in [2, 3, 0, 1] {
+            let session = NewSession {
+                kata_id,
+                started_at: Utc::now(),
+                completed_at: Some(Utc::now()),
+                test_results_json: None,
+                num_passed: None,
+                num_failed: None,
+                num_skipped: None,
+                duration_ms: None,
+                quality_rating: Some(rating),
+            };
+            repo.create_session(&session).unwrap();
+        }
+
+        let rate = repo.get_success_rate_last_n_days(7).unwrap();
+        assert_eq!(rate, 0.5);
+    }
+
+    #[test]
+    fn test_get_success_rate_last_n_days_filters_by_date() {
+        let repo = setup_test_repo();
+        let kata_id = repo
+            .create_kata(
+                &NewKata {
+                    name: "date_filter_kata".to_string(),
+                    category: "test".to_string(),
+                    description: "Date filter test".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        // create 1 successful session today
+        let session = NewSession {
+            kata_id,
+            started_at: Utc::now(),
+            completed_at: Some(Utc::now()),
+            test_results_json: None,
+            num_passed: None,
+            num_failed: None,
+            num_skipped: None,
+            duration_ms: None,
+            quality_rating: Some(2),
+        };
+        repo.create_session(&session).unwrap();
+
+        // create 1 failed session 10 days ago (should not count for 7-day window)
+        let ten_days_ago = Utc::now() - chrono::Duration::days(10);
+        let session = NewSession {
+            kata_id,
+            started_at: ten_days_ago,
+            completed_at: Some(ten_days_ago),
+            test_results_json: None,
+            num_passed: None,
+            num_failed: None,
+            num_skipped: None,
+            duration_ms: None,
+            quality_rating: Some(0),
+        };
+        repo.create_session(&session).unwrap();
+
+        let rate = repo.get_success_rate_last_n_days(7).unwrap();
+        assert_eq!(rate, 1.0);
     }
 }

@@ -1,6 +1,20 @@
 """Tests for DFS/BFS kata."""
 
-from user_kata import bfs, dfs, has_path
+try:
+    from user_kata import bfs, dfs, has_path
+except ModuleNotFoundError:  # pragma: no cover - fallback for standalone test runs
+    import importlib.util
+    from pathlib import Path
+
+    module_path = Path(__file__).with_name("reference.py")
+    spec = importlib.util.spec_from_file_location("dfs_bfs_reference", module_path)
+    reference = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(reference)
+
+    bfs = reference.bfs  # type: ignore[attr-defined]
+    dfs = reference.dfs  # type: ignore[attr-defined]
+    has_path = reference.has_path  # type: ignore[attr-defined]
 
 
 def test_dfs_simple_graph():

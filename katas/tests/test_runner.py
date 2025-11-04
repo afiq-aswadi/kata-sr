@@ -1,14 +1,19 @@
 """Integration tests for pytest runner."""
 
 import json
+import shutil
 import subprocess
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, cast
+from uuid import uuid4
 
 from runner import KataTestError, run_kata_tests
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+EXERCISES_DIR = ROOT_DIR / "exercises"
 
 
 def run_kata_tests_in_subprocess(kata_dir: Path, template_path: Path) -> dict[str, Any]:
@@ -36,6 +41,18 @@ def run_kata_tests_in_subprocess(kata_dir: Path, template_path: Path) -> dict[st
     if completed.returncode != 0:
         raise RuntimeError(completed.stderr or completed.stdout)
     return cast(dict[str, Any], json.loads(completed.stdout))
+
+
+@contextmanager
+def temporary_exercise_kata() -> Iterator[tuple[str, Path]]:
+    """Create a temporary kata directory inside exercises/ for CLI tests."""
+    kata_id = f"_tmp_cli_{uuid4().hex}"
+    kata_path = EXERCISES_DIR / kata_id
+    kata_path.mkdir(parents=True, exist_ok=False)
+    try:
+        yield kata_id, kata_path
+    finally:
+        shutil.rmtree(kata_path, ignore_errors=True)
 
 
 def test_run_kata_tests_all_passing(tmp_path: Path):
@@ -219,6 +236,119 @@ def add(a, b)  # missing colon
 
     assert results["passed"] is False
     assert "error" in results
+
+
+def test_run_kata_tests_skipped_tests(tmp_path: Path):
+    """Ensure skipped tests are counted and reported."""
+    kata_dir = tmp_path / "test_kata"
+    kata_dir.mkdir()
+
+    test_content = """
+import sys
+import pytest
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent.parent.parent))
+
+def test_run():
+    from user_kata import identity
+    assert identity(5) == 5
+
+def test_skip():
+    pytest.skip("not implemented yet")
+"""
+    (kata_dir / "test_kata.py").write_text(test_content)
+
+    template_path = tmp_path / "user_template.py"
+    template_content = """
+def identity(x):
+    return x
+"""
+    template_path.write_text(template_content)
+
+    results = run_kata_tests_in_subprocess(kata_dir, template_path)
+
+    assert results["passed"] is True
+    assert results["num_passed"] == 1
+    assert results["num_failed"] == 0
+    assert results["num_skipped"] == 1
+    statuses = {r["status"] for r in results["results"]}
+    assert statuses == {"passed", "skipped"}
+
+
+def test_run_kata_tests_multiple_files(tmp_path: Path):
+    """Ensure tests across multiple files (including subdirectories) are executed."""
+    kata_dir = tmp_path / "test_kata"
+    kata_dir.mkdir()
+    (kata_dir / "nested").mkdir()
+
+    test_alpha = """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent.parent.parent))
+
+def test_alpha():
+    from user_kata import increment
+    assert increment(1) == 2
+"""
+    (kata_dir / "test_alpha.py").write_text(test_alpha)
+
+    test_beta = """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent.parent.parent))
+
+def test_beta():
+    from user_kata import increment
+    assert increment(10) == 11
+"""
+    (kata_dir / "nested" / "test_beta.py").write_text(test_beta)
+
+    template_path = tmp_path / "user_template.py"
+    template_content = """
+def increment(x):
+    return x + 1
+"""
+    template_path.write_text(template_content)
+
+    results = run_kata_tests_in_subprocess(kata_dir, template_path)
+
+    assert results["passed"] is True, results
+    assert results["num_passed"] == 2
+    assert len(results["results"]) == 2
+
+
+def test_runner_cli_main_success(tmp_path: Path):
+    """Run the CLI (`python -m runner`) end-to-end against a temporary kata."""
+    with temporary_exercise_kata() as (kata_id, kata_dir):
+        (kata_dir / "test_cli.py").write_text(
+            """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent.parent.parent))
+
+def test_double():
+    from user_kata import double
+    assert double(4) == 8
+"""
+        )
+
+        template_path = tmp_path / "template.py"
+        template_path.write_text(
+            """
+def double(x):
+    return 2 * x
+"""
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-m", "runner", kata_id, str(template_path)],
+            cwd=str(ROOT_DIR),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert completed.returncode == 0, completed.stderr
+        payload = json.loads(completed.stdout)
+        assert payload["passed"] is True
+        assert payload["num_passed"] == 1
+        assert not payload["num_failed"]
 
 
 def test_run_kata_tests_with_torch(tmp_path: Path):

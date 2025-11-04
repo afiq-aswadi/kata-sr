@@ -1,10 +1,22 @@
 """Tests for softmax kata."""
 
 import torch
-from jaxtyping import Float
 
 from framework import assert_close, assert_shape
-from user_kata import softmax
+
+try:
+    from user_kata import softmax
+except ModuleNotFoundError:  # pragma: no cover - fallback for standalone test runs
+    import importlib.util
+    from pathlib import Path
+
+    module_path = Path(__file__).with_name("reference.py")
+    spec = importlib.util.spec_from_file_location("softmax_reference", module_path)
+    reference = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(reference)
+
+    softmax = reference.softmax  # type: ignore[attr-defined]
 
 
 def test_output_shape():

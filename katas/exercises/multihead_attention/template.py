@@ -2,7 +2,6 @@
 
 import torch
 import torch.nn as nn
-from einops import einsum, rearrange
 from jaxtyping import Float
 
 
@@ -24,23 +23,26 @@ class MultiHeadAttention(nn.Module):
 
         # TODO: initialize query, key, value, and output projections
         # BLANK_START
-        pass
+        raise NotImplementedError
         # BLANK_END
 
     def forward(
-        self, x: Float[torch.Tensor, "batch seq d_model"]
+        self,
+        x: Float[torch.Tensor, "batch seq d_model"],
+        mask: torch.Tensor | None = None,
     ) -> Float[torch.Tensor, "batch seq d_model"]:
         """Forward pass.
 
         Args:
             x: input tensor
+            mask: optional attention mask where True entries are masked
 
         Returns:
             output tensor with same shape as input
         """
         # TODO: implement multi-head attention
         # BLANK_START
-        pass
+        raise NotImplementedError
         # BLANK_END
 
 
@@ -55,5 +57,5 @@ def create_causal_mask(seq_len: int) -> Float[torch.Tensor, "seq seq"]:
     """
     # TODO: create causal mask
     # BLANK_START
-    pass
+    raise NotImplementedError
     # BLANK_END

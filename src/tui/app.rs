@@ -1,0 +1,344 @@
+//! Main TUI application and event loop.
+//!
+//! This module provides the central coordinator for all TUI screens,
+//! handling keyboard input, async test events, and screen transitions.
+
+use anyhow::Context;
+use chrono::{Duration, Utc};
+use crossterm::event::{self, Event, KeyCode};
+use ratatui::backend::CrosstermBackend;
+use ratatui::{Frame, Terminal};
+use std::io;
+use std::sync::mpsc::{channel, Receiver, Sender};
+
+use super::dashboard::{Dashboard, DashboardAction};
+use super::keybindings;
+use super::practice::{PracticeAction, PracticeScreen};
+use super::results::{ResultsAction, ResultsScreen};
+use crate::core::scheduler::QualityRating;
+use crate::db::repo::{Kata, KataRepository, NewSession};
+use crate::runner::python_runner::TestResults;
+
+/// Events that can be sent to the main application loop.
+///
+/// These events allow for async communication between background threads
+/// (e.g., test runner) and the main UI thread.
+#[derive(Debug)]
+pub enum AppEvent {
+    /// Keyboard input received
+    Input(KeyCode),
+    /// Test execution completed
+    TestComplete(TestResults),
+    /// Application should quit
+    Quit,
+}
+
+/// Current screen being displayed in the TUI.
+///
+/// Each screen maintains its own state and handles its own rendering.
+pub enum Screen {
+    /// Dashboard showing katas due today and stats
+    Dashboard,
+    /// Practice screen for a specific kata
+    Practice(Kata, PracticeScreen),
+    /// Results screen showing test output and rating selection
+    Results(Kata, ResultsScreen),
+    /// Help screen showing keybindings
+    Help,
+}
+
+/// Internal enum for handling screen transitions without borrow conflicts.
+enum ScreenAction {
+    StartPractice(Kata),
+    ReturnToDashboard,
+    SubmitRating(Kata, u8),
+}
+
+/// Main application state and event loop coordinator.
+///
+/// The App struct manages screen transitions, event handling,
+/// and database interactions.
+pub struct App {
+    /// Current screen being displayed
+    pub current_screen: Screen,
+    /// Cached dashboard state
+    pub dashboard: Dashboard,
+    /// Database repository for kata and session management
+    pub repo: KataRepository,
+    /// Sender for async events
+    pub event_tx: Sender<AppEvent>,
+    /// Receiver for async events
+    pub event_rx: Receiver<AppEvent>,
+    /// Whether we're showing help screen
+    showing_help: bool,
+}
+
+impl App {
+    /// Creates a new App with the given repository.
+    ///
+    /// Loads initial dashboard state from the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `repo` - Database repository for kata management
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # use kata_sr::tui::app::App;
+    /// let repo = KataRepository::new("kata.db")?;
+    /// let app = App::new(repo)?;
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
+    pub fn new(repo: KataRepository) -> anyhow::Result<Self> {
+        let (tx, rx) = channel();
+        let dashboard = Dashboard::load(&repo)?;
+
+        Ok(Self {
+            current_screen: Screen::Dashboard,
+            dashboard,
+            repo,
+            event_tx: tx,
+            event_rx: rx,
+            showing_help: false,
+        })
+    }
+
+    /// Runs the TUI application.
+    ///
+    /// Sets up the terminal, runs the event loop, and ensures proper cleanup
+    /// even on error.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # use kata_sr::tui::app::App;
+    /// let repo = KataRepository::new("kata.db")?;
+    /// let mut app = App::new(repo)?;
+    /// app.run()?;
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
+    pub fn run(&mut self) -> anyhow::Result<()> {
+        crossterm::terminal::enable_raw_mode().context("Failed to enable raw mode")?;
+
+        let mut stdout = io::stdout();
+        crossterm::execute!(
+            stdout,
+            crossterm::terminal::EnterAlternateScreen,
+            crossterm::event::EnableMouseCapture
+        )
+        .context("Failed to setup terminal")?;
+
+        let backend = CrosstermBackend::new(stdout);
+        let mut terminal = Terminal::new(backend).context("Failed to create terminal")?;
+
+        let result = self.event_loop(&mut terminal);
+
+        // cleanup - always execute even on error
+        crossterm::terminal::disable_raw_mode().context("Failed to disable raw mode")?;
+        crossterm::execute!(
+            terminal.backend_mut(),
+            crossterm::terminal::LeaveAlternateScreen,
+            crossterm::event::DisableMouseCapture
+        )
+        .context("Failed to restore terminal")?;
+        terminal.show_cursor().context("Failed to show cursor")?;
+
+        result
+    }
+
+    /// Main event loop.
+    ///
+    /// Continuously renders the current screen, polls for events,
+    /// and handles both keyboard input and async events.
+    fn event_loop(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    ) -> anyhow::Result<()> {
+        loop {
+            // render current screen
+            terminal
+                .draw(|f| self.render(f))
+                .context("Failed to draw frame")?;
+
+            // poll for keyboard events with timeout
+            if event::poll(std::time::Duration::from_millis(100))
+                .context("Failed to poll events")?
+            {
+                if let Event::Key(key) = event::read().context("Failed to read event")? {
+                    match key.code {
+                        KeyCode::Char('q') => {
+                            // global quit
+                            return Ok(());
+                        }
+                        KeyCode::Char('?') => {
+                            // toggle help screen
+                            self.toggle_help();
+                        }
+                        code => {
+                            self.handle_input(code)?;
+                        }
+                    }
+                }
+            }
+
+            // check for async events (non-blocking)
+            if let Ok(event) = self.event_rx.try_recv() {
+                self.handle_event(event)?;
+            }
+        }
+    }
+
+    /// Renders the current screen.
+    ///
+    /// Delegates to the appropriate screen's render method.
+    fn render(&mut self, frame: &mut Frame) {
+        if self.showing_help {
+            keybindings::render_help_screen(frame);
+        } else {
+            match &self.current_screen {
+                Screen::Dashboard => {
+                    self.dashboard.render(frame);
+                }
+                Screen::Practice(_, practice_screen) => {
+                    practice_screen.render(frame);
+                }
+                Screen::Results(_, results_screen) => {
+                    results_screen.render(frame);
+                }
+                Screen::Help => {
+                    keybindings::render_help_screen(frame);
+                }
+            }
+        }
+    }
+
+    /// Handles keyboard input by delegating to the current screen.
+    fn handle_input(&mut self, code: KeyCode) -> anyhow::Result<()> {
+        if self.showing_help {
+            // any key exits help screen
+            self.showing_help = false;
+            return Ok(());
+        }
+
+        // extract action from current screen to avoid borrow checker issues
+        let action_result = match &mut self.current_screen {
+            Screen::Dashboard => {
+                let action = self.dashboard.handle_input(code);
+                match action {
+                    DashboardAction::SelectKata(kata) => Some(ScreenAction::StartPractice(kata)),
+                    DashboardAction::None => None,
+                }
+            }
+            Screen::Practice(_kata, practice_screen) => {
+                let action = practice_screen.handle_input(code, self.event_tx.clone())?;
+                match action {
+                    PracticeAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    PracticeAction::None => None,
+                }
+            }
+            Screen::Results(kata, results_screen) => {
+                let action = results_screen.handle_input(code);
+                match action {
+                    ResultsAction::SubmitRating(rating) => {
+                        Some(ScreenAction::SubmitRating(kata.clone(), rating))
+                    }
+                    ResultsAction::None => None,
+                }
+            }
+            Screen::Help => Some(ScreenAction::ReturnToDashboard),
+        };
+
+        // handle the extracted action (no longer borrowing self.current_screen)
+        if let Some(action) = action_result {
+            match action {
+                ScreenAction::StartPractice(kata) => {
+                    let practice_screen = PracticeScreen::new(kata.clone())?;
+                    self.current_screen = Screen::Practice(kata, practice_screen);
+                }
+                ScreenAction::ReturnToDashboard => {
+                    self.dashboard = Dashboard::load(&self.repo)?;
+                    self.current_screen = Screen::Dashboard;
+                }
+                ScreenAction::SubmitRating(kata, rating) => {
+                    self.handle_rating_submission(kata, rating)?;
+                    self.dashboard = Dashboard::load(&self.repo)?;
+                    self.current_screen = Screen::Dashboard;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Handles async events from background threads.
+    fn handle_event(&mut self, event: AppEvent) -> anyhow::Result<()> {
+        match event {
+            AppEvent::TestComplete(results) => {
+                // transition from Practice to Results
+                if let Screen::Practice(kata, _) = &self.current_screen {
+                    let results_screen = ResultsScreen::new(kata.clone(), results);
+                    self.current_screen = Screen::Results(kata.clone(), results_screen);
+                }
+            }
+            AppEvent::Quit => {
+                return Err(anyhow::anyhow!("Quit event received"));
+            }
+            AppEvent::Input(_) => {
+                // input events are handled in the main loop
+            }
+        }
+        Ok(())
+    }
+
+    /// Toggles between the current screen and the help screen.
+    fn toggle_help(&mut self) {
+        self.showing_help = !self.showing_help;
+    }
+
+    /// Handles rating submission by updating SM-2 state and creating a session record.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata` - The kata that was reviewed
+    /// * `rating` - User's quality rating (0-3)
+    fn handle_rating_submission(&mut self, kata: Kata, rating: u8) -> anyhow::Result<()> {
+        // convert rating to QualityRating
+        let quality_rating = QualityRating::from_int(rating as i32)
+            .ok_or_else(|| anyhow::anyhow!("Invalid rating: {}", rating))?;
+
+        // get current SM-2 state and update it
+        let mut state = kata.sm2_state();
+        let interval_days = state.update(quality_rating);
+
+        // calculate next review date
+        let now = Utc::now();
+        let next_review = now + Duration::days(interval_days);
+
+        // update kata in database
+        self.repo
+            .update_kata_after_review(kata.id, &state, next_review, now)
+            .context("Failed to update kata after review")?;
+
+        // create session record
+        let session = NewSession {
+            kata_id: kata.id,
+            started_at: now,
+            completed_at: Some(now),
+            test_results_json: None, // could serialize TestResults if needed
+            num_passed: None,
+            num_failed: None,
+            num_skipped: None,
+            duration_ms: None,
+            quality_rating: Some(rating as i32),
+        };
+
+        self.repo
+            .create_session(&session)
+            .context("Failed to create session record")?;
+
+        Ok(())
+    }
+}

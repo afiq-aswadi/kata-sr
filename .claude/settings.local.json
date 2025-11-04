@@ -11,7 +11,16 @@
       "Bash(PATH=\"$HOME/.cargo/bin:$PATH\")",
       "Bash(cargo build:*)",
       "Bash(cargo doc:*)",
-      "Bash(source $HOME/.cargo/env)"
+      "Bash(source $HOME/.cargo/env)",
+      "Bash(/Users/afiqabdillah/.cargo/bin/cargo test:*)",
+      "Bash(tree:*)",
+      "Bash(cargo check:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(find:*)",
+      "Bash(/Users/afiqabdillah/.cargo/bin/cargo check:*)",
+      "Bash(~/.cargo/bin/cargo build:*)",
+      "Bash(~/.cargo/bin/cargo test:*)"
     ],
     "deny": [],
     "ask": []
