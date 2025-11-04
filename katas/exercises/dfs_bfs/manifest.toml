@@ -1,0 +1,13 @@
+[kata]
+name = "dfs_bfs"
+category = "graphs"
+base_difficulty = 2
+description = """
+Implement depth-first search (DFS) and breadth-first search (BFS) for graph traversal.
+
+Given an adjacency list representation of a graph, traverse all reachable nodes.
+Handle cycles properly with a visited set.
+
+Key concepts: graph traversal, recursion vs iteration, stack vs queue, cycle detection
+"""
+dependencies = []

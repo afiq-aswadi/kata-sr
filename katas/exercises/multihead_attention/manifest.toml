@@ -1,0 +1,18 @@
+[kata]
+name = "multihead_attention"
+category = "transformers"
+base_difficulty = 4
+description = """
+Implement scaled dot-product multi-head attention.
+
+Project queries, keys, and values into multiple heads, compute attention scores,
+apply softmax, and aggregate the weighted values.
+
+Key concepts: attention mechanism, multi-head parallelism, scaling factor, einops
+"""
+dependencies = []
+
+[[variations]]
+name = "attention_causal"
+description = "Add causal masking for autoregressive generation"
+params = { mask_type = "causal" }

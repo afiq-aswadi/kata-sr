@@ -1,0 +1,13 @@
+[kata]
+name = "layer_norm"
+category = "normalization"
+base_difficulty = 3
+description = """
+Implement layer normalization from scratch.
+
+Normalize activations across the feature dimension by computing mean and variance,
+then scale and shift with learnable parameters.
+
+Key concepts: normalization, mean/variance calculation, learnable affine transform
+"""
+dependencies = []

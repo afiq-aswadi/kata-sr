@@ -1,0 +1,13 @@
+[kata]
+name = "mlp"
+category = "neural_networks"
+base_difficulty = 2
+description = """
+Implement a multi-layer perceptron (MLP) with ReLU activations.
+
+Build a feedforward network by stacking linear layers with ReLU activations.
+No activation on the final layer for flexibility.
+
+Key concepts: linear transformations, activation functions, layer composition
+"""
+dependencies = []

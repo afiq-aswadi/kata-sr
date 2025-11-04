@@ -1,0 +1,13 @@
+[kata]
+name = "softmax"
+category = "fundamentals"
+base_difficulty = 1
+description = """
+Implement the softmax function with numerical stability.
+
+Softmax converts a vector of real numbers into a probability distribution.
+Key challenge: prevent overflow by subtracting the maximum value before exponentiation.
+
+Key concepts: numerical stability, normalization, probability distributions
+"""
+dependencies = []
