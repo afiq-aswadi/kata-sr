@@ -48,6 +48,7 @@
 //! # Ok::<(), rusqlite::Error>(())
 //! ```
 
+pub mod cli;
 pub mod core;
 pub mod db;
 pub mod python_env;

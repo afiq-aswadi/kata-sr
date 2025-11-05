@@ -483,6 +483,40 @@ impl KataRepository {
         Ok(())
     }
 
+    /// Replaces all dependency edges for the given kata.
+    ///
+    /// Existing dependencies are removed and replaced with the provided list.
+    /// Duplicate dependency IDs are ignored. Self-dependencies are skipped.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - The kata whose dependencies should be replaced
+    /// * `dependency_ids` - Slice of prerequisite kata IDs (each requires one success by default)
+    pub fn replace_dependencies(&self, kata_id: i64, dependency_ids: &[i64]) -> Result<()> {
+        let tx = self.conn.unchecked_transaction()?;
+        tx.execute(
+            "DELETE FROM kata_dependencies WHERE kata_id = ?1",
+            params![kata_id],
+        )?;
+
+        let mut stmt = tx.prepare(
+            "INSERT INTO kata_dependencies (kata_id, depends_on_kata_id, required_success_count)
+             VALUES (?1, ?2, 1)",
+        )?;
+
+        let mut seen = std::collections::HashSet::new();
+        for &dep_id in dependency_ids {
+            if dep_id == kata_id || !seen.insert(dep_id) {
+                continue;
+            }
+            stmt.execute(params![kata_id, dep_id])?;
+        }
+
+        drop(stmt);
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Calculates the current streak of consecutive days with completed sessions.
     ///
     /// Counts backwards from today, stopping at the first day with no completed sessions.
@@ -611,6 +645,236 @@ impl KataRepository {
             Ok(successful as f64 / total as f64)
         }
     }
+
+    // ===== Debug/Management Methods =====
+
+    /// Resets a specific kata's SM-2 state to initial values.
+    ///
+    /// Sets ease_factor=2.5, interval_days=1, repetition_count=0.
+    /// Sets next_review_at to now to make it immediately due.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to reset
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// repo.reset_kata_sm2_state(1)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn reset_kata_sm2_state(&self, kata_id: i64) -> Result<()> {
+        let now = Utc::now().timestamp();
+        self.conn.execute(
+            "UPDATE katas
+             SET current_ease_factor = 2.5,
+                 current_interval_days = 1,
+                 current_repetition_count = 0,
+                 next_review_at = ?1
+             WHERE id = ?2",
+            params![now, kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Resets all katas' SM-2 states to initial values.
+    ///
+    /// Makes all katas immediately due for review.
+    pub fn reset_all_sm2_states(&self) -> Result<()> {
+        let now = Utc::now().timestamp();
+        self.conn.execute(
+            "UPDATE katas
+             SET current_ease_factor = 2.5,
+                 current_interval_days = 1,
+                 current_repetition_count = 0,
+                 next_review_at = ?1",
+            [now],
+        )?;
+        Ok(())
+    }
+
+    /// Makes a kata due immediately without resetting its SM-2 state.
+    ///
+    /// Only sets next_review_at to now. Preserves ease_factor,
+    /// interval_days, and repetition_count for continued progression.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to make due
+    pub fn force_kata_due(&self, kata_id: i64) -> Result<()> {
+        let now = Utc::now().timestamp();
+        self.conn.execute(
+            "UPDATE katas SET next_review_at = ?1 WHERE id = ?2",
+            params![now, kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Deletes all session records.
+    ///
+    /// Use for testing or when you want to reset practice history
+    /// while keeping kata definitions.
+    pub fn clear_all_sessions(&self) -> Result<()> {
+        self.conn.execute("DELETE FROM sessions", [])?;
+        Ok(())
+    }
+
+    /// Deletes all daily statistics records.
+    pub fn clear_daily_stats(&self) -> Result<()> {
+        self.conn.execute("DELETE FROM daily_stats", [])?;
+        Ok(())
+    }
+
+    /// Deletes a kata and all its associated data.
+    ///
+    /// CASCADE deletes all sessions and dependencies for this kata.
+    /// Foreign key constraints must be enabled.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to delete
+    pub fn delete_kata(&self, kata_id: i64) -> Result<()> {
+        // delete sessions first (foreign key constraint)
+        self.conn
+            .execute("DELETE FROM sessions WHERE kata_id = ?1", [kata_id])?;
+
+        // delete dependencies where this kata is either side
+        self.conn.execute(
+            "DELETE FROM kata_dependencies WHERE kata_id = ?1 OR depends_on_kata_id = ?1",
+            [kata_id],
+        )?;
+
+        // delete the kata itself
+        self.conn
+            .execute("DELETE FROM katas WHERE id = ?1", [kata_id])?;
+
+        Ok(())
+    }
+
+    /// Finds a kata by its name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The kata name to search for
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Some(Kata))` if found
+    /// * `Ok(None)` if not found
+    pub fn get_kata_by_name(&self, name: &str) -> Result<Option<Kata>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, category, description, base_difficulty,
+                    current_difficulty, parent_kata_id, variation_params,
+                    next_review_at, last_reviewed_at, current_ease_factor,
+                    current_interval_days, current_repetition_count, created_at
+             FROM katas
+             WHERE name = ?1",
+        )?;
+
+        let mut rows = stmt.query([name])?;
+
+        if let Some(row) = rows.next()? {
+            Ok(Some(row_to_kata(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Updates kata metadata without affecting SM-2 state.
+    ///
+    /// Used during reimport to update description, category, and base difficulty
+    /// while preserving the user's review progress.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to update
+    /// * `description` - New description
+    /// * `category` - New category
+    /// * `base_difficulty` - New base difficulty
+    pub fn update_kata_metadata(
+        &self,
+        kata_id: i64,
+        description: &str,
+        category: &str,
+        base_difficulty: i32,
+    ) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas
+             SET description = ?1,
+                 category = ?2,
+                 base_difficulty = ?3
+             WHERE id = ?4",
+            params![description, category, base_difficulty, kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Gets database statistics for debugging and inspection.
+    ///
+    /// Returns counts of katas, sessions, dependencies, and streak info.
+    pub fn get_database_stats(&self) -> Result<DatabaseStats> {
+        let katas_total: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM katas", [], |row| row.get(0))?;
+
+        let now = Utc::now().timestamp();
+        let katas_due: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM katas
+             WHERE next_review_at IS NULL OR next_review_at <= ?1",
+            [now],
+            |row| row.get(0),
+        )?;
+
+        let katas_scheduled = katas_total - katas_due;
+
+        let sessions_total: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM sessions", [], |row| row.get(0))?;
+
+        let (sessions_passed, sessions_failed): (i64, i64) = self.conn.query_row(
+            "SELECT
+                 COALESCE(SUM(CASE WHEN quality_rating >= 2 THEN 1 ELSE 0 END), 0) as passed,
+                 COALESCE(SUM(CASE WHEN quality_rating < 2 THEN 1 ELSE 0 END), 0) as failed
+             FROM sessions
+             WHERE quality_rating IS NOT NULL",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+
+        let dependencies_count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM kata_dependencies", [], |row| {
+                row.get(0)
+            })?;
+
+        let current_streak = self.get_current_streak()? as i64;
+
+        Ok(DatabaseStats {
+            katas_total,
+            katas_due,
+            katas_scheduled,
+            sessions_total,
+            sessions_passed,
+            sessions_failed,
+            dependencies_count,
+            current_streak,
+        })
+    }
+}
+
+/// Database statistics for debug/inspection purposes.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DatabaseStats {
+    pub katas_total: i64,
+    pub katas_due: i64,
+    pub katas_scheduled: i64,
+    pub sessions_total: i64,
+    pub sessions_passed: i64,
+    pub sessions_failed: i64,
+    pub dependencies_count: i64,
+    pub current_streak: i64,
 }
 
 /// Full kata record from the database.
@@ -954,6 +1218,65 @@ mod tests {
         let counts = HashMap::new();
 
         assert!(!graph.is_unlocked(kata2_id, &counts));
+    }
+
+    #[test]
+    fn test_replace_dependencies() {
+        let repo = setup_test_repo();
+
+        let kata_a = repo
+            .create_kata(
+                &NewKata {
+                    name: "a".to_string(),
+                    category: "test".to_string(),
+                    description: "A".to_string(),
+                    base_difficulty: 1,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        let kata_b = repo
+            .create_kata(
+                &NewKata {
+                    name: "b".to_string(),
+                    category: "test".to_string(),
+                    description: "B".to_string(),
+                    base_difficulty: 1,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        let kata_c = repo
+            .create_kata(
+                &NewKata {
+                    name: "c".to_string(),
+                    category: "test".to_string(),
+                    description: "C".to_string(),
+                    base_difficulty: 1,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        repo.add_dependency(kata_c, kata_a, 1).unwrap();
+        repo.add_dependency(kata_c, kata_b, 1).unwrap();
+
+        repo.replace_dependencies(kata_c, &[kata_a]).unwrap();
+
+        let graph = repo.load_dependency_graph().unwrap();
+        let counts = HashMap::new();
+        let blocking = graph.get_blocking_dependencies(kata_c, &counts);
+
+        assert_eq!(blocking.len(), 1);
+        assert_eq!(blocking[0].0, kata_a);
     }
 
     #[test]

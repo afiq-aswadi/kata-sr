@@ -3,6 +3,7 @@
 //! This is the main entry point for the kata spaced repetition system.
 //! It handles:
 //!
+//! - CLI argument parsing (debug commands or launch TUI)
 //! - Python environment bootstrap
 //! - Database initialization with migrations
 //! - TUI application launch
@@ -11,6 +12,8 @@
 //! (Terminal User Interface) for kata practice and review.
 
 use anyhow::{Context, Result};
+use clap::Parser;
+use kata_sr::cli::{Cli, Command};
 use kata_sr::db::repo::KataRepository;
 use kata_sr::python_env::PythonEnv;
 use kata_sr::tui::app::App;
@@ -42,22 +45,49 @@ fn get_db_path() -> Result<PathBuf> {
 }
 
 fn main() -> Result<()> {
-    // setup Python environment
-    let python_env = PythonEnv::setup()
-        .map_err(|e| anyhow::anyhow!("Failed to setup Python environment: {}", e))?;
+    // parse CLI arguments
+    let cli = Cli::parse();
 
-    configure_python_env_vars(&python_env)?;
+    // setup Python environment (required for TUI, optional for debug commands)
+    let python_env = match &cli.command {
+        Some(Command::Debug { .. }) => {
+            // debug commands don't need Python environment
+            None
+        }
+        None => {
+            // TUI needs Python environment
+            Some(PythonEnv::setup()
+                .map_err(|e| anyhow::anyhow!("Failed to setup Python environment: {}", e))?)
+        }
+    };
+
+    if let Some(ref env) = python_env {
+        configure_python_env_vars(env)?;
+    }
 
     // initialize database
-    let db_path = get_db_path()?;
+    let db_path = if let Some(ref path) = cli.db_path {
+        PathBuf::from(path)
+    } else {
+        get_db_path()?
+    };
+
     let repo = KataRepository::new(&db_path).context("Failed to open database connection")?;
 
     repo.run_migrations()
         .context("Failed to run database migrations")?;
 
-    // launch TUI application
-    let mut app = App::new(repo)?;
-    app.run()?;
+    // route to appropriate command
+    match cli.command {
+        Some(Command::Debug { operation }) => {
+            operation.execute(&repo)?;
+        }
+        None => {
+            // launch TUI application (default behavior)
+            let mut app = App::new(repo)?;
+            app.run()?;
+        }
+    }
 
     Ok(())
 }

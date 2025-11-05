@@ -85,11 +85,174 @@ fn load_kata_from_manifest(manifest_path: &Path) -> Result<AvailableKata> {
     Ok(manifest.kata)
 }
 
+/// Result of a kata reimport operation
+#[derive(Debug)]
+pub struct ReimportResult {
+    pub added: usize,
+    pub updated: usize,
+    pub deleted: usize,
+}
+
+/// Reimports katas from manifest files into the database.
+///
+/// Scans katas/exercises/ directory and:
+/// - Updates existing katas (description, difficulty, category) while preserving SM-2 state
+/// - Adds new katas found in the directory
+/// - Optionally deletes katas not found in the directory (if prune=true)
+///
+/// # Arguments
+///
+/// * `repo` - The kata repository
+/// * `prune` - If true, delete katas from DB that aren't in exercises/ directory
+///
+/// # Returns
+///
+/// ReimportResult with counts of added, updated, and deleted katas
+pub fn reimport_katas(
+    repo: &crate::db::repo::KataRepository,
+    prune: bool,
+) -> Result<ReimportResult> {
+    use crate::db::repo::NewKata;
+    use std::collections::{HashMap, HashSet};
+
+    // load all katas from disk
+    let available_katas = load_available_katas()?;
+    let available_names: HashSet<String> = available_katas
+        .iter()
+        .map(|k| k.name.clone())
+        .collect();
+
+    // load all katas from database
+    let existing_katas = repo.get_all_katas()?;
+    let existing_by_name: std::collections::HashMap<String, crate::db::repo::Kata> = existing_katas
+        .into_iter()
+        .map(|k| (k.name.clone(), k))
+        .collect();
+    let mut name_to_id: HashMap<String, i64> = existing_by_name
+        .iter()
+        .map(|(name, kata)| (name.clone(), kata.id))
+        .collect();
+
+    let mut added = 0;
+    let mut updated = 0;
+
+    // process each available kata
+    for available in &available_katas {
+        if let Some(existing) = existing_by_name.get(&available.name) {
+            // kata exists - update metadata if changed (preserve SM-2 state)
+            let needs_update = existing.description != available.description
+                || existing.category != available.category
+                || existing.base_difficulty != available.base_difficulty;
+
+            if needs_update {
+                repo.update_kata_metadata(
+                    existing.id,
+                    &available.description,
+                    &available.category,
+                    available.base_difficulty,
+                )?;
+                updated += 1;
+            }
+            name_to_id.insert(available.name.clone(), existing.id);
+        } else {
+            // new kata - create it
+            let new_kata = NewKata {
+                name: available.name.clone(),
+                category: available.category.clone(),
+                description: available.description.clone(),
+                base_difficulty: available.base_difficulty,
+                parent_kata_id: None,
+                variation_params: None,
+            };
+
+            let kata_id = repo.create_kata(&new_kata, chrono::Utc::now())?;
+            name_to_id.insert(available.name.clone(), kata_id);
+            added += 1;
+        }
+    }
+
+    // synchronize dependency edges with manifests
+    for available in &available_katas {
+        let Some(&kata_id) = name_to_id.get(&available.name) else {
+            continue;
+        };
+
+        let mut dependency_ids = Vec::new();
+        let mut seen = HashSet::new();
+
+        for dep_name in &available.dependencies {
+            if dep_name == &available.name {
+                eprintln!(
+                    "warning: kata '{}' lists itself as a dependency; skipping self edge",
+                    available.name
+                );
+                continue;
+            }
+
+            match name_to_id.get(dep_name) {
+                Some(&dep_id) => {
+                    if seen.insert(dep_id) {
+                        dependency_ids.push(dep_id);
+                    }
+                }
+                None => {
+                    eprintln!(
+                        "warning: dependency '{}' for kata '{}' was not found during reimport",
+                        dep_name, available.name
+                    );
+                }
+            }
+        }
+
+        repo.replace_dependencies(kata_id, &dependency_ids)?;
+    }
+
+    // optionally delete katas not in exercises/ directory
+    let mut deleted = 0;
+    if prune {
+        for existing_name in existing_by_name.keys() {
+            if !available_names.contains(existing_name) {
+                if let Some(kata) = existing_by_name.get(existing_name) {
+                    repo.delete_kata(kata.id)?;
+                    deleted += 1;
+                }
+            }
+        }
+    }
+
+    Ok(ReimportResult {
+        added,
+        updated,
+        deleted,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::repo::KataRepository;
     use std::fs;
+    use std::path::Path;
+    use std::collections::HashMap;
     use tempfile::TempDir;
+
+    struct CwdGuard {
+        original: std::path::PathBuf,
+    }
+
+    impl CwdGuard {
+        fn change_to(path: &Path) -> Self {
+            let original = std::env::current_dir().unwrap();
+            std::env::set_current_dir(path).unwrap();
+            Self { original }
+        }
+    }
+
+    impl Drop for CwdGuard {
+        fn drop(&mut self) {
+            let _ = std::env::set_current_dir(&self.original);
+        }
+    }
 
     #[test]
     fn test_load_available_katas_empty_dir() {
@@ -152,5 +315,65 @@ description = "Simple kata without dependencies"
 
         let result = load_kata_from_manifest(&manifest_path);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_reimport_katas_syncs_dependencies() {
+        let temp_dir = TempDir::new().unwrap();
+        let _guard = CwdGuard::change_to(temp_dir.path());
+
+        let exercises_dir = temp_dir.path().join("katas/exercises");
+        fs::create_dir_all(exercises_dir.join("intro")).unwrap();
+        fs::create_dir_all(exercises_dir.join("advanced")).unwrap();
+
+        fs::write(
+            exercises_dir.join("intro/manifest.toml"),
+            r#"
+[kata]
+name = "intro"
+category = "basics"
+base_difficulty = 1
+description = "Intro kata"
+dependencies = []
+"#,
+        )
+        .unwrap();
+
+        fs::write(
+            exercises_dir.join("advanced/manifest.toml"),
+            r#"
+[kata]
+name = "advanced"
+category = "advanced"
+base_difficulty = 3
+description = "Advanced kata"
+dependencies = ["intro"]
+"#,
+        )
+        .unwrap();
+
+        let repo = KataRepository::new_in_memory().unwrap();
+        repo.run_migrations().unwrap();
+
+        let result = reimport_katas(&repo, false).unwrap();
+        assert_eq!(result.added, 2);
+
+        let intro_id = repo
+            .get_kata_by_name("intro")
+            .unwrap()
+            .unwrap()
+            .id;
+        let advanced_id = repo
+            .get_kata_by_name("advanced")
+            .unwrap()
+            .unwrap()
+            .id;
+
+        let graph = repo.load_dependency_graph().unwrap();
+        let counts = HashMap::new();
+        let blocking = graph.get_blocking_dependencies(advanced_id, &counts);
+
+        assert_eq!(blocking.len(), 1);
+        assert_eq!(blocking[0].0, intro_id);
     }
 }
