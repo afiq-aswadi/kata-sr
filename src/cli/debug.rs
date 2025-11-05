@@ -14,7 +14,7 @@ use serde_json;
 
 #[derive(Subcommand)]
 pub enum DebugOperation {
-    /// Reset all kata SM-2 states to initial values
+    /// Perform a complete database reset (deletes all katas, sessions, dependencies, and stats)
     ResetAll,
 
     /// Reset specific kata SM-2 state
@@ -80,9 +80,13 @@ impl DebugOperation {
 }
 
 fn reset_all(repo: &KataRepository) -> Result<()> {
-    repo.reset_all_sm2_states()
-        .context("Failed to reset all SM-2 states")?;
-    println!("✓ Reset all kata SM-2 states to initial values");
+    repo.delete_all_data()
+        .context("Failed to delete all data")?;
+    println!("✓ Performed full database reset");
+    println!("  - Cleared all sessions");
+    println!("  - Cleared all dependencies");
+    println!("  - Removed all katas");
+    println!("  - Cleared all daily stats");
     Ok(())
 }
 
