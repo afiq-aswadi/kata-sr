@@ -26,7 +26,9 @@
       "Bash(/Users/afiqabdillah/.cargo/bin/cargo clippy:*)",
       "Bash(~/.cargo/bin/cargo fmt)",
       "Bash(~/.cargo/bin/cargo clippy:*)",
-      "Bash(~/.cargo/bin/cargo check:*)"
+      "Bash(~/.cargo/bin/cargo check:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []

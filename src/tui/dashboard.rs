@@ -84,11 +84,14 @@ impl Dashboard {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),   // Header
-                Constraint::Min(8),      // Main kata list
-                Constraint::Length(3),   // Heatmap
-                Constraint::Length(std::cmp::max(3, self.stats.category_breakdown.len() as u16 + 2)), // Category breakdown (dynamic)
-                Constraint::Length(4),   // Stats summary
+                Constraint::Length(3), // Header
+                Constraint::Min(8),    // Main kata list
+                Constraint::Length(3), // Heatmap
+                Constraint::Length(std::cmp::max(
+                    3,
+                    self.stats.category_breakdown.len() as u16 + 2,
+                )), // Category breakdown (dynamic)
+                Constraint::Length(4), // Stats summary
             ])
             .split(frame.size());
 

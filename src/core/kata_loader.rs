@@ -117,10 +117,7 @@ pub fn reimport_katas(
 
     // load all katas from disk
     let available_katas = load_available_katas()?;
-    let available_names: HashSet<String> = available_katas
-        .iter()
-        .map(|k| k.name.clone())
-        .collect();
+    let available_names: HashSet<String> = available_katas.iter().map(|k| k.name.clone()).collect();
 
     // load all katas from database
     let existing_katas = repo.get_all_katas()?;
@@ -231,9 +228,9 @@ pub fn reimport_katas(
 mod tests {
     use super::*;
     use crate::db::repo::KataRepository;
+    use std::collections::HashMap;
     use std::fs;
     use std::path::Path;
-    use std::collections::HashMap;
     use tempfile::TempDir;
 
     struct CwdGuard {
@@ -358,16 +355,8 @@ dependencies = ["intro"]
         let result = reimport_katas(&repo, false).unwrap();
         assert_eq!(result.added, 2);
 
-        let intro_id = repo
-            .get_kata_by_name("intro")
-            .unwrap()
-            .unwrap()
-            .id;
-        let advanced_id = repo
-            .get_kata_by_name("advanced")
-            .unwrap()
-            .unwrap()
-            .id;
+        let intro_id = repo.get_kata_by_name("intro").unwrap().unwrap().id;
+        let advanced_id = repo.get_kata_by_name("advanced").unwrap().unwrap().id;
 
         let graph = repo.load_dependency_graph().unwrap();
         let counts = HashMap::new();

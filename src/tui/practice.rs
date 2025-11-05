@@ -88,9 +88,8 @@ impl PracticeScreen {
             KeyCode::Char('e') => {
                 let tx_clone = event_tx.clone();
                 if let Err(err) = self.edit_and_run_tests(tx_clone) {
-                    let _ = event_tx.send(AppEvent::TestComplete(TestResults::error(
-                        err.to_string(),
-                    )));
+                    let _ =
+                        event_tx.send(AppEvent::TestComplete(TestResults::error(err.to_string())));
                     self.status = PracticeStatus::ShowingDescription;
                 }
                 Ok(PracticeAction::None)

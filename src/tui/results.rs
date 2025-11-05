@@ -67,49 +67,66 @@ impl ResultsScreen {
             List::new(items).block(Block::default().borders(Borders::ALL).title("Test Results"));
         frame.render_widget(list, chunks[1]);
 
-        // rating selection
-        let ratings = ["[0] Again", "[1] Hard", "[2] Good", "[3] Easy"];
-        let rating_text = ratings
-            .iter()
-            .enumerate()
-            .map(|(i, r)| {
-                if i == self.selected_rating {
-                    format!("> {}", r)
-                } else {
-                    format!("  {}", r)
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
+        // rating selection or retry prompt
+        if self.results.passed {
+            let ratings = ["[0] Again", "[1] Hard", "[2] Good", "[3] Easy"];
+            let rating_text = ratings
+                .iter()
+                .enumerate()
+                .map(|(i, r)| {
+                    if i == self.selected_rating {
+                        format!("> {}", r)
+                    } else {
+                        format!("  {}", r)
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
 
-        let rating = Paragraph::new(rating_text).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Rate Difficulty"),
-        );
-        frame.render_widget(rating, chunks[2]);
+            let rating = Paragraph::new(rating_text).block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Rate Difficulty (Press Enter to submit)"),
+            );
+            frame.render_widget(rating, chunks[2]);
+        } else {
+            let retry_text = "Tests failed. You must fix your implementation before rating.\n\n[r] Retry (edit and run tests again)\n[Esc] Back to dashboard";
+            let retry = Paragraph::new(retry_text)
+                .block(Block::default().borders(Borders::ALL).title("Next Steps"));
+            frame.render_widget(retry, chunks[2]);
+        }
     }
 
     pub fn handle_input(&mut self, code: KeyCode) -> ResultsAction {
-        match code {
-            KeyCode::Char('0') => {
-                self.selected_rating = 0;
-                ResultsAction::None
+        if self.results.passed {
+            // tests passed - allow rating
+            match code {
+                KeyCode::Char('0') => {
+                    self.selected_rating = 0;
+                    ResultsAction::None
+                }
+                KeyCode::Char('1') => {
+                    self.selected_rating = 1;
+                    ResultsAction::None
+                }
+                KeyCode::Char('2') => {
+                    self.selected_rating = 2;
+                    ResultsAction::None
+                }
+                KeyCode::Char('3') => {
+                    self.selected_rating = 3;
+                    ResultsAction::None
+                }
+                KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8),
+                _ => ResultsAction::None,
             }
-            KeyCode::Char('1') => {
-                self.selected_rating = 1;
-                ResultsAction::None
+        } else {
+            // tests failed - only allow retry or back to dashboard
+            match code {
+                KeyCode::Char('r') => ResultsAction::Retry,
+                KeyCode::Esc => ResultsAction::BackToDashboard,
+                _ => ResultsAction::None,
             }
-            KeyCode::Char('2') => {
-                self.selected_rating = 2;
-                ResultsAction::None
-            }
-            KeyCode::Char('3') => {
-                self.selected_rating = 3;
-                ResultsAction::None
-            }
-            KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8),
-            _ => ResultsAction::None,
         }
     }
 }
@@ -117,4 +134,6 @@ impl ResultsScreen {
 pub enum ResultsAction {
     None,
     SubmitRating(u8),
+    Retry,
+    BackToDashboard,
 }
