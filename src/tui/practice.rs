@@ -139,12 +139,14 @@ impl PracticeScreen {
         match code {
             KeyCode::Char('e') => {
                 let tx_clone = event_tx.clone();
-                if let Err(err) = self.edit_and_run_tests(tx_clone) {
-                    let _ =
-                        event_tx.send(AppEvent::TestComplete(TestResults::error(err.to_string())));
-                    self.status = PracticeStatus::ShowingDescription;
+                match self.edit_and_run_tests(tx_clone) {
+                    Ok(_) => Ok(PracticeAction::EditorExited),
+                    Err(err) => {
+                        let _ = event_tx.send(AppEvent::TestComplete(TestResults::error(err.to_string())));
+                        self.status = PracticeStatus::ShowingDescription;
+                        Ok(PracticeAction::EditorExited)
+                    }
                 }
-                Ok(PracticeAction::None)
             }
             KeyCode::Char('t') => {
                 self.run_tests(event_tx);
@@ -172,6 +174,8 @@ impl PracticeScreen {
             let mut stdout = std::io::stdout();
             crossterm::execute!(
                 stdout,
+                crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+                crossterm::cursor::Show,
                 crossterm::terminal::LeaveAlternateScreen,
             )
             .context("failed to leave alternate screen before launching editor")?;
@@ -190,8 +194,14 @@ impl PracticeScreen {
                 stdout,
                 crossterm::terminal::EnterAlternateScreen,
                 crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+                crossterm::cursor::Hide,
+                crossterm::cursor::MoveTo(0, 0),
             )
             .context("failed to re-enter alternate screen after exiting editor")?;
+
+            // Flush to ensure all commands are executed
+            use std::io::Write;
+            stdout.flush().context("failed to flush stdout after terminal reset")?;
 
             let editor_status = status_result.with_context(|| format!("failed to launch {}", editor))?;
 
@@ -227,4 +237,5 @@ impl PracticeScreen {
 pub enum PracticeAction {
     None,
     BackToDashboard,
+    EditorExited, // Signal that terminal needs refresh after editor
 }

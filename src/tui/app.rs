@@ -84,6 +84,8 @@ pub struct App {
     pub event_rx: Receiver<AppEvent>,
     /// Whether we're showing help screen
     showing_help: bool,
+    /// Whether terminal needs to be cleared (after external editor)
+    needs_terminal_clear: bool,
 }
 
 impl App {
@@ -115,6 +117,7 @@ impl App {
             event_tx: tx,
             event_rx: rx,
             showing_help: false,
+            needs_terminal_clear: false,
         })
     }
 
@@ -192,6 +195,12 @@ impl App {
                         }
                         code => {
                             self.handle_input(code)?;
+
+                            // Clear terminal if needed (after external editor)
+                            if self.needs_terminal_clear {
+                                terminal.clear().context("Failed to clear terminal")?;
+                                self.needs_terminal_clear = false;
+                            }
                         }
                     }
                 }
@@ -259,6 +268,10 @@ impl App {
                 let action = practice_screen.handle_input(code, self.event_tx.clone())?;
                 match action {
                     PracticeAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    PracticeAction::EditorExited => {
+                        self.needs_terminal_clear = true;
+                        None
+                    }
                     PracticeAction::None => None,
                 }
             }
