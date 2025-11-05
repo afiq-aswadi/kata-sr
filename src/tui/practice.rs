@@ -165,19 +165,39 @@ impl PracticeScreen {
         self.status = PracticeStatus::EditingInProgress;
 
         let result = (|| -> anyhow::Result<()> {
+            // Determine which editor to use (respects EDITOR env var)
+            let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
+
+            // Exit alternate screen and disable raw mode to hand control to editor
+            let mut stdout = std::io::stdout();
+            crossterm::execute!(
+                stdout,
+                crossterm::terminal::LeaveAlternateScreen,
+            )
+            .context("failed to leave alternate screen before launching editor")?;
+
             crossterm::terminal::disable_raw_mode()
                 .context("failed to disable raw mode before launching editor")?;
 
-            let status_result = Command::new("nvim").arg(&self.template_path).status();
+            // Launch editor and wait for it to complete
+            let status_result = Command::new(&editor).arg(&self.template_path).status();
 
+            // Re-enable raw mode and re-enter alternate screen to restore TUI
             crossterm::terminal::enable_raw_mode()
                 .context("failed to re-enable raw mode after exiting editor")?;
 
-            let editor_status = status_result.context("failed to launch nvim")?;
+            crossterm::execute!(
+                stdout,
+                crossterm::terminal::EnterAlternateScreen,
+            )
+            .context("failed to re-enter alternate screen after exiting editor")?;
+
+            let editor_status = status_result.with_context(|| format!("failed to launch {}", editor))?;
 
             if !editor_status.success() {
                 anyhow::bail!(
-                    "nvim exited with non-zero status (code {:?})",
+                    "{} exited with non-zero status (code {:?})",
+                    editor,
                     editor_status.code()
                 );
             }
