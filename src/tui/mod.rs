@@ -1,5 +1,6 @@
 pub mod app;
 pub mod dashboard;
+pub mod details;
 pub mod heatmap;
 pub mod keybindings;
 pub mod library;

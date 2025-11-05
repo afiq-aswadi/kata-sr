@@ -109,7 +109,12 @@ mod tests {
         assert_eq!(heatmap.chars().count(), "Last 7 days: ".len() + 7);
 
         // check that it contains some symbols
-        assert!(heatmap.contains('░') || heatmap.contains('▒') || heatmap.contains('▓') || heatmap.contains('█'));
+        assert!(
+            heatmap.contains('░')
+                || heatmap.contains('▒')
+                || heatmap.contains('▓')
+                || heatmap.contains('█')
+        );
     }
 
     #[test]

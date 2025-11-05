@@ -56,8 +56,10 @@ fn main() -> Result<()> {
         }
         None => {
             // TUI needs Python environment
-            Some(PythonEnv::setup()
-                .map_err(|e| anyhow::anyhow!("Failed to setup Python environment: {}", e))?)
+            Some(
+                PythonEnv::setup()
+                    .map_err(|e| anyhow::anyhow!("Failed to setup Python environment: {}", e))?,
+            )
         }
     };
 

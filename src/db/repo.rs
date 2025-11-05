@@ -785,7 +785,11 @@ impl KataRepository {
     ///
     /// * `start_date` - Start date (inclusive) in YYYY-MM-DD format
     /// * `end_date` - End date (inclusive) in YYYY-MM-DD format
-    pub fn get_daily_stats_range(&self, start_date: &str, end_date: &str) -> Result<Vec<DailyStats>> {
+    pub fn get_daily_stats_range(
+        &self,
+        start_date: &str,
+        end_date: &str,
+    ) -> Result<Vec<DailyStats>> {
         let mut stmt = self.conn.prepare(
             "SELECT date, total_reviews, total_successes, success_rate, streak_days, categories_json
              FROM daily_stats
@@ -911,9 +915,9 @@ impl KataRepository {
 
         let katas_scheduled = katas_total - katas_due;
 
-        let sessions_total: i64 = self
-            .conn
-            .query_row("SELECT COUNT(*) FROM sessions", [], |row| row.get(0))?;
+        let sessions_total: i64 =
+            self.conn
+                .query_row("SELECT COUNT(*) FROM sessions", [], |row| row.get(0))?;
 
         let (sessions_passed, sessions_failed): (i64, i64) = self.conn.query_row(
             "SELECT
@@ -925,11 +929,11 @@ impl KataRepository {
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
 
-        let dependencies_count: i64 = self
-            .conn
-            .query_row("SELECT COUNT(*) FROM kata_dependencies", [], |row| {
-                row.get(0)
-            })?;
+        let dependencies_count: i64 =
+            self.conn
+                .query_row("SELECT COUNT(*) FROM kata_dependencies", [], |row| {
+                    row.get(0)
+                })?;
 
         let current_streak = self.get_current_streak()? as i64;
 

@@ -69,12 +69,7 @@ pub fn run_python_tests(kata_id: &str, template_path: &Path) -> TestResults {
 
     let output = match output {
         Ok(output) => output,
-        Err(err) => {
-            return TestResults::error(format!(
-                "Failed to spawn Python process: {}",
-                err
-            ))
-        }
+        Err(err) => return TestResults::error(format!("Failed to spawn Python process: {}", err)),
     };
 
     if !output.status.success() {

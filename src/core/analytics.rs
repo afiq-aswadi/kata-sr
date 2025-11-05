@@ -414,7 +414,10 @@ mod tests {
         let counts = analytics.get_review_counts_last_n_days(7)?;
 
         assert_eq!(counts.get(&Utc::now().date_naive()), Some(&1));
-        assert_eq!(counts.get(&(Utc::now().date_naive() - Duration::days(1))), Some(&1));
+        assert_eq!(
+            counts.get(&(Utc::now().date_naive() - Duration::days(1))),
+            Some(&1)
+        );
 
         Ok(())
     }

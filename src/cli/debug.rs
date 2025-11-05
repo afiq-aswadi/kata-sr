@@ -146,8 +146,7 @@ fn delete_kata(repo: &KataRepository, kata_name: &str) -> Result<()> {
         .context("Failed to look up kata")?
         .ok_or_else(|| anyhow::anyhow!("Kata not found: {}", kata_name))?;
 
-    repo.delete_kata(kata.id)
-        .context("Failed to delete kata")?;
+    repo.delete_kata(kata.id).context("Failed to delete kata")?;
 
     println!("✓ Deleted kata: {}", kata_name);
     Ok(())
@@ -159,16 +158,20 @@ fn show_stats(repo: &KataRepository, json: bool) -> Result<()> {
         .context("Failed to get database stats")?;
 
     if json {
-        let json_output = serde_json::to_string_pretty(&stats)
-            .context("Failed to serialize stats to JSON")?;
+        let json_output =
+            serde_json::to_string_pretty(&stats).context("Failed to serialize stats to JSON")?;
         println!("{}", json_output);
     } else {
         println!("Database Statistics");
         println!("===================");
-        println!("Katas:        {} total ({} due, {} scheduled)",
-            stats.katas_total, stats.katas_due, stats.katas_scheduled);
-        println!("Sessions:     {} total ({} passed, {} failed)",
-            stats.sessions_total, stats.sessions_passed, stats.sessions_failed);
+        println!(
+            "Katas:        {} total ({} due, {} scheduled)",
+            stats.katas_total, stats.katas_due, stats.katas_scheduled
+        );
+        println!(
+            "Sessions:     {} total ({} passed, {} failed)",
+            stats.sessions_total, stats.sessions_passed, stats.sessions_failed
+        );
         println!("Dependencies: {} edges", stats.dependencies_count);
         println!("Streak:       {} days", stats.current_streak);
     }
@@ -181,8 +184,7 @@ fn list_katas(repo: &KataRepository, due: bool) -> Result<()> {
         repo.get_katas_due(chrono::Utc::now())
             .context("Failed to get due katas")?
     } else {
-        repo.get_all_katas()
-            .context("Failed to get all katas")?
+        repo.get_all_katas().context("Failed to get all katas")?
     };
 
     if katas.is_empty() {
@@ -205,10 +207,10 @@ fn list_katas(repo: &KataRepository, due: bool) -> Result<()> {
         println!("  {} ({})", kata.name, status);
         println!("    Category: {}", kata.category);
         println!("    Difficulty: {:.1}/5", kata.current_difficulty);
-        println!("    SM-2: ease={:.2}, interval={} days, reps={}",
-            kata.current_ease_factor,
-            kata.current_interval_days,
-            kata.current_repetition_count);
+        println!(
+            "    SM-2: ease={:.2}, interval={} days, reps={}",
+            kata.current_ease_factor, kata.current_interval_days, kata.current_repetition_count
+        );
         println!();
     }
 

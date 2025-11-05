@@ -12,6 +12,7 @@ use std::io;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 use super::dashboard::{Dashboard, DashboardAction};
+use super::details::{DetailsAction, DetailsScreen};
 use super::keybindings;
 use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
@@ -49,6 +50,8 @@ pub enum Screen {
     Help,
     /// Library screen for browsing and adding katas
     Library(Library),
+    /// Details screen for viewing kata information
+    Details(DetailsScreen),
 }
 
 /// Internal enum for handling screen transitions without borrow conflicts.
@@ -59,6 +62,9 @@ enum ScreenAction {
     OpenLibrary,
     AddKataFromLibrary(String),
     BackFromLibrary,
+    ViewDetails(crate::core::kata_loader::AvailableKata, bool),
+    BackFromDetails,
+    RetryKata(Kata),
 }
 
 /// Main application state and event loop coordinator.
@@ -221,6 +227,9 @@ impl App {
                 Screen::Library(library) => {
                     library.render(frame);
                 }
+                Screen::Details(details) => {
+                    details.render(frame);
+                }
             }
         }
     }
@@ -259,6 +268,8 @@ impl App {
                     ResultsAction::SubmitRating(rating) => {
                         Some(ScreenAction::SubmitRating(kata.clone(), rating))
                     }
+                    ResultsAction::Retry => Some(ScreenAction::StartPractice(kata.clone())),
+                    ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::None => None,
                 }
             }
@@ -268,8 +279,19 @@ impl App {
                 match action {
                     LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
                     LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
-                    LibraryAction::ViewDetails(_) => None, // ignore for now
+                    LibraryAction::ViewDetails(kata) => {
+                        let in_deck = library.kata_ids_in_deck.contains(&kata.name);
+                        Some(ScreenAction::ViewDetails(kata, in_deck))
+                    }
                     LibraryAction::None => None,
+                }
+            }
+            Screen::Details(details) => {
+                let action = details.handle_input(code);
+                match action {
+                    DetailsAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
+                    DetailsAction::Back => Some(ScreenAction::BackFromDetails),
+                    DetailsAction::None => None,
                 }
             }
         };
@@ -319,9 +341,17 @@ impl App {
                     // add to database with next_review_at = now (so it appears as due)
                     self.repo.create_kata(&new_kata, Utc::now())?;
 
-                    // update library state
-                    if let Screen::Library(library) = &mut self.current_screen {
-                        library.mark_as_added(&kata_name);
+                    // update library state if on library screen, or navigate back if on details
+                    match &mut self.current_screen {
+                        Screen::Library(library) => {
+                            library.mark_as_added(&kata_name);
+                        }
+                        Screen::Details(_) => {
+                            // navigate back to library with updated state
+                            let library = Library::load(&self.repo)?;
+                            self.current_screen = Screen::Library(library);
+                        }
+                        _ => {}
                     }
 
                     // reload dashboard so counts are updated
@@ -330,6 +360,18 @@ impl App {
             }
             ScreenAction::BackFromLibrary => {
                 self.current_screen = Screen::Dashboard;
+            }
+            ScreenAction::ViewDetails(kata, in_deck) => {
+                let details = DetailsScreen::new(kata, in_deck);
+                self.current_screen = Screen::Details(details);
+            }
+            ScreenAction::BackFromDetails => {
+                let library = Library::load(&self.repo)?;
+                self.current_screen = Screen::Library(library);
+            }
+            ScreenAction::RetryKata(kata) => {
+                let practice_screen = PracticeScreen::new(kata.clone())?;
+                self.current_screen = Screen::Practice(kata, practice_screen);
             }
         }
         Ok(())
