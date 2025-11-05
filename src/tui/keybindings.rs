@@ -10,6 +10,7 @@
 //! - **Dashboard**: Main menu navigation and kata selection
 //! - **Practice**: Kata editing and test execution
 //! - **Results**: Test results and difficulty rating
+//! - **Library**: Browse and add katas from the library
 //!
 //! # Usage
 //!
@@ -52,6 +53,7 @@ pub struct Keybindings {
     pub dashboard: Vec<Keybinding>,
     pub practice: Vec<Keybinding>,
     pub results: Vec<Keybinding>,
+    pub library: Vec<Keybinding>,
 }
 
 /// Returns all keybindings for the application.
@@ -78,13 +80,13 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("k / ↑", "Move up in kata list"),
             Keybinding::new("Enter", "Select and start kata practice"),
             Keybinding::new("a", "Show analytics and statistics"),
+            Keybinding::new("l", "Open kata library to browse and add katas"),
             Keybinding::new("r", "Refresh kata list"),
         ],
         practice: vec![
-            Keybinding::new("e", "Edit kata in nvim"),
-            Keybinding::new("t", "Run tests"),
-            Keybinding::new("Esc", "Return to dashboard (discard changes)"),
-            Keybinding::new("s", "Save progress without rating"),
+            Keybinding::new("e", "Edit kata in nvim and auto-run tests"),
+            Keybinding::new("t", "Re-run tests without reopening the editor"),
+            Keybinding::new("Esc", "Return to dashboard"),
         ],
         results: vec![
             Keybinding::new("0", "Rate as Again (complete failure)"),
@@ -95,6 +97,13 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("k / ↑", "Navigate to previous rating option"),
             Keybinding::new("Enter", "Submit selected rating"),
             Keybinding::new("Esc", "Return to dashboard without rating"),
+        ],
+        library: vec![
+            Keybinding::new("j / ↓", "Navigate to next kata"),
+            Keybinding::new("k / ↑", "Navigate to previous kata"),
+            Keybinding::new("a", "Add selected kata to deck"),
+            Keybinding::new("Enter", "View kata details"),
+            Keybinding::new("Esc", "Return to dashboard"),
         ],
     }
 }
@@ -145,9 +154,10 @@ pub fn render_help_screen(frame: &mut Frame) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(4),  // Global
-            Constraint::Length(7),  // Dashboard
+            Constraint::Length(8),  // Dashboard
             Constraint::Length(6),  // Practice
             Constraint::Length(10), // Results
+            Constraint::Length(7),  // Library
             Constraint::Min(1),     // Spacer
             Constraint::Length(2),  // Footer
         ])
@@ -158,6 +168,7 @@ pub fn render_help_screen(frame: &mut Frame) {
     render_keybinding_section(frame, sections[1], "Dashboard", &keybindings.dashboard);
     render_keybinding_section(frame, sections[2], "Practice", &keybindings.practice);
     render_keybinding_section(frame, sections[3], "Results", &keybindings.results);
+    render_keybinding_section(frame, sections[4], "Library", &keybindings.library);
 
     // footer
     let footer = Paragraph::new("Press ? or Esc to close this help screen")
@@ -167,7 +178,7 @@ pub fn render_help_screen(frame: &mut Frame) {
                 .fg(Color::DarkGray)
                 .add_modifier(Modifier::ITALIC),
         );
-    frame.render_widget(footer, sections[5]);
+    frame.render_widget(footer, sections[6]);
 }
 
 /// Renders a single section of keybindings.
@@ -253,6 +264,7 @@ mod tests {
         assert!(!kb.dashboard.is_empty());
         assert!(!kb.practice.is_empty());
         assert!(!kb.results.is_empty());
+        assert!(!kb.library.is_empty());
     }
 
     #[test]

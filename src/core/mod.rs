@@ -4,7 +4,9 @@
 //! - SM-2 spaced repetition scheduling
 //! - Adaptive difficulty tracking based on performance
 //! - Dependency graph management for prerequisite relationships
+//! - Kata loading from manifest files
 
 pub mod dependencies;
 pub mod difficulty;
+pub mod kata_loader;
 pub mod scheduler;

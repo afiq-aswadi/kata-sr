@@ -100,7 +100,7 @@ impl Dashboard {
         frame.render_widget(list, chunks[1]);
 
         let stats_text = format!(
-            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%",
+            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library",
             self.stats.streak_days,
             self.stats.total_reviews_today,
             self.stats.success_rate_7d * 100.0

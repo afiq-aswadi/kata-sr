@@ -1,5 +1,7 @@
 use crate::db::repo::Kata;
+use crate::runner::python_runner::TestResults;
 use crate::tui::app::AppEvent;
+use anyhow::Context;
 use crossterm::event::KeyCode;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
@@ -27,9 +29,17 @@ impl PracticeScreen {
     pub fn new(kata: Kata) -> anyhow::Result<Self> {
         let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
 
-        let kata_dir = PathBuf::from("katas/exercises").join(&kata.name);
+        let katas_root = std::env::var("KATA_SR_KATAS_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("katas"));
+        let kata_dir = katas_root.join("exercises").join(&kata.name);
         let template_source = kata_dir.join("template.py");
-        fs::copy(&template_source, &template_path)?;
+        fs::copy(&template_source, &template_path).with_context(|| {
+            format!(
+                "failed to copy kata template from {}",
+                template_source.display()
+            )
+        })?;
 
         Ok(Self {
             kata,
@@ -58,8 +68,10 @@ impl PracticeScreen {
         frame.render_widget(desc, chunks[1]);
 
         let instructions = match self.status {
-            PracticeStatus::ShowingDescription => "[e] Edit in nvim  [q] Back to dashboard",
-            PracticeStatus::EditingInProgress => "Editing in nvim... (save and exit to return)",
+            PracticeStatus::ShowingDescription => {
+                "[e] Edit & run tests  [t] Run tests  [Esc] Back to dashboard"
+            }
+            PracticeStatus::EditingInProgress => "Editing in nvim... (save and exit to run tests)",
             PracticeStatus::TestsRunning => "Running tests...",
         };
         let inst = Paragraph::new(instructions)
@@ -74,7 +86,13 @@ impl PracticeScreen {
     ) -> anyhow::Result<PracticeAction> {
         match code {
             KeyCode::Char('e') => {
-                self.launch_editor();
+                let tx_clone = event_tx.clone();
+                if let Err(err) = self.edit_and_run_tests(tx_clone) {
+                    let _ = event_tx.send(AppEvent::TestComplete(TestResults::error(
+                        err.to_string(),
+                    )));
+                    self.status = PracticeStatus::ShowingDescription;
+                }
                 Ok(PracticeAction::None)
             }
             KeyCode::Char('t') => {
@@ -86,28 +104,38 @@ impl PracticeScreen {
         }
     }
 
-    fn launch_editor(&mut self) {
+    fn edit_and_run_tests(&mut self, event_tx: Sender<AppEvent>) -> anyhow::Result<()> {
+        self.launch_editor()?;
+        self.run_tests(event_tx);
+        Ok(())
+    }
+
+    fn launch_editor(&mut self) -> anyhow::Result<()> {
         self.status = PracticeStatus::EditingInProgress;
 
-        if let Err(e) = crossterm::terminal::disable_raw_mode() {
-            eprintln!("Failed to disable raw mode: {}", e);
-            return;
-        }
+        let result = (|| -> anyhow::Result<()> {
+            crossterm::terminal::disable_raw_mode()
+                .context("failed to disable raw mode before launching editor")?;
 
-        let status = Command::new("nvim")
-            .arg(&self.template_path)
-            .status()
-            .expect("Failed to launch nvim");
+            let status_result = Command::new("nvim").arg(&self.template_path).status();
 
-        if let Err(e) = crossterm::terminal::enable_raw_mode() {
-            eprintln!("Failed to re-enable raw mode: {}", e);
-        }
+            crossterm::terminal::enable_raw_mode()
+                .context("failed to re-enable raw mode after exiting editor")?;
 
-        if !status.success() {
-            eprintln!("Editor exited with error");
-        }
+            let editor_status = status_result.context("failed to launch nvim")?;
+
+            if !editor_status.success() {
+                anyhow::bail!(
+                    "nvim exited with non-zero status (code {:?})",
+                    editor_status.code()
+                );
+            }
+
+            Ok(())
+        })();
 
         self.status = PracticeStatus::ShowingDescription;
+        result
     }
 
     fn run_tests(&mut self, event_tx: Sender<AppEvent>) {

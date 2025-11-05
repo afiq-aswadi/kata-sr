@@ -43,8 +43,10 @@ fn get_db_path() -> Result<PathBuf> {
 
 fn main() -> Result<()> {
     // setup Python environment
-    let _python_env = PythonEnv::setup()
+    let python_env = PythonEnv::setup()
         .map_err(|e| anyhow::anyhow!("Failed to setup Python environment: {}", e))?;
+
+    configure_python_env_vars(&python_env)?;
 
     // initialize database
     let db_path = get_db_path()?;
@@ -56,6 +58,28 @@ fn main() -> Result<()> {
     // launch TUI application
     let mut app = App::new(repo)?;
     app.run()?;
+
+    Ok(())
+}
+
+fn configure_python_env_vars(env: &PythonEnv) -> Result<()> {
+    let interpreter = env.interpreter_path();
+    std::env::set_var("KATA_SR_PYTHON", interpreter);
+
+    if let Some(katas_dir) = interpreter
+        .parent()
+        .and_then(|p| p.parent())
+        .and_then(|p| p.parent())
+    {
+        let katas_dir = katas_dir.to_path_buf();
+        let canonical = katas_dir.canonicalize().unwrap_or(katas_dir);
+        std::env::set_var("KATA_SR_KATAS_DIR", canonical);
+    } else {
+        anyhow::bail!(
+            "Unable to determine katas directory from interpreter path: {}",
+            interpreter.display()
+        );
+    }
 
     Ok(())
 }

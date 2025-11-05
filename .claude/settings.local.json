@@ -20,7 +20,13 @@
       "Bash(find:*)",
       "Bash(/Users/afiqabdillah/.cargo/bin/cargo check:*)",
       "Bash(~/.cargo/bin/cargo build:*)",
-      "Bash(~/.cargo/bin/cargo test:*)"
+      "Bash(~/.cargo/bin/cargo test:*)",
+      "Bash(~/.cargo/bin/cargo fmt --check)",
+      "Bash(/Users/afiqabdillah/.cargo/bin/cargo fmt)",
+      "Bash(/Users/afiqabdillah/.cargo/bin/cargo clippy:*)",
+      "Bash(~/.cargo/bin/cargo fmt)",
+      "Bash(~/.cargo/bin/cargo clippy:*)",
+      "Bash(~/.cargo/bin/cargo check:*)"
     ],
     "deny": [],
     "ask": []

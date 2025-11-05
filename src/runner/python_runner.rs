@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -20,7 +20,7 @@ pub struct TestResult {
 }
 
 impl TestResults {
-    fn error(message: String) -> Self {
+    pub fn error(message: String) -> Self {
         Self {
             passed: false,
             num_passed: 0,
@@ -37,7 +37,21 @@ impl TestResults {
 }
 
 pub fn run_python_tests(kata_id: &str, template_path: &Path) -> TestResults {
-    let python_path = "katas/.venv/bin/python";
+    let interpreter_path = resolve_interpreter_path();
+    if !interpreter_path.exists() {
+        return TestResults::error(format!(
+            "Python interpreter not found at {}",
+            interpreter_path.display()
+        ));
+    }
+
+    let katas_dir = resolve_katas_dir();
+    if !katas_dir.exists() {
+        return TestResults::error(format!(
+            "Katas directory not found at {}",
+            katas_dir.display()
+        ));
+    }
 
     let template_str = match template_path.to_str() {
         Some(s) => s,
@@ -48,15 +62,28 @@ pub fn run_python_tests(kata_id: &str, template_path: &Path) -> TestResults {
         }
     };
 
-    let output = Command::new(python_path)
+    let output = Command::new(&interpreter_path)
         .args(["-m", "runner", kata_id, template_str])
-        .current_dir("katas")
-        .output()
-        .expect("Failed to spawn Python process");
+        .current_dir(&katas_dir)
+        .output();
+
+    let output = match output {
+        Ok(output) => output,
+        Err(err) => {
+            return TestResults::error(format!(
+                "Failed to spawn Python process: {}",
+                err
+            ))
+        }
+    };
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return TestResults::error(format!("Python runner failed:\n{}", stderr));
+        return TestResults::error(format!(
+            "Python runner failed (exit code {:?}):\n{}",
+            output.status.code(),
+            stderr
+        ));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -68,4 +95,16 @@ pub fn run_python_tests(kata_id: &str, template_path: &Path) -> TestResults {
             e, stdout
         )),
     }
+}
+
+fn resolve_interpreter_path() -> PathBuf {
+    std::env::var("KATA_SR_PYTHON")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("katas/.venv/bin/python"))
+}
+
+fn resolve_katas_dir() -> PathBuf {
+    std::env::var("KATA_SR_KATAS_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("katas"))
 }

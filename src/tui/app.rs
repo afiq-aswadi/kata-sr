@@ -13,10 +13,11 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 
 use super::dashboard::{Dashboard, DashboardAction};
 use super::keybindings;
+use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
 use super::results::{ResultsAction, ResultsScreen};
 use crate::core::scheduler::QualityRating;
-use crate::db::repo::{Kata, KataRepository, NewSession};
+use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
 use crate::runner::python_runner::TestResults;
 
 /// Events that can be sent to the main application loop.
@@ -45,6 +46,8 @@ pub enum Screen {
     Results(Kata, ResultsScreen),
     /// Help screen showing keybindings
     Help,
+    /// Library screen for browsing and adding katas
+    Library(Library),
 }
 
 /// Internal enum for handling screen transitions without borrow conflicts.
@@ -52,6 +55,9 @@ enum ScreenAction {
     StartPractice(Kata),
     ReturnToDashboard,
     SubmitRating(Kata, u8),
+    OpenLibrary,
+    AddKataFromLibrary(String),
+    BackFromLibrary,
 }
 
 /// Main application state and event loop coordinator.
@@ -211,6 +217,9 @@ impl App {
                 Screen::Help => {
                     keybindings::render_help_screen(frame);
                 }
+                Screen::Library(library) => {
+                    library.render(frame);
+                }
             }
         }
     }
@@ -226,6 +235,10 @@ impl App {
         // extract action from current screen to avoid borrow checker issues
         let action_result = match &mut self.current_screen {
             Screen::Dashboard => {
+                // handle library key 'l' in dashboard
+                if code == KeyCode::Char('l') {
+                    return self.execute_action(ScreenAction::OpenLibrary);
+                }
                 let action = self.dashboard.handle_input(code);
                 match action {
                     DashboardAction::SelectKata(kata) => Some(ScreenAction::StartPractice(kata)),
@@ -249,27 +262,75 @@ impl App {
                 }
             }
             Screen::Help => Some(ScreenAction::ReturnToDashboard),
+            Screen::Library(library) => {
+                let action = library.handle_input(code);
+                match action {
+                    LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
+                    LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
+                    LibraryAction::ViewDetails(_) => None, // ignore for now
+                    LibraryAction::None => None,
+                }
+            }
         };
 
         // handle the extracted action (no longer borrowing self.current_screen)
         if let Some(action) = action_result {
-            match action {
-                ScreenAction::StartPractice(kata) => {
-                    let practice_screen = PracticeScreen::new(kata.clone())?;
-                    self.current_screen = Screen::Practice(kata, practice_screen);
-                }
-                ScreenAction::ReturnToDashboard => {
-                    self.dashboard = Dashboard::load(&self.repo)?;
-                    self.current_screen = Screen::Dashboard;
-                }
-                ScreenAction::SubmitRating(kata, rating) => {
-                    self.handle_rating_submission(kata, rating)?;
-                    self.dashboard = Dashboard::load(&self.repo)?;
-                    self.current_screen = Screen::Dashboard;
-                }
-            }
+            self.execute_action(action)?;
         }
 
+        Ok(())
+    }
+
+    /// Executes a screen action, handling all state transitions.
+    fn execute_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
+            ScreenAction::StartPractice(kata) => {
+                let practice_screen = PracticeScreen::new(kata.clone())?;
+                self.current_screen = Screen::Practice(kata, practice_screen);
+            }
+            ScreenAction::ReturnToDashboard => {
+                self.dashboard = Dashboard::load(&self.repo)?;
+                self.current_screen = Screen::Dashboard;
+            }
+            ScreenAction::SubmitRating(kata, rating) => {
+                self.handle_rating_submission(kata, rating)?;
+                self.dashboard = Dashboard::load(&self.repo)?;
+                self.current_screen = Screen::Dashboard;
+            }
+            ScreenAction::OpenLibrary => {
+                let library = Library::load(&self.repo)?;
+                self.current_screen = Screen::Library(library);
+            }
+            ScreenAction::AddKataFromLibrary(kata_name) => {
+                // load available katas
+                let available_katas = crate::core::kata_loader::load_available_katas()?;
+                if let Some(available_kata) = available_katas.iter().find(|k| k.name == kata_name) {
+                    // create NewKata
+                    let new_kata = NewKata {
+                        name: available_kata.name.clone(),
+                        category: available_kata.category.clone(),
+                        description: available_kata.description.clone(),
+                        base_difficulty: available_kata.base_difficulty,
+                        parent_kata_id: None,
+                        variation_params: None,
+                    };
+
+                    // add to database with next_review_at = now (so it appears as due)
+                    self.repo.create_kata(&new_kata, Utc::now())?;
+
+                    // update library state
+                    if let Screen::Library(library) = &mut self.current_screen {
+                        library.mark_as_added(&kata_name);
+                    }
+
+                    // reload dashboard so counts are updated
+                    self.dashboard = Dashboard::load(&self.repo)?;
+                }
+            }
+            ScreenAction::BackFromLibrary => {
+                self.current_screen = Screen::Dashboard;
+            }
+        }
         Ok(())
     }
 
