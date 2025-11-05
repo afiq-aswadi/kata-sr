@@ -5,6 +5,7 @@
 //! All tests use in-memory databases to avoid filesystem side effects.
 
 use chrono::{Duration, Utc};
+use kata_sr::core::analytics::Analytics;
 use kata_sr::core::scheduler::QualityRating;
 use kata_sr::db::repo::{KataRepository, NewKata, NewSession};
 use std::collections::HashMap;
@@ -516,4 +517,357 @@ fn test_kata_variations() {
     // all three katas should be independent in scheduling
     let all = repo.get_all_katas().unwrap();
     assert_eq!(all.len(), 3);
+}
+
+#[test]
+fn test_analytics_daily_stats_accuracy() {
+    let repo = setup_repo();
+
+    // create two katas in different categories
+    let kata1_id = repo
+        .create_kata(
+            &NewKata {
+                name: "kata1".to_string(),
+                category: "transformers".to_string(),
+                description: "Test 1".to_string(),
+                base_difficulty: 3,
+                parent_kata_id: None,
+                variation_params: None,
+            },
+            Utc::now(),
+        )
+        .unwrap();
+
+    let kata2_id = repo
+        .create_kata(
+            &NewKata {
+                name: "kata2".to_string(),
+                category: "algorithms".to_string(),
+                description: "Test 2".to_string(),
+                base_difficulty: 2,
+                parent_kata_id: None,
+                variation_params: None,
+            },
+            Utc::now(),
+        )
+        .unwrap();
+
+    // create 3 successful sessions and 1 failed session
+    for i in 0..3 {
+        let kata_id = if i % 2 == 0 { kata1_id } else { kata2_id };
+        repo.create_session(&NewSession {
+            kata_id,
+            started_at: Utc::now(),
+            completed_at: Some(Utc::now()),
+            test_results_json: None,
+            num_passed: Some(5),
+            num_failed: Some(0),
+            num_skipped: Some(0),
+            duration_ms: Some(100),
+            quality_rating: Some(2), // Good
+        })
+        .unwrap();
+    }
+
+    // one failed session
+    repo.create_session(&NewSession {
+        kata_id: kata1_id,
+        started_at: Utc::now(),
+        completed_at: Some(Utc::now()),
+        test_results_json: None,
+        num_passed: Some(2),
+        num_failed: Some(3),
+        num_skipped: Some(0),
+        duration_ms: Some(100),
+        quality_rating: Some(0), // Again
+    })
+    .unwrap();
+
+    // compute and verify daily stats
+    let analytics = Analytics::new(&repo);
+    let today = Utc::now().date_naive();
+    let stats = analytics.compute_daily_stats(today).unwrap();
+
+    assert_eq!(stats.total_reviews, 4);
+    assert_eq!(stats.total_successes, 3);
+    assert_eq!(stats.success_rate, 0.75);
+    assert_eq!(stats.streak_days, 1);
+
+    // verify category breakdown
+    let categories: HashMap<String, i32> = serde_json::from_str(&stats.categories_json).unwrap();
+    assert_eq!(categories.get("transformers"), Some(&3));
+    assert_eq!(categories.get("algorithms"), Some(&1));
+}
+
+#[test]
+fn test_analytics_streak_calculation() {
+    let repo = setup_repo();
+
+    let kata_id = repo
+        .create_kata(
+            &NewKata {
+                name: "streak_test".to_string(),
+                category: "test".to_string(),
+                description: "Streak test".to_string(),
+                base_difficulty: 2,
+                parent_kata_id: None,
+                variation_params: None,
+            },
+            Utc::now(),
+        )
+        .unwrap();
+
+    // create sessions on consecutive days
+    let now = Utc::now();
+    for i in 0..5 {
+        let session_time = now - Duration::days(i);
+        repo.create_session(&NewSession {
+            kata_id,
+            started_at: session_time,
+            completed_at: Some(session_time),
+            test_results_json: None,
+            num_passed: Some(5),
+            num_failed: Some(0),
+            num_skipped: Some(0),
+            duration_ms: Some(100),
+            quality_rating: Some(2),
+        })
+        .unwrap();
+    }
+
+    // streak should be 5 days
+    let streak = repo.get_current_streak().unwrap();
+    assert_eq!(streak, 5);
+
+    // verify through analytics
+    let analytics = Analytics::new(&repo);
+    let today = Utc::now().date_naive();
+    let computed_streak = analytics.compute_streak_up_to(today).unwrap();
+    assert_eq!(computed_streak, 5);
+}
+
+#[test]
+fn test_analytics_streak_with_gap() {
+    let repo = setup_repo();
+
+    let kata_id = repo
+        .create_kata(
+            &NewKata {
+                name: "gap_test".to_string(),
+                category: "test".to_string(),
+                description: "Gap test".to_string(),
+                base_difficulty: 2,
+                parent_kata_id: None,
+                variation_params: None,
+            },
+            Utc::now(),
+        )
+        .unwrap();
+
+    // create session today
+    repo.create_session(&NewSession {
+        kata_id,
+        started_at: Utc::now(),
+        completed_at: Some(Utc::now()),
+        test_results_json: None,
+        num_passed: Some(5),
+        num_failed: Some(0),
+        num_skipped: Some(0),
+        duration_ms: Some(100),
+        quality_rating: Some(2),
+    })
+    .unwrap();
+
+    // create session 3 days ago (gap of 2 days)
+    let three_days_ago = Utc::now() - Duration::days(3);
+    repo.create_session(&NewSession {
+        kata_id,
+        started_at: three_days_ago,
+        completed_at: Some(three_days_ago),
+        test_results_json: None,
+        num_passed: Some(5),
+        num_failed: Some(0),
+        num_skipped: Some(0),
+        duration_ms: Some(100),
+        quality_rating: Some(2),
+    })
+    .unwrap();
+
+    // streak should be 1 (only today counts)
+    let streak = repo.get_current_streak().unwrap();
+    assert_eq!(streak, 1);
+}
+
+#[test]
+fn test_analytics_daily_stats_persistence() {
+    let repo = setup_repo();
+
+    let kata_id = repo
+        .create_kata(
+            &NewKata {
+                name: "persist_test".to_string(),
+                category: "test".to_string(),
+                description: "Persistence test".to_string(),
+                base_difficulty: 2,
+                parent_kata_id: None,
+                variation_params: None,
+            },
+            Utc::now(),
+        )
+        .unwrap();
+
+    // create a session
+    repo.create_session(&NewSession {
+        kata_id,
+        started_at: Utc::now(),
+        completed_at: Some(Utc::now()),
+        test_results_json: None,
+        num_passed: Some(5),
+        num_failed: Some(0),
+        num_skipped: Some(0),
+        duration_ms: Some(100),
+        quality_rating: Some(2),
+    })
+    .unwrap();
+
+    // compute and save daily stats
+    let analytics = Analytics::new(&repo);
+    analytics.update_daily_stats().unwrap();
+
+    // verify stats were persisted
+    let today = Utc::now().date_naive().format("%Y-%m-%d").to_string();
+    let stats = repo.get_daily_stats(&today).unwrap();
+
+    assert!(stats.is_some());
+    let stats = stats.unwrap();
+    assert_eq!(stats.total_reviews, 1);
+    assert_eq!(stats.total_successes, 1);
+    assert_eq!(stats.success_rate, 1.0);
+}
+
+#[test]
+fn test_analytics_success_rate_calculation() {
+    let repo = setup_repo();
+
+    let kata_id = repo
+        .create_kata(
+            &NewKata {
+                name: "success_rate_test".to_string(),
+                category: "test".to_string(),
+                description: "Success rate test".to_string(),
+                base_difficulty: 2,
+                parent_kata_id: None,
+                variation_params: None,
+            },
+            Utc::now(),
+        )
+        .unwrap();
+
+    // create 7 sessions over 7 days with mixed success
+    let now = Utc::now();
+    let ratings = [2, 2, 2, 0, 1, 2, 3]; // 5 successes (>=2) out of 7
+
+    for (i, rating) in ratings.iter().enumerate() {
+        let session_time = now - Duration::days(i as i64);
+        repo.create_session(&NewSession {
+            kata_id,
+            started_at: session_time,
+            completed_at: Some(session_time),
+            test_results_json: None,
+            num_passed: None,
+            num_failed: None,
+            num_skipped: None,
+            duration_ms: Some(100),
+            quality_rating: Some(*rating),
+        })
+        .unwrap();
+    }
+
+    // 7-day success rate should be 5/7 ≈ 0.714
+    let success_rate = repo.get_success_rate_last_n_days(7).unwrap();
+    assert!((success_rate - 5.0 / 7.0).abs() < 0.01);
+
+    // verify through analytics
+    let analytics = Analytics::new(&repo);
+    let computed_rate = analytics.get_success_rate_last_n_days(7).unwrap();
+    assert_eq!(success_rate, computed_rate);
+}
+
+#[test]
+fn test_analytics_category_breakdown() {
+    let repo = setup_repo();
+
+    // create katas in multiple categories
+    let categories = ["transformers", "algorithms", "fundamentals"];
+    let mut kata_ids = Vec::new();
+
+    for category in &categories {
+        let kata_id = repo
+            .create_kata(
+                &NewKata {
+                    name: format!("kata_{}", category),
+                    category: category.to_string(),
+                    description: "Test".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+        kata_ids.push(kata_id);
+    }
+
+    // create sessions: 3 for transformers, 2 for algorithms, 1 for fundamentals
+    for _ in 0..3 {
+        repo.create_session(&NewSession {
+            kata_id: kata_ids[0],
+            started_at: Utc::now(),
+            completed_at: Some(Utc::now()),
+            test_results_json: None,
+            num_passed: Some(5),
+            num_failed: Some(0),
+            num_skipped: Some(0),
+            duration_ms: Some(100),
+            quality_rating: Some(2),
+        })
+        .unwrap();
+    }
+
+    for _ in 0..2 {
+        repo.create_session(&NewSession {
+            kata_id: kata_ids[1],
+            started_at: Utc::now(),
+            completed_at: Some(Utc::now()),
+            test_results_json: None,
+            num_passed: Some(5),
+            num_failed: Some(0),
+            num_skipped: Some(0),
+            duration_ms: Some(100),
+            quality_rating: Some(2),
+        })
+        .unwrap();
+    }
+
+    repo.create_session(&NewSession {
+        kata_id: kata_ids[2],
+        started_at: Utc::now(),
+        completed_at: Some(Utc::now()),
+        test_results_json: None,
+        num_passed: Some(5),
+        num_failed: Some(0),
+        num_skipped: Some(0),
+        duration_ms: Some(100),
+        quality_rating: Some(2),
+    })
+    .unwrap();
+
+    // verify category breakdown
+    let analytics = Analytics::new(&repo);
+    let today = Utc::now().date_naive();
+    let breakdown = analytics.get_category_breakdown(today).unwrap();
+
+    assert_eq!(breakdown.get("transformers"), Some(&3));
+    assert_eq!(breakdown.get("algorithms"), Some(&2));
+    assert_eq!(breakdown.get("fundamentals"), Some(&1));
 }

@@ -5,7 +5,9 @@
 //! - Adaptive difficulty tracking based on performance
 //! - Dependency graph management for prerequisite relationships
 //! - Kata loading from manifest files
+//! - Analytics and statistics aggregation
 
+pub mod analytics;
 pub mod dependencies;
 pub mod difficulty;
 pub mod kata_loader;

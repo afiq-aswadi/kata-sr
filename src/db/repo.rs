@@ -727,6 +727,88 @@ impl KataRepository {
         Ok(())
     }
 
+    /// Inserts or replaces daily statistics for a specific date.
+    ///
+    /// # Arguments
+    ///
+    /// * `stats` - Daily statistics to upsert
+    pub fn upsert_daily_stats(&self, stats: &DailyStats) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO daily_stats
+             (date, total_reviews, total_successes, success_rate, streak_days, categories_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                &stats.date,
+                stats.total_reviews,
+                stats.total_successes,
+                stats.success_rate,
+                stats.streak_days,
+                &stats.categories_json,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Gets daily statistics for a specific date.
+    ///
+    /// # Arguments
+    ///
+    /// * `date` - Date string in YYYY-MM-DD format
+    pub fn get_daily_stats(&self, date: &str) -> Result<Option<DailyStats>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT date, total_reviews, total_successes, success_rate, streak_days, categories_json
+             FROM daily_stats
+             WHERE date = ?1",
+        )?;
+
+        let result = stmt.query_row([date], |row| {
+            Ok(DailyStats {
+                date: row.get(0)?,
+                total_reviews: row.get(1)?,
+                total_successes: row.get(2)?,
+                success_rate: row.get(3)?,
+                streak_days: row.get(4)?,
+                categories_json: row.get(5)?,
+            })
+        });
+
+        match result {
+            Ok(stats) => Ok(Some(stats)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Gets daily statistics for a date range.
+    ///
+    /// # Arguments
+    ///
+    /// * `start_date` - Start date (inclusive) in YYYY-MM-DD format
+    /// * `end_date` - End date (inclusive) in YYYY-MM-DD format
+    pub fn get_daily_stats_range(&self, start_date: &str, end_date: &str) -> Result<Vec<DailyStats>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT date, total_reviews, total_successes, success_rate, streak_days, categories_json
+             FROM daily_stats
+             WHERE date >= ?1 AND date <= ?2
+             ORDER BY date ASC",
+        )?;
+
+        let stats = stmt
+            .query_map([start_date, end_date], |row| {
+                Ok(DailyStats {
+                    date: row.get(0)?,
+                    total_reviews: row.get(1)?,
+                    total_successes: row.get(2)?,
+                    success_rate: row.get(3)?,
+                    streak_days: row.get(4)?,
+                    categories_json: row.get(5)?,
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(stats)
+    }
+
     /// Deletes a kata and all its associated data.
     ///
     /// CASCADE deletes all sessions and dependencies for this kata.
@@ -945,6 +1027,17 @@ pub struct NewSession {
     pub num_skipped: Option<i32>,
     pub duration_ms: Option<i64>,
     pub quality_rating: Option<i32>,
+}
+
+/// Daily statistics record.
+#[derive(Debug, Clone)]
+pub struct DailyStats {
+    pub date: String,
+    pub total_reviews: i32,
+    pub total_successes: i32,
+    pub success_rate: f64,
+    pub streak_days: i32,
+    pub categories_json: String,
 }
 
 fn row_to_kata(row: &Row) -> Result<Kata> {

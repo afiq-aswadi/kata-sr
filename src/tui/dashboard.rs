@@ -1,4 +1,6 @@
+use crate::core::analytics::Analytics;
 use crate::db::repo::{Kata, KataRepository};
+use crate::tui::heatmap::{render_category_breakdown, render_weekly_heatmap};
 use chrono::Utc;
 use crossterm::event::KeyCode;
 use ratatui::{
@@ -18,6 +20,8 @@ pub struct DashboardStats {
     pub streak_days: i32,
     pub total_reviews_today: i32,
     pub success_rate_7d: f64,
+    pub heatmap: String,
+    pub category_breakdown: Vec<String>,
 }
 
 impl Dashboard {
@@ -50,10 +54,22 @@ impl Dashboard {
             })
             .collect();
 
+        // compute analytics
+        let analytics = Analytics::new(repo);
+        let review_counts = analytics.get_review_counts_last_n_days(7)?;
+        let heatmap = render_weekly_heatmap(&review_counts);
+
+        // get category breakdown from today
+        let today = Utc::now().date_naive();
+        let categories = analytics.get_category_breakdown(today)?;
+        let category_breakdown = render_category_breakdown(&categories);
+
         let stats = DashboardStats {
             streak_days: repo.get_current_streak()?,
             total_reviews_today: repo.get_reviews_count_today()?,
             success_rate_7d: repo.get_success_rate_last_n_days(7)?,
+            heatmap,
+            category_breakdown,
         };
 
         Ok(Self {
@@ -68,9 +84,11 @@ impl Dashboard {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),
-                Constraint::Min(10),
-                Constraint::Length(5),
+                Constraint::Length(3),   // Header
+                Constraint::Min(8),      // Main kata list
+                Constraint::Length(3),   // Heatmap
+                Constraint::Length(std::cmp::max(3, self.stats.category_breakdown.len() as u16 + 2)), // Category breakdown (dynamic)
+                Constraint::Length(4),   // Stats summary
             ])
             .split(frame.size());
 
@@ -99,6 +117,22 @@ impl Dashboard {
             List::new(items).block(Block::default().borders(Borders::ALL).title("Due Today"));
         frame.render_widget(list, chunks[1]);
 
+        // heatmap
+        let heatmap_widget = Paragraph::new(self.stats.heatmap.clone())
+            .block(Block::default().borders(Borders::ALL).title("Activity"));
+        frame.render_widget(heatmap_widget, chunks[2]);
+
+        // category breakdown
+        let category_text = if self.stats.category_breakdown.is_empty() {
+            "No reviews today".to_string()
+        } else {
+            self.stats.category_breakdown.join("\n")
+        };
+        let categories = Paragraph::new(category_text)
+            .block(Block::default().borders(Borders::ALL).title("Categories"));
+        frame.render_widget(categories, chunks[3]);
+
+        // stats summary
         let stats_text = format!(
             "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library",
             self.stats.streak_days,
@@ -107,7 +141,7 @@ impl Dashboard {
         );
         let stats =
             Paragraph::new(stats_text).block(Block::default().borders(Borders::ALL).title("Stats"));
-        frame.render_widget(stats, chunks[2]);
+        frame.render_widget(stats, chunks[4]);
     }
 
     pub fn handle_input(&mut self, code: KeyCode) -> DashboardAction {

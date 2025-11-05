@@ -16,6 +16,7 @@ use super::keybindings;
 use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
 use super::results::{ResultsAction, ResultsScreen};
+use crate::core::analytics::Analytics;
 use crate::core::scheduler::QualityRating;
 use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
 use crate::runner::python_runner::TestResults;
@@ -399,6 +400,12 @@ impl App {
         self.repo
             .create_session(&session)
             .context("Failed to create session record")?;
+
+        // update daily statistics
+        let analytics = Analytics::new(&self.repo);
+        analytics
+            .update_daily_stats()
+            .context("Failed to update daily stats")?;
 
         Ok(())
     }
