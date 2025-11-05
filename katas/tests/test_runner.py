@@ -348,6 +348,42 @@ def double(x):
         payload = json.loads(completed.stdout)
         assert payload["passed"] is True
         assert payload["num_passed"] == 1
+
+
+def test_runner_cli_from_repo_root(tmp_path: Path):
+    """Run the CLI from the repository root via the package name."""
+    with temporary_exercise_kata() as (kata_id, kata_dir):
+        (kata_dir / "test_cli.py").write_text(
+            """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent.parent.parent))
+
+def test_double():
+    from user_kata import double
+    assert double(3) == 6
+"""
+        )
+
+        template_path = tmp_path / "template.py"
+        template_path.write_text(
+            """
+def double(x):
+    return 2 * x
+"""
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-m", "katas.runner", kata_id, str(template_path)],
+            cwd=str(ROOT_DIR.parent),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert completed.returncode == 0, completed.stderr or completed.stdout
+        payload = json.loads(completed.stdout)
+        assert payload["passed"] is True
+        assert payload["num_passed"] == 1
         assert not payload["num_failed"]
 
 

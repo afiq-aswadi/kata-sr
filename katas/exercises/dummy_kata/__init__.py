@@ -1,0 +1,1 @@
+"""Dummy kata package."""

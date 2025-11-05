@@ -1,0 +1,11 @@
+[kata]
+name = "dummy_kata"
+category = "debug"
+base_difficulty = 1
+description = """
+A dummy kata for debugging purposes that always passes tests.
+
+This kata is useful for testing the spaced repetition system without
+needing to implement any actual code. All tests will pass by default.
+"""
+dependencies = []
