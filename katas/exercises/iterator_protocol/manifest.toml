@@ -1,0 +1,13 @@
+[kata]
+name = "iterator_protocol"
+category = "python"
+base_difficulty = 2
+description = """
+Implement the iterator protocol using __iter__ and __next__.
+
+Create custom iterators for ranges, sequences, and infinite streams.
+Handle StopIteration and stateful iteration.
+
+Key concepts: iteration protocol, generators, lazy evaluation, infinite sequences
+"""
+dependencies = []

@@ -1,0 +1,13 @@
+[kata]
+name = "descriptor_protocol"
+category = "python"
+base_difficulty = 4
+description = """
+Implement descriptors using __get__, __set__, and __delete__.
+
+Create property-like objects with custom access control, validation, and caching.
+Understand how properties, methods, and ORM fields work internally.
+
+Key concepts: descriptors, attribute access, data vs non-data descriptors, decorators
+"""
+dependencies = []

@@ -1,0 +1,13 @@
+[kata]
+name = "lru_cache"
+category = "algorithms"
+base_difficulty = 4
+description = """
+Implement an LRU (Least Recently Used) cache from scratch.
+
+Support get and put operations in O(1) time using hash map + doubly linked list.
+Evict least recently used item when capacity is reached.
+
+Key concepts: hash maps, doubly linked lists, cache eviction policies
+"""
+dependencies = []

@@ -1,0 +1,13 @@
+[kata]
+name = "context_manager"
+category = "python"
+base_difficulty = 2
+description = """
+Implement custom context managers using __enter__ and __exit__.
+
+Create context managers for resource management, timing, error handling.
+Practice both class-based and decorator-based approaches.
+
+Key concepts: resource management, RAII, exception handling, with statement
+"""
+dependencies = []

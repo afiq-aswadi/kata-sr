@@ -1,0 +1,13 @@
+[kata]
+name = "trie"
+category = "algorithms"
+base_difficulty = 3
+description = """
+Implement a Trie (prefix tree) data structure.
+
+Support insert, search, and prefix search operations.
+Useful for autocomplete, spell checking, and IP routing.
+
+Key concepts: tree structures, prefix matching, space-time tradeoffs
+"""
+dependencies = []

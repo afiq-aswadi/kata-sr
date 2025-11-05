@@ -1,0 +1,13 @@
+[kata]
+name = "batch_norm"
+category = "pytorch"
+base_difficulty = 3
+description = """
+Implement batch normalization from scratch.
+
+Normalize activations across the batch dimension, then scale and shift.
+Handle both training mode (compute stats) and eval mode (use running stats).
+
+Key concepts: normalization, running statistics, training vs eval mode
+"""
+dependencies = ["softmax"]

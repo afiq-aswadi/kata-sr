@@ -1,0 +1,13 @@
+[kata]
+name = "conv2d"
+category = "pytorch"
+base_difficulty = 4
+description = """
+Implement 2D convolution from scratch using tensor operations.
+
+Given input (batch, in_channels, height, width) and kernel (out_channels, in_channels, kh, kw),
+compute the convolution with stride and padding.
+
+Key concepts: sliding windows, im2col, einsum, convolution mathematics
+"""
+dependencies = ["tensor_slicing"]

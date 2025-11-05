@@ -1,0 +1,13 @@
+[kata]
+name = "dynamic_programming"
+category = "algorithms"
+base_difficulty = 3
+description = """
+Implement classic dynamic programming problems.
+
+Practice memoization and tabulation: Fibonacci, knapsack, longest common subsequence.
+Build optimal solutions from subproblems.
+
+Key concepts: memoization, tabulation, optimal substructure, overlapping subproblems
+"""
+dependencies = []

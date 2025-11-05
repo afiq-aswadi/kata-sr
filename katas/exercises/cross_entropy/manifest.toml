@@ -1,0 +1,13 @@
+[kata]
+name = "cross_entropy"
+category = "pytorch"
+base_difficulty = 2
+description = """
+Implement cross-entropy loss from scratch.
+
+Cross-entropy measures the difference between predicted and true probability distributions.
+Combine log-softmax with negative log-likelihood for numerical stability.
+
+Key concepts: information theory, log-softmax, numerical stability, classification loss
+"""
+dependencies = ["softmax"]

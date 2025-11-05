@@ -1,0 +1,13 @@
+[kata]
+name = "binary_search"
+category = "algorithms"
+base_difficulty = 1
+description = """
+Implement binary search and its variants.
+
+Search for elements in sorted arrays using O(log n) time complexity.
+Handle edge cases: duplicates, range queries, insertion points.
+
+Key concepts: divide and conquer, logarithmic complexity, boundary conditions
+"""
+dependencies = []
