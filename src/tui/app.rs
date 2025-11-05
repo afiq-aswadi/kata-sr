@@ -65,6 +65,7 @@ enum ScreenAction {
     ViewDetails(crate::core::kata_loader::AvailableKata, bool),
     BackFromDetails,
     RetryKata(Kata),
+    RemoveKataFromDeck(Kata),
 }
 
 /// Main application state and event loop coordinator.
@@ -261,6 +262,7 @@ impl App {
                 let action = self.dashboard.handle_input(code);
                 match action {
                     DashboardAction::SelectKata(kata) => Some(ScreenAction::StartPractice(kata)),
+                    DashboardAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
                     DashboardAction::None => None,
                 }
             }
@@ -385,6 +387,14 @@ impl App {
             ScreenAction::RetryKata(kata) => {
                 let practice_screen = PracticeScreen::new_retry(kata.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
+            }
+            ScreenAction::RemoveKataFromDeck(kata) => {
+                // Delete the kata from the database
+                self.repo.delete_kata(kata.id)?;
+
+                // Reload dashboard to reflect the change
+                self.dashboard = Dashboard::load(&self.repo)?;
+                self.current_screen = Screen::Dashboard;
             }
         }
         Ok(())

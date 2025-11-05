@@ -114,7 +114,7 @@ impl Library {
             .enumerate()
             .map(|(i, kata)| {
                 let status = if self.kata_ids_in_deck.contains(&kata.name) {
-                    "[]"
+                    "[Added]"
                 } else {
                     "[ ]"
                 };
