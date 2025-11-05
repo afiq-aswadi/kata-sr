@@ -28,7 +28,11 @@
       "Bash(~/.cargo/bin/cargo clippy:*)",
       "Bash(~/.cargo/bin/cargo check:*)",
       "Bash(gh issue create:*)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(git -C /Users/afiqabdillah/kata-sr-fix-issue-6 status)",
+      "Bash(git -C /Users/afiqabdillah/kata-sr-fix-issue-6 log --oneline -5)",
+      "Bash(git -C /Users/afiqabdillah/kata-sr-fix-issue-6 show HEAD:src/tui/app.rs)",
+      "Bash(gh pr create:*)"
     ],
     "deny": [],
     "ask": []

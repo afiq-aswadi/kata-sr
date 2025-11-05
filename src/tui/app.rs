@@ -268,7 +268,7 @@ impl App {
                     ResultsAction::SubmitRating(rating) => {
                         Some(ScreenAction::SubmitRating(kata.clone(), rating))
                     }
-                    ResultsAction::Retry => Some(ScreenAction::StartPractice(kata.clone())),
+                    ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::None => None,
                 }
@@ -370,7 +370,7 @@ impl App {
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::RetryKata(kata) => {
-                let practice_screen = PracticeScreen::new(kata.clone())?;
+                let practice_screen = PracticeScreen::new_retry(kata.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
         }

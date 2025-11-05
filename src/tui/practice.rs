@@ -48,6 +48,58 @@ impl PracticeScreen {
         })
     }
 
+    /// Creates a practice screen for retry scenarios, preserving existing edits.
+    ///
+    /// Unlike `new()`, this method does NOT copy the template file, allowing the user
+    /// to retry tests with their previous edits intact. This prevents data loss when
+    /// users press 'r' to retry after test failures.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata` - The kata to practice
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::Kata;
+    /// # use kata_sr::tui::practice::PracticeScreen;
+    /// # let kata = Kata {
+    /// #     id: 1,
+    /// #     name: "test".to_string(),
+    /// #     category: "test".to_string(),
+    /// #     description: "test".to_string(),
+    /// #     base_difficulty: 1,
+    /// #     current_difficulty: 1.0,
+    /// #     parent_kata_id: None,
+    /// #     variation_params: None,
+    /// #     next_review_at: Some(chrono::Utc::now()),
+    /// #     last_reviewed_at: None,
+    /// #     current_ease_factor: 2.5,
+    /// #     current_interval_days: 1,
+    /// #     current_repetition_count: 0,
+    /// #     created_at: chrono::Utc::now(),
+    /// # };
+    /// let practice_screen = PracticeScreen::new_retry(kata)?;
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
+    pub fn new_retry(kata: Kata) -> anyhow::Result<Self> {
+        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+
+        // verify the file exists (it should, since we're retrying)
+        if !template_path.exists() {
+            anyhow::bail!(
+                "expected existing practice file at {}, but it doesn't exist",
+                template_path.display()
+            );
+        }
+
+        Ok(Self {
+            kata,
+            template_path,
+            status: PracticeStatus::ShowingDescription,
+        })
+    }
+
     pub fn render(&self, frame: &mut Frame) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
