@@ -189,6 +189,7 @@ impl PracticeScreen {
             crossterm::execute!(
                 stdout,
                 crossterm::terminal::EnterAlternateScreen,
+                crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
             )
             .context("failed to re-enter alternate screen after exiting editor")?;
 
