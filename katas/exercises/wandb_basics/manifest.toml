@@ -1,0 +1,13 @@
+[kata]
+name = "wandb_basics"
+category = "mlops"
+base_difficulty = 2
+description = """
+Learn to use Weights & Biases for experiment tracking and visualization.
+
+Track metrics, log hyperparameters, save artifacts, and create visualizations.
+Essential tool for ML experiment management.
+
+Key concepts: experiment tracking, hyperparameter logging, metric visualization, artifacts
+"""
+dependencies = []

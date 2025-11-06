@@ -1,0 +1,13 @@
+[kata]
+name = "tensor_slicing"
+category = "pytorch"
+base_difficulty = 2
+description = """
+Master PyTorch tensor indexing, slicing, and advanced selection operations.
+
+Implement functions using gather, scatter, advanced indexing, and boolean masks.
+Key concepts: broadcasting, index tensors, gather/scatter, masked selection
+
+Key concepts: tensor indexing, broadcasting, gather/scatter operations
+"""
+dependencies = []

@@ -1,0 +1,13 @@
+[kata]
+name = "operator_overloading"
+category = "python"
+base_difficulty = 2
+description = """
+Implement operator overloading using dunder methods.
+
+Create custom classes with arithmetic, comparison, and container operators.
+Practice __add__, __eq__, __lt__, __len__, __getitem__, etc.
+
+Key concepts: operator overloading, dunder methods, pythonic APIs
+"""
+dependencies = []

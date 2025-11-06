@@ -1,0 +1,13 @@
+[kata]
+name = "adam_optimizer"
+category = "pytorch"
+base_difficulty = 3
+description = """
+Implement the Adam optimizer from scratch.
+
+Adam combines momentum (first moment) and RMSprop (second moment) with bias correction.
+Update rule: m_t = β1*m + (1-β1)*grad, v_t = β2*v + (1-β2)*grad², param -= lr * m_hat / (sqrt(v_hat) + eps)
+
+Key concepts: adaptive learning rates, momentum, bias correction, optimization
+"""
+dependencies = []

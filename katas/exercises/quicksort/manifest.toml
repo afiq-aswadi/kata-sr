@@ -1,0 +1,13 @@
+[kata]
+name = "quicksort"
+category = "algorithms"
+base_difficulty = 3
+description = """
+Implement quicksort algorithm and variations.
+
+Use divide-and-conquer to partition array around a pivot and recursively sort.
+Practice different partition schemes: Lomuto vs Hoare.
+
+Key concepts: divide and conquer, in-place sorting, partition schemes, recursion
+"""
+dependencies = []

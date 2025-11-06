@@ -9,6 +9,8 @@ dependencies = [
     "einops>=0.7.0",
     "jaxtyping>=0.2.0",
     "toml>=0.10.2",
+    "transformer-lens>=2.0.0",
+    "wandb>=0.16.0",
 ]
 
 [tool.uv]

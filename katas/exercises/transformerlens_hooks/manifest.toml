@@ -1,0 +1,13 @@
+[kata]
+name = "transformerlens_hooks"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Use TransformerLens hook points to extract and analyze model activations.
+
+Learn to register hooks, extract intermediate activations, and analyze layer outputs.
+Essential for mechanistic interpretability work.
+
+Key concepts: hook points, activation extraction, model inspection, caching
+"""
+dependencies = []

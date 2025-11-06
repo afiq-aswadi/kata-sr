@@ -1,0 +1,13 @@
+[kata]
+name = "activation_patching"
+category = "interpretability"
+base_difficulty = 4
+description = """
+Implement activation patching for causal intervention in language models.
+
+Patch activations from one input into another to identify causal components.
+Core technique for circuit discovery and mechanistic interpretability.
+
+Key concepts: causal intervention, activation patching, circuit analysis, counterfactuals
+"""
+dependencies = ["transformerlens_hooks"]
