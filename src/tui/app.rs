@@ -11,6 +11,7 @@ use ratatui::{Frame, Terminal};
 use std::io;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
+use super::create_kata::{CreateKataAction, CreateKataScreen};
 use super::dashboard::{Dashboard, DashboardAction};
 use super::details::{DetailsAction, DetailsScreen};
 use super::keybindings;
@@ -52,6 +53,8 @@ pub enum Screen {
     Library(Library),
     /// Details screen for viewing kata information
     Details(DetailsScreen),
+    /// Create kata screen for generating new kata files
+    CreateKata(CreateKataScreen),
 }
 
 /// Internal enum for handling screen transitions without borrow conflicts.
@@ -66,6 +69,12 @@ enum ScreenAction {
     BackFromDetails,
     RetryKata(Kata),
     RemoveKataFromDeck(Kata),
+    OpenCreateKata,
+    SubmitNewKata {
+        form_data: crate::core::kata_generator::KataFormData,
+        slug: String,
+    },
+    CancelCreateKata,
 }
 
 /// Main application state and event loop coordinator.
@@ -240,6 +249,9 @@ impl App {
                 Screen::Details(details) => {
                     details.render(frame);
                 }
+                Screen::CreateKata(create_kata) => {
+                    create_kata.render(frame);
+                }
             }
         }
     }
@@ -298,6 +310,7 @@ impl App {
                         let in_deck = library.kata_ids_in_deck.contains(&kata.name);
                         Some(ScreenAction::ViewDetails(kata, in_deck))
                     }
+                    LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
                     LibraryAction::None => None,
                 }
             }
@@ -307,6 +320,17 @@ impl App {
                     DetailsAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
                     DetailsAction::Back => Some(ScreenAction::BackFromDetails),
                     DetailsAction::None => None,
+                }
+            }
+            Screen::CreateKata(create_kata) => {
+                let exercises_dir = std::path::Path::new("katas/exercises");
+                let action = create_kata.handle_input(code, exercises_dir);
+                match action {
+                    CreateKataAction::Submit { form_data, slug } => {
+                        Some(ScreenAction::SubmitNewKata { form_data, slug })
+                    }
+                    CreateKataAction::Cancel => Some(ScreenAction::CancelCreateKata),
+                    CreateKataAction::None => None,
                 }
             }
         };
@@ -395,6 +419,48 @@ impl App {
                 // Reload dashboard to reflect the change
                 self.dashboard = Dashboard::load(&self.repo)?;
                 self.current_screen = Screen::Dashboard;
+            }
+            ScreenAction::OpenCreateKata => {
+                // Load available katas for dependency selection
+                let available_katas = crate::core::kata_loader::load_available_katas()?;
+                let kata_names: Vec<String> = available_katas.iter().map(|k| k.name.clone()).collect();
+
+                let create_kata_screen = CreateKataScreen::new(kata_names);
+                self.current_screen = Screen::CreateKata(create_kata_screen);
+            }
+            ScreenAction::SubmitNewKata { form_data, slug } => {
+                use crate::core::kata_generator::generate_kata_files;
+
+                let exercises_dir = std::path::Path::new("katas/exercises");
+
+                // Generate the kata files
+                match generate_kata_files(&form_data, exercises_dir) {
+                    Ok(created_slug) => {
+                        // Success! Return to library
+                        let library = Library::load(&self.repo)?;
+                        self.current_screen = Screen::Library(library);
+
+                        // TODO: Show success message to user
+                        eprintln!(
+                            "Created kata '{}'! Press 'a' in Library to add to deck.",
+                            created_slug
+                        );
+                    }
+                    Err(e) => {
+                        // Error! Stay on CreateKata screen
+                        // TODO: Show error message to user
+                        eprintln!("Failed to create kata: {}", e);
+
+                        // For now, return to library on error
+                        let library = Library::load(&self.repo)?;
+                        self.current_screen = Screen::Library(library);
+                    }
+                }
+            }
+            ScreenAction::CancelCreateKata => {
+                // Return to library
+                let library = Library::load(&self.repo)?;
+                self.current_screen = Screen::Library(library);
             }
         }
         Ok(())

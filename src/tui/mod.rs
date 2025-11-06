@@ -1,4 +1,5 @@
 pub mod app;
+pub mod create_kata;
 pub mod dashboard;
 pub mod details;
 pub mod heatmap;

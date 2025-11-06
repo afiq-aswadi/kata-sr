@@ -29,6 +29,8 @@ pub enum LibraryAction {
     ViewDetails(AvailableKata),
     /// Return to dashboard
     Back,
+    /// Open create kata screen
+    CreateKata,
 }
 
 /// Library screen state for browsing available katas.
@@ -153,7 +155,11 @@ impl Library {
 
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
         let footer_text = if self.available_katas.is_empty() {
-            Line::from(vec![Span::raw("No katas found. [Esc] Back")])
+            Line::from(vec![
+                Span::raw("No katas found. "),
+                Span::raw("[n] Create New  "),
+                Span::raw("[Esc] Back"),
+            ])
         } else {
             let selected_kata = &self.available_katas[self.selected_index];
             let can_add = !self.kata_ids_in_deck.contains(&selected_kata.name);
@@ -162,6 +168,7 @@ impl Library {
                 Line::from(vec![
                     Span::raw("[j/k] Navigate  "),
                     Span::raw("[a] Add to Deck  "),
+                    Span::raw("[n] Create New  "),
                     Span::raw("[Enter] Details  "),
                     Span::raw("[Esc] Back"),
                 ])
@@ -169,6 +176,7 @@ impl Library {
                 Line::from(vec![
                     Span::raw("[j/k] Navigate  "),
                     Span::styled("Already in deck  ", Style::default().fg(Color::Gray)),
+                    Span::raw("[n] Create New  "),
                     Span::raw("[Esc] Back"),
                 ])
             }
@@ -190,14 +198,19 @@ impl Library {
     /// - `j` or `Down`: Move selection down
     /// - `k` or `Up`: Move selection up
     /// - `a`: Add selected kata to deck (if not already added)
+    /// - `n`: Create a new kata
     /// - `Enter`: View details of selected kata
     /// - `Esc`: Return to dashboard
     pub fn handle_input(&mut self, code: KeyCode) -> LibraryAction {
+        // Global keybindings that work regardless of available katas
+        match code {
+            KeyCode::Char('n') => return LibraryAction::CreateKata,
+            KeyCode::Esc => return LibraryAction::Back,
+            _ => {}
+        }
+
         if self.available_katas.is_empty() {
-            return match code {
-                KeyCode::Esc => LibraryAction::Back,
-                _ => LibraryAction::None,
-            };
+            return LibraryAction::None;
         }
 
         match code {
@@ -225,7 +238,6 @@ impl Library {
                 let selected_kata = self.available_katas[self.selected_index].clone();
                 LibraryAction::ViewDetails(selected_kata)
             }
-            KeyCode::Esc => LibraryAction::Back,
             _ => LibraryAction::None,
         }
     }
