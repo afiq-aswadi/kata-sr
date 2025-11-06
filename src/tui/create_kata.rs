@@ -3,11 +3,10 @@
 //! This module provides a form-based interface for creating new katas,
 //! with real-time validation, dependency selection, and confirmation dialog.
 
-use anyhow::Result;
 use crossterm::event::KeyCode;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
     Frame,
@@ -15,7 +14,7 @@ use ratatui::{
 use std::collections::HashMap;
 use std::path::Path;
 
-use crate::core::kata_generator::{generate_kata_files, KataFormData};
+use crate::core::kata_generator::KataFormData;
 use crate::core::kata_validation::{slugify_kata_name, validate_dependencies, validate_kata_name};
 
 /// Action returned by create kata input handling.
@@ -221,7 +220,7 @@ impl CreateKataScreen {
             // Show cursor for single-line fields
             let mut display = text.to_string();
             if cursor_pos <= display.len() {
-                display.insert(cursor_pos, '');
+                display.insert(cursor_pos, '|');
             }
             display
         } else {
@@ -481,10 +480,29 @@ impl CreateKataScreen {
             KeyCode::Esc => CreateKataAction::Cancel,
             _ => {
                 match self.current_field {
-                    FormField::Name => self.handle_text_input(code, &mut self.name_input),
-                    FormField::Category => self.handle_text_input(code, &mut self.category_input),
+                    FormField::Name => {
+                        Self::handle_text_input_static(
+                            code,
+                            &mut self.name_input,
+                            &mut self.cursor_position,
+                        );
+                        self.validation_errors.remove(&FormField::Name);
+                    }
+                    FormField::Category => {
+                        Self::handle_text_input_static(
+                            code,
+                            &mut self.category_input,
+                            &mut self.cursor_position,
+                        );
+                        self.validation_errors.remove(&FormField::Category);
+                    }
                     FormField::Description => {
-                        self.handle_text_input(code, &mut self.description_input)
+                        Self::handle_text_input_static(
+                            code,
+                            &mut self.description_input,
+                            &mut self.cursor_position,
+                        );
+                        self.validation_errors.remove(&FormField::Description);
                     }
                     FormField::Difficulty => self.handle_difficulty_input(code),
                     FormField::Dependencies => self.handle_dependencies_input(code),
@@ -494,7 +512,7 @@ impl CreateKataScreen {
         }
     }
 
-    fn handle_confirmation_input(&mut self, code: KeyCode, exercises_dir: &Path) -> CreateKataAction {
+    fn handle_confirmation_input(&mut self, code: KeyCode, _exercises_dir: &Path) -> CreateKataAction {
         if self.confirmation_error.is_some() {
             // If there's an error, any key returns to form
             match code {
@@ -531,42 +549,38 @@ impl CreateKataScreen {
         }
     }
 
-    fn handle_text_input(&mut self, code: KeyCode, buffer: &mut String) {
+    fn handle_text_input_static(code: KeyCode, buffer: &mut String, cursor_position: &mut usize) {
         match code {
             KeyCode::Char(c) => {
-                buffer.insert(self.cursor_position, c);
-                self.cursor_position += 1;
-                // Clear validation error for this field
-                self.validation_errors.remove(&self.current_field);
+                buffer.insert(*cursor_position, c);
+                *cursor_position += 1;
             }
             KeyCode::Backspace => {
-                if self.cursor_position > 0 {
-                    buffer.remove(self.cursor_position - 1);
-                    self.cursor_position -= 1;
-                    self.validation_errors.remove(&self.current_field);
+                if *cursor_position > 0 {
+                    buffer.remove(*cursor_position - 1);
+                    *cursor_position -= 1;
                 }
             }
             KeyCode::Delete => {
-                if self.cursor_position < buffer.len() {
-                    buffer.remove(self.cursor_position);
-                    self.validation_errors.remove(&self.current_field);
+                if *cursor_position < buffer.len() {
+                    buffer.remove(*cursor_position);
                 }
             }
             KeyCode::Left => {
-                if self.cursor_position > 0 {
-                    self.cursor_position -= 1;
+                if *cursor_position > 0 {
+                    *cursor_position -= 1;
                 }
             }
             KeyCode::Right => {
-                if self.cursor_position < buffer.len() {
-                    self.cursor_position += 1;
+                if *cursor_position < buffer.len() {
+                    *cursor_position += 1;
                 }
             }
             KeyCode::Home => {
-                self.cursor_position = 0;
+                *cursor_position = 0;
             }
             KeyCode::End => {
-                self.cursor_position = buffer.len();
+                *cursor_position = buffer.len();
             }
             _ => {}
         }

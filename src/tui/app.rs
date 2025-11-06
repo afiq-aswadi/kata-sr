@@ -428,7 +428,7 @@ impl App {
                 let create_kata_screen = CreateKataScreen::new(kata_names);
                 self.current_screen = Screen::CreateKata(create_kata_screen);
             }
-            ScreenAction::SubmitNewKata { form_data, slug } => {
+            ScreenAction::SubmitNewKata { form_data, slug: _ } => {
                 use crate::core::kata_generator::generate_kata_files;
 
                 let exercises_dir = std::path::Path::new("katas/exercises");

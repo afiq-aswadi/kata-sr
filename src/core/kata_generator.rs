@@ -360,7 +360,7 @@ mod tests {
             fs::set_permissions(&kata_dir, perms).unwrap();
         }
 
-        let form = KataFormData {
+        let _form = KataFormData {
             name: "Another Kata".to_string(), // Different name to avoid conflict
             category: "test".to_string(),
             description: "Test".to_string(),
