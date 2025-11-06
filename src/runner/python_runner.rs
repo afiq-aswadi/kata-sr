@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -37,7 +38,7 @@ impl TestResults {
 }
 
 pub fn run_python_tests(kata_id: &str, template_path: &Path) -> TestResults {
-    let interpreter_path = resolve_interpreter_path();
+    let interpreter_path = make_absolute(resolve_interpreter_path());
     if !interpreter_path.exists() {
         return TestResults::error(format!(
             "Python interpreter not found at {}",
@@ -45,7 +46,7 @@ pub fn run_python_tests(kata_id: &str, template_path: &Path) -> TestResults {
         ));
     }
 
-    let katas_dir = resolve_katas_dir();
+    let katas_dir = make_absolute(resolve_katas_dir());
     if !katas_dir.exists() {
         return TestResults::error(format!(
             "Katas directory not found at {}",
@@ -102,4 +103,14 @@ fn resolve_katas_dir() -> PathBuf {
     std::env::var("KATA_SR_KATAS_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("katas"))
+}
+
+fn make_absolute(path: PathBuf) -> PathBuf {
+    if path.is_absolute() {
+        return path;
+    }
+    match env::current_dir() {
+        Ok(cwd) => cwd.join(path),
+        Err(_) => path,
+    }
 }

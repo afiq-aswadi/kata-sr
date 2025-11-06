@@ -727,6 +727,28 @@ impl KataRepository {
         Ok(())
     }
 
+    /// Performs a complete database reset, deleting all data.
+    ///
+    /// Deletes all sessions, dependencies, katas, and daily stats.
+    /// Returns the database to its initial state (empty but with schema intact).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// repo.delete_all_data()?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn delete_all_data(&self) -> Result<()> {
+        // Delete in order to respect foreign key constraints
+        self.conn.execute("DELETE FROM sessions", [])?;
+        self.conn.execute("DELETE FROM kata_dependencies", [])?;
+        self.conn.execute("DELETE FROM katas", [])?;
+        self.conn.execute("DELETE FROM daily_stats", [])?;
+        Ok(())
+    }
+
     /// Inserts or replaces daily statistics for a specific date.
     ///
     /// # Arguments
@@ -1612,5 +1634,101 @@ mod tests {
 
         let rate = repo.get_success_rate_last_n_days(7).unwrap();
         assert_eq!(rate, 1.0);
+    }
+
+    #[test]
+    fn test_delete_all_data() {
+        let repo = setup_test_repo();
+
+        // Create some test data
+        let kata_id = repo
+            .create_kata(
+                &NewKata {
+                    name: "test_kata".to_string(),
+                    category: "test".to_string(),
+                    description: "Test".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        let kata_id2 = repo
+            .create_kata(
+                &NewKata {
+                    name: "test_kata2".to_string(),
+                    category: "test".to_string(),
+                    description: "Test 2".to_string(),
+                    base_difficulty: 3,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        // Add dependency
+        repo.add_dependency(kata_id2, kata_id, 1).unwrap();
+
+        // Add session
+        let session = NewSession {
+            kata_id,
+            started_at: Utc::now(),
+            completed_at: Some(Utc::now()),
+            test_results_json: None,
+            num_passed: Some(5),
+            num_failed: Some(0),
+            num_skipped: Some(0),
+            duration_ms: Some(1000),
+            quality_rating: Some(2),
+        };
+        repo.create_session(&session).unwrap();
+
+        // Add daily stats
+        repo.upsert_daily_stats(&DailyStats {
+            date: "2025-01-01".to_string(),
+            total_reviews: 1,
+            total_successes: 1,
+            success_rate: 1.0,
+            streak_days: 1,
+            categories_json: "{}".to_string(),
+        })
+        .unwrap();
+
+        // Verify data exists
+        let katas = repo.get_all_katas().unwrap();
+        assert_eq!(katas.len(), 2);
+
+        let sessions = repo.get_recent_sessions(kata_id, 10).unwrap();
+        assert_eq!(sessions.len(), 1);
+
+        let deps = repo.load_dependency_graph().unwrap();
+        assert!(!deps.is_unlocked(kata_id2, &HashMap::new()));
+
+        let stats = repo.get_daily_stats("2025-01-01").unwrap();
+        assert!(stats.is_some());
+
+        // Perform full reset
+        repo.delete_all_data().unwrap();
+
+        // Verify all data is deleted
+        let katas = repo.get_all_katas().unwrap();
+        assert_eq!(katas.len(), 0);
+
+        let sessions = repo.get_recent_sessions(kata_id, 10).unwrap();
+        assert_eq!(sessions.len(), 0);
+
+        let deps = repo.load_dependency_graph().unwrap();
+        assert!(deps.is_unlocked(kata_id2, &HashMap::new())); // No dependencies means unlocked
+
+        let stats = repo.get_daily_stats("2025-01-01").unwrap();
+        assert!(stats.is_none());
+
+        let db_stats = repo.get_database_stats().unwrap();
+        assert_eq!(db_stats.katas_total, 0);
+        assert_eq!(db_stats.sessions_total, 0);
+        assert_eq!(db_stats.dependencies_count, 0);
     }
 }
