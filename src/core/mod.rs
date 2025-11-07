@@ -10,5 +10,7 @@
 pub mod analytics;
 pub mod dependencies;
 pub mod difficulty;
+pub mod kata_generator;
 pub mod kata_loader;
+pub mod kata_validation;
 pub mod scheduler;
