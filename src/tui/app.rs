@@ -416,11 +416,15 @@ impl App {
                     match &mut self.current_screen {
                         Screen::Library(library) => {
                             library.mark_as_added(&kata_name);
+                            // Force terminal clear to prevent display corruption
+                            self.needs_terminal_clear = true;
                         }
                         Screen::Details(_) => {
                             // navigate back to library with updated state
                             let library = Library::load(&self.repo)?;
                             self.current_screen = Screen::Library(library);
+                            // Force terminal clear to prevent display corruption
+                            self.needs_terminal_clear = true;
                         }
                         _ => {}
                     }
