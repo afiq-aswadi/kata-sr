@@ -114,7 +114,12 @@ impl KataRepository {
         let mut stmt = self.conn.prepare(
             "SELECT id, name, category, description, base_difficulty, current_difficulty,
                     parent_kata_id, variation_params, next_review_at, last_reviewed_at,
-                    current_ease_factor, current_interval_days, current_repetition_count, created_at
+                    current_ease_factor, current_interval_days, current_repetition_count,
+                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
+                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
+                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
+                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
+                    created_at
              FROM katas
              WHERE next_review_at IS NULL OR next_review_at <= ?1
              ORDER BY next_review_at ASC NULLS FIRST",
@@ -141,7 +146,12 @@ impl KataRepository {
         let mut stmt = self.conn.prepare(
             "SELECT id, name, category, description, base_difficulty, current_difficulty,
                     parent_kata_id, variation_params, next_review_at, last_reviewed_at,
-                    current_ease_factor, current_interval_days, current_repetition_count, created_at
+                    current_ease_factor, current_interval_days, current_repetition_count,
+                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
+                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
+                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
+                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
+                    created_at
              FROM katas
              ORDER BY created_at DESC",
         )?;
@@ -171,7 +181,12 @@ impl KataRepository {
         let mut stmt = self.conn.prepare(
             "SELECT id, name, category, description, base_difficulty, current_difficulty,
                     parent_kata_id, variation_params, next_review_at, last_reviewed_at,
-                    current_ease_factor, current_interval_days, current_repetition_count, created_at
+                    current_ease_factor, current_interval_days, current_repetition_count,
+                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
+                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
+                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
+                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
+                    created_at
              FROM katas
              WHERE id = ?1",
         )?;
@@ -662,6 +677,60 @@ impl KataRepository {
         convert_optional_timestamp(next_timestamp, 0, "next_review_at_min")
     }
 
+    /// Gets daily review counts for a date range.
+    ///
+    /// Returns the number of completed sessions for each date in the range.
+    /// Used by the GitHub-style heatmap calendar visualization.
+    ///
+    /// # Arguments
+    ///
+    /// * `start_date` - Start date (inclusive)
+    /// * `end_date` - End date (inclusive)
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # use chrono::{Duration, Utc};
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let end_date = Utc::now().date_naive();
+    /// let start_date = end_date - Duration::days(364);
+    /// let counts = repo.get_daily_review_counts(start_date, end_date)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_daily_review_counts(
+        &self,
+        start_date: chrono::NaiveDate,
+        end_date: chrono::NaiveDate,
+    ) -> Result<Vec<DailyCount>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT date(completed_at, 'unixepoch') as date, COUNT(*) as count
+             FROM sessions
+             WHERE completed_at IS NOT NULL
+               AND date(completed_at, 'unixepoch') BETWEEN ?1 AND ?2
+             GROUP BY date(completed_at, 'unixepoch')
+             ORDER BY date",
+        )?;
+
+        let counts = stmt
+            .query_map(
+                params![start_date.to_string(), end_date.to_string()],
+                |row| {
+                    let date_str: String = row.get(0)?;
+                    let count: i64 = row.get(1)?;
+                    let date = chrono::NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")
+                        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+                    Ok(DailyCount {
+                        date,
+                        count: count as usize,
+                    })
+                },
+            )?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(counts)
+    }
+
     // ===== Debug/Management Methods =====
 
     /// Resets a specific kata's SM-2 state to initial values.
@@ -892,7 +961,12 @@ impl KataRepository {
             "SELECT id, name, category, description, base_difficulty,
                     current_difficulty, parent_kata_id, variation_params,
                     next_review_at, last_reviewed_at, current_ease_factor,
-                    current_interval_days, current_repetition_count, created_at
+                    current_interval_days, current_repetition_count,
+                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
+                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
+                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
+                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
+                    created_at
              FROM katas
              WHERE name = ?1",
         )?;
@@ -1143,6 +1217,150 @@ impl KataRepository {
         Ok(())
     }
 
+    /// Updates a kata's FSRS state after a review.
+    ///
+    /// Updates the FSRS card state (stability, difficulty, reps, etc.),
+    /// next review timestamp, and last reviewed timestamp.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to update
+    /// * `card` - New FSRS card state
+    /// * `next_review` - When the kata should be reviewed next
+    /// * `reviewed_at` - When the review was completed
+    pub fn update_kata_after_fsrs_review(
+        &self,
+        kata_id: i64,
+        card: &crate::core::fsrs::FsrsCard,
+        next_review: DateTime<Utc>,
+        reviewed_at: DateTime<Utc>,
+    ) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas
+             SET next_review_at = ?1,
+                 last_reviewed_at = ?2,
+                 fsrs_stability = ?3,
+                 fsrs_difficulty = ?4,
+                 fsrs_elapsed_days = ?5,
+                 fsrs_scheduled_days = ?6,
+                 fsrs_reps = ?7,
+                 fsrs_lapses = ?8,
+                 fsrs_state = ?9
+             WHERE id = ?10",
+            params![
+                next_review.timestamp(),
+                reviewed_at.timestamp(),
+                card.stability,
+                card.difficulty,
+                card.elapsed_days,
+                card.scheduled_days,
+                card.reps,
+                card.lapses,
+                card.state.to_str(),
+                kata_id,
+            ],
+        )?;
+
+        Ok(())
+    }
+
+    /// Sets a kata to use FSRS scheduling instead of SM-2.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to switch to FSRS
+    pub fn set_kata_to_fsrs(&self, kata_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas SET scheduler_type = 'FSRS' WHERE id = ?1",
+            [kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Sets a kata to use SM-2 scheduling instead of FSRS.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to switch to SM-2
+    pub fn set_kata_to_sm2(&self, kata_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas SET scheduler_type = 'SM2' WHERE id = ?1",
+            [kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Switches all katas to use FSRS scheduling.
+    pub fn migrate_all_to_fsrs(&self) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas SET scheduler_type = 'FSRS'",
+            [],
+        )?;
+        Ok(())
+    }
+
+    /// Stores optimized FSRS parameters in the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - FSRS parameters to store
+    /// * `created_at` - Timestamp when these parameters were created
+    ///
+    /// # Returns
+    ///
+    /// The ID of the newly inserted parameter set
+    pub fn save_fsrs_params(
+        &self,
+        params: &crate::core::fsrs::FsrsParams,
+        created_at: DateTime<Utc>,
+    ) -> Result<i64> {
+        self.conn.execute(
+            "INSERT INTO fsrs_params (w0, w1, w2, w3, w4, w5, w6, w7, w8, w9,
+                                     w10, w11, w12, w13, w14, w15, w16, w17, w18, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
+                     ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)",
+            params![
+                params.w[0], params.w[1], params.w[2], params.w[3], params.w[4],
+                params.w[5], params.w[6], params.w[7], params.w[8], params.w[9],
+                params.w[10], params.w[11], params.w[12], params.w[13], params.w[14],
+                params.w[15], params.w[16], params.w[17], params.w[18],
+                created_at.timestamp(),
+            ],
+        )?;
+
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Retrieves the most recently saved FSRS parameters.
+    ///
+    /// Returns None if no parameters have been saved yet.
+    pub fn get_latest_fsrs_params(&self) -> Result<Option<crate::core::fsrs::FsrsParams>> {
+        let result = self.conn.query_row(
+            "SELECT w0, w1, w2, w3, w4, w5, w6, w7, w8, w9,
+                    w10, w11, w12, w13, w14, w15, w16, w17, w18
+             FROM fsrs_params
+             ORDER BY created_at DESC
+             LIMIT 1",
+            [],
+            |row| {
+                Ok(crate::core::fsrs::FsrsParams {
+                    w: [
+                        row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?,
+                        row.get(5)?, row.get(6)?, row.get(7)?, row.get(8)?, row.get(9)?,
+                        row.get(10)?, row.get(11)?, row.get(12)?, row.get(13)?, row.get(14)?,
+                        row.get(15)?, row.get(16)?, row.get(17)?, row.get(18)?,
+                    ],
+                })
+            },
+        );
+
+        match result {
+            Ok(params) => Ok(Some(params)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+
     /// Gets database statistics for debugging and inspection.
     ///
     /// Returns counts of katas, sessions, dependencies, and streak info.
@@ -1222,9 +1440,19 @@ pub struct Kata {
     pub variation_params: Option<String>,
     pub next_review_at: Option<DateTime<Utc>>,
     pub last_reviewed_at: Option<DateTime<Utc>>,
+    // SM-2 state fields
     pub current_ease_factor: f64,
     pub current_interval_days: i64,
     pub current_repetition_count: i64,
+    // FSRS state fields
+    pub fsrs_stability: f64,
+    pub fsrs_difficulty: f64,
+    pub fsrs_elapsed_days: u32,
+    pub fsrs_scheduled_days: u32,
+    pub fsrs_reps: u32,
+    pub fsrs_lapses: u32,
+    pub fsrs_state: String,
+    pub scheduler_type: String,
     pub created_at: DateTime<Utc>,
 }
 
@@ -1236,6 +1464,27 @@ impl Kata {
             interval_days: self.current_interval_days,
             repetition_count: self.current_repetition_count,
         }
+    }
+
+    /// Returns the current FSRS card state for this kata.
+    pub fn fsrs_card(&self) -> crate::core::fsrs::FsrsCard {
+        use crate::core::fsrs::{CardState, FsrsCard};
+
+        FsrsCard {
+            stability: self.fsrs_stability,
+            difficulty: self.fsrs_difficulty,
+            elapsed_days: self.fsrs_elapsed_days,
+            scheduled_days: self.fsrs_scheduled_days,
+            reps: self.fsrs_reps,
+            lapses: self.fsrs_lapses,
+            state: CardState::from_str(&self.fsrs_state).unwrap_or(CardState::New),
+            last_review: self.last_reviewed_at,
+        }
+    }
+
+    /// Checks if this kata uses FSRS scheduling.
+    pub fn uses_fsrs(&self) -> bool {
+        self.scheduler_type == "FSRS"
     }
 }
 
@@ -1290,14 +1539,21 @@ pub struct DailyStats {
     pub categories_json: String,
 }
 
+/// Daily review count for heatmap visualization.
+#[derive(Debug, Clone)]
+pub struct DailyCount {
+    pub date: chrono::NaiveDate,
+    pub count: usize,
+}
+
 fn row_to_kata(row: &Row) -> Result<Kata> {
     let next_review_ts: Option<i64> = row.get(8)?;
     let last_reviewed_ts: Option<i64> = row.get(9)?;
-    let created_ts: i64 = row.get(13)?;
+    let created_ts: i64 = row.get(21)?;
 
     let next_review_at = convert_optional_timestamp(next_review_ts, 8, "next_review_at")?;
     let last_reviewed_at = convert_optional_timestamp(last_reviewed_ts, 9, "last_reviewed_at")?;
-    let created_at = convert_timestamp(created_ts, 13, "created_at")?;
+    let created_at = convert_timestamp(created_ts, 21, "created_at")?;
 
     Ok(Kata {
         id: row.get(0)?,
@@ -1313,6 +1569,14 @@ fn row_to_kata(row: &Row) -> Result<Kata> {
         current_ease_factor: row.get(10)?,
         current_interval_days: row.get(11)?,
         current_repetition_count: row.get(12)?,
+        fsrs_stability: row.get(13)?,
+        fsrs_difficulty: row.get(14)?,
+        fsrs_elapsed_days: row.get(15)?,
+        fsrs_scheduled_days: row.get(16)?,
+        fsrs_reps: row.get(17)?,
+        fsrs_lapses: row.get(18)?,
+        fsrs_state: row.get(19)?,
+        scheduler_type: row.get(20)?,
         created_at,
     })
 }
