@@ -307,10 +307,19 @@ impl Library {
                     Style::default()
                 };
 
+                // Display tags as comma-separated list, fallback to category if no tags
+                let tags_str = if !kata.tags.is_empty() {
+                    kata.tags.join(", ")
+                } else if !kata.category.is_empty() {
+                    kata.category.clone()
+                } else {
+                    "—".to_string()
+                };
+
                 Row::new(vec![
                     Cell::from(prefix),
                     Cell::from(kata.name.clone()),
-                    Cell::from(kata.category.clone()),
+                    Cell::from(tags_str),
                     Cell::from(due_str).style(due_style),
                     Cell::from(format!("{:.1}", kata.current_difficulty)),
                 ])
@@ -901,6 +910,7 @@ mod tests {
                     id: 1,
                     name: "kata1".to_string(),
                     category: "test".to_string(),
+                    tags: vec![],
                     description: "Test".to_string(),
                     base_difficulty: 1,
                     current_difficulty: 1.0,
@@ -925,6 +935,7 @@ mod tests {
                     id: 2,
                     name: "kata2".to_string(),
                     category: "test".to_string(),
+                    tags: vec![],
                     description: "Test".to_string(),
                     base_difficulty: 2,
                     current_difficulty: 2.0,

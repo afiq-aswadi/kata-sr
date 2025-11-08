@@ -9,7 +9,10 @@ use std::path::Path;
 #[derive(Debug, Clone, Deserialize)]
 pub struct AvailableKata {
     pub name: String,
+    #[serde(default)]
     pub category: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
     pub base_difficulty: i32,
     pub description: String,
     #[serde(default)]
@@ -155,6 +158,15 @@ pub fn reimport_katas(
 
     // process each available kata
     for available in &available_katas {
+        // Determine tags: prefer tags array, fall back to category if tags is empty
+        let tags = if !available.tags.is_empty() {
+            available.tags.clone()
+        } else if !available.category.is_empty() {
+            vec![available.category.clone()]
+        } else {
+            vec![]
+        };
+
         if let Some(existing) = existing_by_name.get(&available.name) {
             // kata exists - update metadata if changed (preserve SM-2 state)
             let needs_update = existing.description != available.description
@@ -170,6 +182,10 @@ pub fn reimport_katas(
                 )?;
                 updated += 1;
             }
+
+            // Update tags
+            repo.set_kata_tags(existing.id, &tags)?;
+
             name_to_id.insert(available.name.clone(), existing.id);
         } else {
             // new kata - create it
@@ -183,6 +199,10 @@ pub fn reimport_katas(
             };
 
             let kata_id = repo.create_kata(&new_kata, chrono::Utc::now())?;
+
+            // Set tags for new kata
+            repo.set_kata_tags(kata_id, &tags)?;
+
             name_to_id.insert(available.name.clone(), kata_id);
             added += 1;
         }
@@ -286,6 +306,7 @@ mod tests {
 [kata]
 name = "test_kata"
 category = "test_category"
+tags = ["tag1", "tag2"]
 base_difficulty = 3
 description = "A test kata"
 dependencies = ["kata1", "kata2"]
@@ -297,6 +318,7 @@ dependencies = ["kata1", "kata2"]
 
         assert_eq!(kata.name, "test_kata");
         assert_eq!(kata.category, "test_category");
+        assert_eq!(kata.tags, vec!["tag1", "tag2"]);
         assert_eq!(kata.base_difficulty, 3);
         assert_eq!(kata.description, "A test kata");
         assert_eq!(kata.dependencies, vec!["kata1", "kata2"]);

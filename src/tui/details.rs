@@ -161,6 +161,7 @@ mod tests {
         let kata = AvailableKata {
             name: "test_kata".to_string(),
             category: "test".to_string(),
+            tags: vec![],
             base_difficulty: 3,
             description: "Test kata".to_string(),
             dependencies: vec![],
@@ -179,6 +180,7 @@ mod tests {
         let kata = AvailableKata {
             name: "test_kata".to_string(),
             category: "test".to_string(),
+            tags: vec![],
             base_difficulty: 3,
             description: "Test kata".to_string(),
             dependencies: vec![],
@@ -197,6 +199,7 @@ mod tests {
         let kata = AvailableKata {
             name: "test_kata".to_string(),
             category: "test".to_string(),
+            tags: vec![],
             base_difficulty: 3,
             description: "Test kata".to_string(),
             dependencies: vec![],

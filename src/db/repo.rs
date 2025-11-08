@@ -980,6 +980,214 @@ impl KataRepository {
         }
     }
 
+    // ===== Tag Management Methods =====
+
+    /// Get all unique tags across all katas.
+    ///
+    /// Returns a sorted list of all distinct tags in the database.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let tags = repo.get_all_tags()?;
+    /// for tag in tags {
+    ///     println!("Tag: {}", tag);
+    /// }
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_all_tags(&self) -> Result<Vec<String>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT DISTINCT tag FROM kata_tags ORDER BY tag")?;
+
+        let tags = stmt
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<Vec<String>>>()?;
+
+        Ok(tags)
+    }
+
+    /// Get all tags for a specific kata.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - The ID of the kata to get tags for
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let tags = repo.get_kata_tags(1)?;
+    /// println!("Tags: {:?}", tags);
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_kata_tags(&self, kata_id: i64) -> Result<Vec<String>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT tag FROM kata_tags WHERE kata_id = ? ORDER BY tag")?;
+
+        let tags = stmt
+            .query_map([kata_id], |row| row.get(0))?
+            .collect::<Result<Vec<String>>>()?;
+
+        Ok(tags)
+    }
+
+    /// Get katas that have a specific tag.
+    ///
+    /// # Arguments
+    ///
+    /// * `tag` - The tag to filter by
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let katas = repo.get_katas_by_tag("transformers")?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_katas_by_tag(&self, tag: &str) -> Result<Vec<Kata>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT DISTINCT k.id, k.name, k.category, k.description, k.base_difficulty,
+                    k.current_difficulty, k.parent_kata_id, k.variation_params,
+                    k.next_review_at, k.last_reviewed_at, k.current_ease_factor,
+                    k.current_interval_days, k.current_repetition_count, k.created_at
+             FROM katas k
+             JOIN kata_tags kt ON k.id = kt.kata_id
+             WHERE kt.tag = ?
+             ORDER BY k.name",
+        )?;
+
+        let katas = stmt
+            .query_map([tag], row_to_kata)?
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(katas)
+    }
+
+    /// Get katas that have ALL of the specified tags.
+    ///
+    /// # Arguments
+    ///
+    /// * `tags` - Slice of tags that the kata must have all of
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let tags = vec!["transformers".to_string(), "attention".to_string()];
+    /// let katas = repo.get_katas_by_tags(&tags)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_katas_by_tags(&self, tags: &[String]) -> Result<Vec<Kata>> {
+        if tags.is_empty() {
+            return self.get_all_katas();
+        }
+
+        // Build query with HAVING clause to match all tags
+        let placeholders = tags.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let query = format!(
+            "SELECT k.id, k.name, k.category, k.description, k.base_difficulty,
+                    k.current_difficulty, k.parent_kata_id, k.variation_params,
+                    k.next_review_at, k.last_reviewed_at, k.current_ease_factor,
+                    k.current_interval_days, k.current_repetition_count, k.created_at
+             FROM katas k
+             JOIN kata_tags kt ON k.id = kt.kata_id
+             WHERE kt.tag IN ({})
+             GROUP BY k.id
+             HAVING COUNT(DISTINCT kt.tag) = ?
+             ORDER BY k.name",
+            placeholders
+        );
+
+        let mut stmt = self.conn.prepare(&query)?;
+        let mut params: Vec<&dyn rusqlite::ToSql> =
+            tags.iter().map(|t| t as &dyn rusqlite::ToSql).collect();
+        let tag_count = tags.len();
+        params.push(&tag_count);
+
+        let katas = stmt
+            .query_map(params.as_slice(), row_to_kata)?
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(katas)
+    }
+
+    /// Add a tag to a kata.
+    ///
+    /// Uses INSERT OR IGNORE to handle duplicate tag assignments gracefully.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata
+    /// * `tag` - Tag to add
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// repo.add_tag(1, "transformers")?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn add_tag(&self, kata_id: i64, tag: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR IGNORE INTO kata_tags (kata_id, tag) VALUES (?, ?)",
+            params![kata_id, tag],
+        )?;
+        Ok(())
+    }
+
+    /// Remove a tag from a kata.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata
+    /// * `tag` - Tag to remove
+    pub fn remove_tag(&self, kata_id: i64, tag: &str) -> Result<()> {
+        self.conn.execute(
+            "DELETE FROM kata_tags WHERE kata_id = ? AND tag = ?",
+            params![kata_id, tag],
+        )?;
+        Ok(())
+    }
+
+    /// Set all tags for a kata (replaces existing tags).
+    ///
+    /// Deletes all existing tags for the kata and inserts the new ones.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata
+    /// * `tags` - New set of tags
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let tags = vec!["transformers".to_string(), "attention".to_string()];
+    /// repo.set_kata_tags(1, &tags)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn set_kata_tags(&self, kata_id: i64, tags: &[String]) -> Result<()> {
+        // Delete existing tags
+        self.conn
+            .execute("DELETE FROM kata_tags WHERE kata_id = ?", params![kata_id])?;
+
+        // Insert new tags
+        for tag in tags {
+            self.add_tag(kata_id, tag)?;
+        }
+
+        Ok(())
+    }
+
     /// Updates kata metadata without affecting SM-2 state.
     ///
     /// Used during reimport to update description, category, and base difficulty

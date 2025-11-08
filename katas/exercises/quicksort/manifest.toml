@@ -1,6 +1,7 @@
 [kata]
 name = "quicksort"
 category = "algorithms"
+tags = ["algorithms", "sorting", "divide-and-conquer", "recursion"]
 base_difficulty = 3
 description = """
 Implement quicksort algorithm and variations.
