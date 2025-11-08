@@ -142,7 +142,8 @@ impl PracticeScreen {
                 match self.edit_and_run_tests(tx_clone) {
                     Ok(_) => Ok(PracticeAction::EditorExited),
                     Err(err) => {
-                        let _ = event_tx.send(AppEvent::TestComplete(TestResults::error(err.to_string())));
+                        let _ = event_tx
+                            .send(AppEvent::TestComplete(TestResults::error(err.to_string())));
                         self.status = PracticeStatus::ShowingDescription;
                         Ok(PracticeAction::EditorExited)
                     }
@@ -201,9 +202,12 @@ impl PracticeScreen {
 
             // Flush to ensure all commands are executed
             use std::io::Write;
-            stdout.flush().context("failed to flush stdout after terminal reset")?;
+            stdout
+                .flush()
+                .context("failed to flush stdout after terminal reset")?;
 
-            let editor_status = status_result.with_context(|| format!("failed to launch {}", editor))?;
+            let editor_status =
+                status_result.with_context(|| format!("failed to launch {}", editor))?;
 
             if !editor_status.success() {
                 anyhow::bail!(

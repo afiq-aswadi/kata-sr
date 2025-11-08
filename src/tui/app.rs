@@ -14,6 +14,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use super::create_kata::{CreateKataAction, CreateKataScreen};
 use super::dashboard::{Dashboard, DashboardAction};
 use super::details::{DetailsAction, DetailsScreen};
+use super::done::{DoneAction, DoneScreen};
 use super::keybindings;
 use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
@@ -43,6 +44,8 @@ pub enum AppEvent {
 pub enum Screen {
     /// Dashboard showing katas due today and stats
     Dashboard,
+    /// Celebration screen when no reviews are due
+    Done(DoneScreen),
     /// Practice screen for a specific kata
     Practice(Kata, PracticeScreen),
     /// Results screen showing test output and rating selection
@@ -62,6 +65,7 @@ enum ScreenAction {
     StartPractice(Kata),
     ReturnToDashboard,
     SubmitRating(Kata, u8),
+    StartNextDue,
     OpenLibrary,
     AddKataFromLibrary(String),
     BackFromLibrary,
@@ -120,7 +124,7 @@ impl App {
         let (tx, rx) = channel();
         let dashboard = Dashboard::load(&repo)?;
 
-        Ok(Self {
+        let mut app = Self {
             current_screen: Screen::Dashboard,
             dashboard,
             repo,
@@ -128,7 +132,10 @@ impl App {
             event_rx: rx,
             showing_help: false,
             needs_terminal_clear: false,
-        })
+        };
+
+        app.refresh_dashboard_screen()?;
+        Ok(app)
     }
 
     /// Runs the TUI application.
@@ -229,29 +236,33 @@ impl App {
     fn render(&mut self, frame: &mut Frame) {
         if self.showing_help {
             keybindings::render_help_screen(frame);
-        } else {
-            match &self.current_screen {
-                Screen::Dashboard => {
-                    self.dashboard.render(frame);
-                }
-                Screen::Practice(_, practice_screen) => {
-                    practice_screen.render(frame);
-                }
-                Screen::Results(_, results_screen) => {
-                    results_screen.render(frame);
-                }
-                Screen::Help => {
-                    keybindings::render_help_screen(frame);
-                }
-                Screen::Library(library) => {
-                    library.render(frame);
-                }
-                Screen::Details(details) => {
-                    details.render(frame);
-                }
-                Screen::CreateKata(create_kata) => {
-                    create_kata.render(frame);
-                }
+            return;
+        }
+
+        match &mut self.current_screen {
+            Screen::Dashboard => {
+                self.dashboard.render(frame);
+            }
+            Screen::Done(done_screen) => {
+                done_screen.render(frame);
+            }
+            Screen::Practice(_, practice_screen) => {
+                practice_screen.render(frame);
+            }
+            Screen::Results(_, results_screen) => {
+                results_screen.render(frame);
+            }
+            Screen::Help => {
+                keybindings::render_help_screen(frame);
+            }
+            Screen::Library(library) => {
+                library.render(frame);
+            }
+            Screen::Details(details) => {
+                details.render(frame);
+            }
+            Screen::CreateKata(create_kata) => {
+                create_kata.render(frame);
             }
         }
     }
@@ -274,7 +285,9 @@ impl App {
                 let action = self.dashboard.handle_input(code);
                 match action {
                     DashboardAction::SelectKata(kata) => Some(ScreenAction::StartPractice(kata)),
-                    DashboardAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
+                    DashboardAction::RemoveKata(kata) => {
+                        Some(ScreenAction::RemoveKataFromDeck(kata))
+                    }
                     DashboardAction::None => None,
                 }
             }
@@ -289,6 +302,10 @@ impl App {
                     PracticeAction::None => None,
                 }
             }
+            Screen::Done(done_screen) => match done_screen.handle_input(code) {
+                DoneAction::BrowseLibrary => Some(ScreenAction::OpenLibrary),
+                DoneAction::None => None,
+            },
             Screen::Results(kata, results_screen) => {
                 let action = results_screen.handle_input(code);
                 match action {
@@ -296,6 +313,8 @@ impl App {
                         Some(ScreenAction::SubmitRating(kata.clone(), rating))
                     }
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
+                    ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
+                    ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::None => None,
                 }
@@ -352,12 +371,25 @@ impl App {
             }
             ScreenAction::ReturnToDashboard => {
                 self.dashboard = Dashboard::load(&self.repo)?;
-                self.current_screen = Screen::Dashboard;
+                self.refresh_dashboard_screen()?;
             }
             ScreenAction::SubmitRating(kata, rating) => {
                 self.handle_rating_submission(kata, rating)?;
                 self.dashboard = Dashboard::load(&self.repo)?;
-                self.current_screen = Screen::Dashboard;
+                if let Screen::Results(_, results_screen) = &mut self.current_screen {
+                    results_screen.mark_rating_submitted(rating, self.dashboard.katas_due.len());
+                }
+            }
+            ScreenAction::StartNextDue => {
+                if self.dashboard.katas_due.is_empty() {
+                    self.dashboard = Dashboard::load(&self.repo)?;
+                }
+                if let Some(next_kata) = self.dashboard.katas_due.first().cloned() {
+                    let practice_screen = PracticeScreen::new(next_kata.clone())?;
+                    self.current_screen = Screen::Practice(next_kata, practice_screen);
+                } else {
+                    self.refresh_dashboard_screen()?;
+                }
             }
             ScreenAction::OpenLibrary => {
                 let library = Library::load(&self.repo)?;
@@ -398,7 +430,7 @@ impl App {
                 }
             }
             ScreenAction::BackFromLibrary => {
-                self.current_screen = Screen::Dashboard;
+                self.refresh_dashboard_screen()?;
             }
             ScreenAction::ViewDetails(kata, in_deck) => {
                 let details = DetailsScreen::new(kata, in_deck);
@@ -418,12 +450,13 @@ impl App {
 
                 // Reload dashboard to reflect the change
                 self.dashboard = Dashboard::load(&self.repo)?;
-                self.current_screen = Screen::Dashboard;
+                self.refresh_dashboard_screen()?;
             }
             ScreenAction::OpenCreateKata => {
                 // Load available katas for dependency selection
                 let available_katas = crate::core::kata_loader::load_available_katas()?;
-                let kata_names: Vec<String> = available_katas.iter().map(|k| k.name.clone()).collect();
+                let kata_names: Vec<String> =
+                    available_katas.iter().map(|k| k.name.clone()).collect();
 
                 let create_kata_screen = CreateKataScreen::new(kata_names);
                 self.current_screen = Screen::CreateKata(create_kata_screen);
@@ -489,6 +522,21 @@ impl App {
     /// Toggles between the current screen and the help screen.
     fn toggle_help(&mut self) {
         self.showing_help = !self.showing_help;
+    }
+
+    fn refresh_dashboard_screen(&mut self) -> anyhow::Result<()> {
+        if self.dashboard.katas_due.is_empty() {
+            let next_review = self.repo.get_next_scheduled_review()?;
+            let done_screen = DoneScreen::new(
+                self.dashboard.stats.total_reviews_today,
+                self.dashboard.stats.streak_days,
+                next_review,
+            );
+            self.current_screen = Screen::Done(done_screen);
+        } else {
+            self.current_screen = Screen::Dashboard;
+        }
+        Ok(())
     }
 
     /// Handles rating submission by updating SM-2 state and creating a session record.

@@ -1,6 +1,5 @@
 """Operator overloading kata."""
 
-from typing import Any
 
 
 class Vector:

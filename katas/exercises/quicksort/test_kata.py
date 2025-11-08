@@ -1,6 +1,5 @@
 """Tests for quicksort kata."""
 
-import pytest
 
 
 def test_quicksort_basic():

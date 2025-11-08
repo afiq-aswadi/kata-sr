@@ -1,6 +1,5 @@
 """Trie (prefix tree) kata."""
 
-from typing import List
 
 
 class TrieNode:
@@ -62,7 +61,7 @@ class Trie:
         pass
         # BLANK_END
 
-    def get_words_with_prefix(self, prefix: str) -> List[str]:
+    def get_words_with_prefix(self, prefix: str) -> list[str]:
         """Get all words with given prefix.
 
         Args:

@@ -43,6 +43,7 @@ class TestResult(TypedDict):
     test_name: str
     status: str
     output: str
+    duration_ms: int
 
 
 class KataTestResults(TypedDict):
@@ -93,11 +94,15 @@ class JSONReporter:
 
         outcome = report.outcome
 
+        duration = getattr(report, "duration", 0.0)
+        duration_ms = int(duration * 1000)
+
         if report.when == "call":
             self._node_results[report.nodeid] = {
                 "test_name": display_name,
                 "status": outcome,
                 "output": output,
+                "duration_ms": duration_ms,
             }
         elif outcome in {"failed", "skipped"}:
             # record setup/teardown errors and skips so they surface in JSON
@@ -105,6 +110,7 @@ class JSONReporter:
                 "test_name": display_name,
                 "status": outcome,
                 "output": output,
+                "duration_ms": duration_ms,
             }
 
         self.results = list(self._node_results.values())

@@ -1,8 +1,7 @@
 """Weights & Biases basics kata."""
 
-import wandb
-import torch
 import torch.nn as nn
+import wandb
 
 
 def initialize_wandb_run(project_name: str, config: dict) -> wandb.sdk.wandb_run.Run:

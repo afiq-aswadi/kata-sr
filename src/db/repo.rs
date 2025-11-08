@@ -646,6 +646,22 @@ impl KataRepository {
         }
     }
 
+    /// Returns the next scheduled review timestamp, if any katas are pending in the future.
+    ///
+    /// This is useful for displaying when the user should return after clearing the queue.
+    pub fn get_next_scheduled_review(&self) -> Result<Option<DateTime<Utc>>> {
+        let next_timestamp: Option<i64> = self.conn.query_row(
+            "SELECT MIN(next_review_at)
+             FROM katas
+             WHERE next_review_at IS NOT NULL
+               AND next_review_at > strftime('%s', 'now')",
+            [],
+            |row| row.get(0),
+        )?;
+
+        convert_optional_timestamp(next_timestamp, 0, "next_review_at_min")
+    }
+
     // ===== Debug/Management Methods =====
 
     /// Resets a specific kata's SM-2 state to initial values.
@@ -1539,6 +1555,65 @@ mod tests {
 
         let count = repo.get_reviews_count_today().unwrap();
         assert_eq!(count, 3);
+    }
+
+    #[test]
+    fn test_next_scheduled_review_none_when_no_katas() {
+        let repo = setup_test_repo();
+        assert!(repo.get_next_scheduled_review().unwrap().is_none());
+    }
+
+    #[test]
+    fn test_next_scheduled_review_returns_earliest_future() {
+        let repo = setup_test_repo();
+        let kata_a = repo
+            .create_kata(
+                &NewKata {
+                    name: "future_a".to_string(),
+                    category: "test".to_string(),
+                    description: "future_a".to_string(),
+                    base_difficulty: 2,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        let kata_b = repo
+            .create_kata(
+                &NewKata {
+                    name: "future_b".to_string(),
+                    category: "test".to_string(),
+                    description: "future_b".to_string(),
+                    base_difficulty: 3,
+                    parent_kata_id: None,
+                    variation_params: None,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+
+        let now = Utc::now();
+        let soon = now + chrono::Duration::hours(8);
+        let later = now + chrono::Duration::hours(30);
+
+        repo.conn
+            .execute(
+                "UPDATE katas SET next_review_at = ?1 WHERE id = ?2",
+                params![soon.timestamp(), kata_a],
+            )
+            .unwrap();
+
+        repo.conn
+            .execute(
+                "UPDATE katas SET next_review_at = ?1 WHERE id = ?2",
+                params![later.timestamp(), kata_b],
+            )
+            .unwrap();
+
+        let next = repo.get_next_scheduled_review().unwrap().unwrap();
+        assert!((next - soon).num_seconds().abs() < 5);
     }
 
     #[test]

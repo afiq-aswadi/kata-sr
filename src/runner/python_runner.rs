@@ -18,6 +18,7 @@ pub struct TestResult {
     pub test_name: String,
     pub status: String,
     pub output: String,
+    pub duration_ms: i64,
 }
 
 impl TestResults {
@@ -32,6 +33,7 @@ impl TestResults {
                 test_name: "runner_error".to_string(),
                 status: "failed".to_string(),
                 output: message,
+                duration_ms: 0,
             }],
         }
     }

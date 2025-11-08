@@ -1,6 +1,5 @@
 """Tests for tensor slicing kata."""
 
-import pytest
 import torch
 
 

@@ -1,6 +1,5 @@
 """Tests for cross-entropy loss kata."""
 
-import pytest
 import torch
 import torch.nn.functional as F
 

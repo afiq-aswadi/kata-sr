@@ -2,6 +2,7 @@ pub mod app;
 pub mod create_kata;
 pub mod dashboard;
 pub mod details;
+pub mod done;
 pub mod heatmap;
 pub mod keybindings;
 pub mod library;

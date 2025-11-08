@@ -1,6 +1,5 @@
 """Tests for binary search kata."""
 
-import pytest
 
 
 def test_binary_search_found():

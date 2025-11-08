@@ -1,6 +1,5 @@
 """Trie (prefix tree) kata - reference solution."""
 
-from typing import List
 
 
 class TrieNode:
@@ -45,7 +44,7 @@ class Trie:
             node = node.children[char]
         return True
 
-    def get_words_with_prefix(self, prefix: str) -> List[str]:
+    def get_words_with_prefix(self, prefix: str) -> list[str]:
         """Get all words with given prefix."""
         node = self.root
         for char in prefix:
@@ -58,7 +57,7 @@ class Trie:
         self._dfs(node, prefix, words)
         return words
 
-    def _dfs(self, node: TrieNode, current: str, words: List[str]) -> None:
+    def _dfs(self, node: TrieNode, current: str, words: list[str]) -> None:
         """Helper to collect all words via DFS."""
         if node.is_end_of_word:
             words.append(current)

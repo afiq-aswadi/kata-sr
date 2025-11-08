@@ -102,10 +102,7 @@ pub fn validate_kata_name(slug: &str, exercises_dir: &Path) -> Result<(), Valida
 /// # Errors
 ///
 /// Returns `ValidationError::MissingDependency` with a list of missing kata names.
-pub fn validate_dependencies(
-    deps: &[String],
-    exercises_dir: &Path,
-) -> Result<(), ValidationError> {
+pub fn validate_dependencies(deps: &[String], exercises_dir: &Path) -> Result<(), ValidationError> {
     let missing: Vec<String> = deps
         .iter()
         .filter(|dep| !exercises_dir.join(dep).exists())
@@ -127,7 +124,10 @@ mod tests {
 
     #[test]
     fn test_slugify_basic() {
-        assert_eq!(slugify_kata_name("Multi-Head Attention"), "multi_head_attention");
+        assert_eq!(
+            slugify_kata_name("Multi-Head Attention"),
+            "multi_head_attention"
+        );
         assert_eq!(slugify_kata_name("BFS/DFS"), "bfs_dfs");
         assert_eq!(slugify_kata_name("  spaces  "), "spaces");
         assert_eq!(slugify_kata_name("123abc"), "123abc");
@@ -215,7 +215,11 @@ mod tests {
         fs::create_dir(temp_dir.path().join("kata_a")).unwrap();
 
         // Missing dependency
-        let deps = vec!["kata_a".to_string(), "missing".to_string(), "also_missing".to_string()];
+        let deps = vec![
+            "kata_a".to_string(),
+            "missing".to_string(),
+            "also_missing".to_string(),
+        ];
         let result = validate_dependencies(&deps, temp_dir.path());
 
         assert!(matches!(result, Err(ValidationError::MissingDependency(_))));

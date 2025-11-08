@@ -125,11 +125,7 @@ description = """
 """
 {}
 "#,
-        slug,
-        form_data.category,
-        form_data.difficulty,
-        form_data.description,
-        dependencies_toml
+        slug, form_data.category, form_data.difficulty, form_data.description, dependencies_toml
     );
 
     fs::write(&manifest_path, content).context("Failed to write manifest.toml")?;

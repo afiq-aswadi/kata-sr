@@ -1,6 +1,5 @@
 """Descriptor protocol kata."""
 
-from typing import Any
 
 
 class ValidatedAttribute:

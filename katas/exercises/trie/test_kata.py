@@ -1,6 +1,5 @@
 """Tests for Trie kata."""
 
-import pytest
 
 
 def test_trie_insert_and_search():

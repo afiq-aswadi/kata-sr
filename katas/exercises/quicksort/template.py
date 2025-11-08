@@ -1,9 +1,8 @@
 """Quicksort kata."""
 
-from typing import List
 
 
-def quicksort(arr: List[int]) -> List[int]:
+def quicksort(arr: list[int]) -> list[int]:
     """Sort array using quicksort algorithm.
 
     Args:
@@ -18,7 +17,7 @@ def quicksort(arr: List[int]) -> List[int]:
     # BLANK_END
 
 
-def quicksort_inplace(arr: List[int], low: int = 0, high: int | None = None) -> None:
+def quicksort_inplace(arr: list[int], low: int = 0, high: int | None = None) -> None:
     """Sort array in-place using quicksort.
 
     Args:
@@ -35,7 +34,7 @@ def quicksort_inplace(arr: List[int], low: int = 0, high: int | None = None) -> 
     # BLANK_END
 
 
-def partition_lomuto(arr: List[int], low: int, high: int) -> int:
+def partition_lomuto(arr: list[int], low: int, high: int) -> int:
     """Partition array using Lomuto scheme.
 
     Choose arr[high] as pivot, partition so all elements < pivot are on left.
@@ -54,7 +53,7 @@ def partition_lomuto(arr: List[int], low: int, high: int) -> int:
     # BLANK_END
 
 
-def partition_hoare(arr: List[int], low: int, high: int) -> int:
+def partition_hoare(arr: list[int], low: int, high: int) -> int:
     """Partition array using Hoare scheme.
 
     Use two pointers from both ends, swap elements to partition.

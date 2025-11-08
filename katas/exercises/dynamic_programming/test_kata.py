@@ -1,6 +1,5 @@
 """Tests for dynamic programming kata."""
 
-import pytest
 
 
 def test_fibonacci_memo():

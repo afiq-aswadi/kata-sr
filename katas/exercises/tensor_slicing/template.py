@@ -1,7 +1,7 @@
 """Tensor slicing and indexing kata."""
 
 import torch
-from jaxtyping import Float, Int, Bool
+from jaxtyping import Bool, Float, Int
 
 
 def gather_rows(

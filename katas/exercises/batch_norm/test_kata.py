@@ -1,8 +1,6 @@
 """Tests for batch normalization kata."""
 
-import pytest
 import torch
-import torch.nn.functional as F
 
 
 def test_batch_norm_1d_basic():

@@ -23,7 +23,10 @@ pub enum CreateKataAction {
     /// No action taken
     None,
     /// Submit the form and create the kata
-    Submit { form_data: KataFormData, slug: String },
+    Submit {
+        form_data: KataFormData,
+        slug: String,
+    },
     /// Cancel and return to library
     Cancel,
 }
@@ -150,8 +153,8 @@ impl CreateKataScreen {
     }
 
     fn render_header(&self, frame: &mut Frame, area: Rect) {
-        let header = Paragraph::new("Create New Kata")
-            .block(Block::default().borders(Borders::ALL));
+        let header =
+            Paragraph::new("Create New Kata").block(Block::default().borders(Borders::ALL));
         frame.render_widget(header, area);
     }
 
@@ -512,7 +515,11 @@ impl CreateKataScreen {
         }
     }
 
-    fn handle_confirmation_input(&mut self, code: KeyCode, _exercises_dir: &Path) -> CreateKataAction {
+    fn handle_confirmation_input(
+        &mut self,
+        code: KeyCode,
+        _exercises_dir: &Path,
+    ) -> CreateKataAction {
         if self.confirmation_error.is_some() {
             // If there's an error, any key returns to form
             match code {

@@ -1,6 +1,5 @@
 """Tests for iterator protocol kata."""
 
-import pytest
 
 
 def test_countdown():

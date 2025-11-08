@@ -1,6 +1,5 @@
 """Tests for LRU Cache kata."""
 
-import pytest
 
 
 def test_lru_basic():

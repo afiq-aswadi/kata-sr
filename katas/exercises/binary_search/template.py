@@ -1,9 +1,8 @@
 """Binary search kata."""
 
-from typing import List
 
 
-def binary_search(arr: List[int], target: int) -> int:
+def binary_search(arr: list[int], target: int) -> int:
     """Find index of target in sorted array, or -1 if not found.
 
     Args:
@@ -19,7 +18,7 @@ def binary_search(arr: List[int], target: int) -> int:
     # BLANK_END
 
 
-def binary_search_leftmost(arr: List[int], target: int) -> int:
+def binary_search_leftmost(arr: list[int], target: int) -> int:
     """Find leftmost occurrence of target in sorted array with duplicates.
 
     Args:
@@ -35,7 +34,7 @@ def binary_search_leftmost(arr: List[int], target: int) -> int:
     # BLANK_END
 
 
-def binary_search_rightmost(arr: List[int], target: int) -> int:
+def binary_search_rightmost(arr: list[int], target: int) -> int:
     """Find rightmost occurrence of target in sorted array with duplicates.
 
     Args:
@@ -51,7 +50,7 @@ def binary_search_rightmost(arr: List[int], target: int) -> int:
     # BLANK_END
 
 
-def binary_search_insert_position(arr: List[int], target: int) -> int:
+def binary_search_insert_position(arr: list[int], target: int) -> int:
     """Find insertion position to maintain sorted order.
 
     Args:

@@ -1,6 +1,5 @@
 """Tests for Adam optimizer kata."""
 
-import pytest
 import torch
 
 

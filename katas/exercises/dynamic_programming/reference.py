@@ -1,6 +1,5 @@
 """Dynamic programming kata - reference solution."""
 
-from typing import List
 
 
 def fibonacci_memo(n: int, memo: dict[int, int] | None = None) -> int:
@@ -32,7 +31,7 @@ def fibonacci_tabulation(n: int) -> int:
     return dp[n]
 
 
-def knapsack(weights: List[int], values: List[int], capacity: int) -> int:
+def knapsack(weights: list[int], values: list[int], capacity: int) -> int:
     """Solve 0/1 knapsack problem."""
     n = len(weights)
     dp = [[0] * (capacity + 1) for _ in range(n + 1)]
@@ -65,7 +64,7 @@ def longest_common_subsequence(s1: str, s2: str) -> int:
     return dp[m][n]
 
 
-def coin_change(coins: List[int], amount: int) -> int:
+def coin_change(coins: list[int], amount: int) -> int:
     """Find minimum number of coins to make amount."""
     dp = [float('inf')] * (amount + 1)
     dp[0] = 0

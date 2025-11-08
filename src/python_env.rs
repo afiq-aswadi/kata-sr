@@ -33,6 +33,7 @@ use std::process::Command;
 #[derive(Debug, Clone)]
 pub struct PythonEnv {
     interpreter_path: PathBuf,
+    venv_path: PathBuf,
 }
 
 impl PythonEnv {
@@ -106,6 +107,7 @@ impl PythonEnv {
 
         Ok(Self {
             interpreter_path: interpreter,
+            venv_path: venv_path.to_path_buf(),
         })
     }
 
@@ -125,6 +127,11 @@ impl PythonEnv {
     /// ```
     pub fn interpreter_path(&self) -> &Path {
         &self.interpreter_path
+    }
+
+    /// Returns the root of the managed virtual environment.
+    pub fn venv_path(&self) -> &Path {
+        &self.venv_path
     }
 }
 
@@ -154,8 +161,10 @@ mod tests {
         // create a mock PythonEnv to test the getter
         let env = PythonEnv {
             interpreter_path: PathBuf::from("katas/.venv/bin/python"),
+            venv_path: PathBuf::from("katas/.venv"),
         };
 
         assert_eq!(env.interpreter_path(), Path::new("katas/.venv/bin/python"));
+        assert_eq!(env.venv_path(), Path::new("katas/.venv"));
     }
 }
