@@ -90,10 +90,44 @@ CREATE TABLE IF NOT EXISTS daily_stats (
 );
 "#;
 
+/// SQL migration for creating the fsrs_params table.
+///
+/// Stores optimized FSRS-5 parameters (19 weights).
+/// Multiple parameter sets can be stored with timestamps for versioning.
+const MIGRATION_FSRS_PARAMS: &str = r#"
+CREATE TABLE IF NOT EXISTS fsrs_params (
+    id INTEGER PRIMARY KEY,
+    w0 REAL NOT NULL, w1 REAL NOT NULL, w2 REAL NOT NULL, w3 REAL NOT NULL,
+    w4 REAL NOT NULL, w5 REAL NOT NULL, w6 REAL NOT NULL, w7 REAL NOT NULL,
+    w8 REAL NOT NULL, w9 REAL NOT NULL, w10 REAL NOT NULL, w11 REAL NOT NULL,
+    w12 REAL NOT NULL, w13 REAL NOT NULL, w14 REAL NOT NULL, w15 REAL NOT NULL,
+    w16 REAL NOT NULL, w17 REAL NOT NULL, w18 REAL NOT NULL,
+    created_at INTEGER NOT NULL
+);
+"#;
+
+/// SQL migration for adding FSRS columns to katas table.
+///
+/// Adds FSRS-5 state tracking columns alongside existing SM-2 columns.
+/// The `scheduler_type` column determines which algorithm is active ('SM2' or 'FSRS').
+const MIGRATION_ADD_FSRS_COLUMNS: &str = r#"
+-- Add FSRS state columns
+ALTER TABLE katas ADD COLUMN fsrs_stability REAL DEFAULT 0.0;
+ALTER TABLE katas ADD COLUMN fsrs_difficulty REAL DEFAULT 0.0;
+ALTER TABLE katas ADD COLUMN fsrs_elapsed_days INTEGER DEFAULT 0;
+ALTER TABLE katas ADD COLUMN fsrs_scheduled_days INTEGER DEFAULT 0;
+ALTER TABLE katas ADD COLUMN fsrs_reps INTEGER DEFAULT 0;
+ALTER TABLE katas ADD COLUMN fsrs_lapses INTEGER DEFAULT 0;
+ALTER TABLE katas ADD COLUMN fsrs_state TEXT DEFAULT 'New';
+ALTER TABLE katas ADD COLUMN scheduler_type TEXT DEFAULT 'SM2';
+"#;
+
 /// Runs all database migrations.
 ///
 /// Creates all tables and indexes if they don't exist. Safe to call
 /// multiple times as all migrations use `IF NOT EXISTS`.
+///
+/// Also adds FSRS columns if they don't exist yet (for upgrading existing databases).
 ///
 /// # Arguments
 ///
@@ -114,6 +148,32 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     conn.execute_batch(MIGRATION_KATA_DEPENDENCIES)?;
     conn.execute_batch(MIGRATION_SESSIONS)?;
     conn.execute_batch(MIGRATION_DAILY_STATS)?;
+    conn.execute_batch(MIGRATION_FSRS_PARAMS)?;
+
+    // Add FSRS columns if they don't exist (for upgrading existing databases)
+    add_fsrs_columns_if_needed(conn)?;
+
+    Ok(())
+}
+
+/// Adds FSRS columns to katas table if they don't already exist.
+///
+/// This function checks if the FSRS columns exist before attempting to add them,
+/// making it safe to call on both new and existing databases.
+fn add_fsrs_columns_if_needed(conn: &Connection) -> Result<()> {
+    // Check if fsrs_stability column exists
+    let column_exists: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('katas') WHERE name='fsrs_stability'")?
+        .query_row([], |row| {
+            let count: i64 = row.get(0)?;
+            Ok(count > 0)
+        })?;
+
+    if !column_exists {
+        // Add all FSRS columns at once
+        conn.execute_batch(MIGRATION_ADD_FSRS_COLUMNS)?;
+    }
+
     Ok(())
 }
 

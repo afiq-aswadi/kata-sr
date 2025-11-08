@@ -417,11 +417,15 @@ impl App {
                     match &mut self.current_screen {
                         Screen::Library(library) => {
                             library.mark_as_added(&kata_name);
+                            // Force terminal clear to prevent display corruption
+                            self.needs_terminal_clear = true;
                         }
                         Screen::Details(_) => {
                             // navigate back to library with updated state
                             let library = Library::load(&self.repo)?;
                             self.current_screen = Screen::Library(library);
+                            // Force terminal clear to prevent display corruption
+                            self.needs_terminal_clear = true;
                         }
                         _ => {}
                     }
@@ -451,7 +455,17 @@ impl App {
 
                 // Reload dashboard to reflect the change
                 self.dashboard = Dashboard::load(&self.repo)?;
-                self.refresh_dashboard_screen()?;
+
+                // If on library screen, update library state
+                match &mut self.current_screen {
+                    Screen::Library(library) => {
+                        library.mark_as_removed(&kata.name);
+                        library.refresh_deck(&self.repo)?;
+                    }
+                    _ => {
+                        self.refresh_dashboard_screen()?;
+                    }
+                }
             }
             ScreenAction::OpenCreateKata => {
                 // Load available katas for dependency selection

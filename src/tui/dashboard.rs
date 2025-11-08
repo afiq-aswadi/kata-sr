@@ -1,6 +1,7 @@
 use crate::core::analytics::Analytics;
 use crate::db::repo::{Kata, KataRepository};
-use crate::tui::heatmap::{render_category_breakdown, render_weekly_heatmap};
+use crate::tui::heatmap::render_category_breakdown;
+use crate::tui::heatmap_calendar::HeatmapCalendar;
 use chrono::Utc;
 use crossterm::event::KeyCode;
 use ratatui::{
@@ -14,13 +15,13 @@ pub struct Dashboard {
     pub locked_katas: Vec<(Kata, String)>,
     pub selected_index: usize,
     pub stats: DashboardStats,
+    pub heatmap_calendar: HeatmapCalendar,
 }
 
 pub struct DashboardStats {
     pub streak_days: i32,
     pub total_reviews_today: i32,
     pub success_rate_7d: f64,
-    pub heatmap: String,
     pub category_breakdown: Vec<String>,
 }
 
@@ -56,8 +57,6 @@ impl Dashboard {
 
         // compute analytics
         let analytics = Analytics::new(repo);
-        let review_counts = analytics.get_review_counts_last_n_days(7)?;
-        let heatmap = render_weekly_heatmap(&review_counts);
 
         // get category breakdown from today
         let today = Utc::now().date_naive();
@@ -68,15 +67,18 @@ impl Dashboard {
             streak_days: repo.get_current_streak()?,
             total_reviews_today: repo.get_reviews_count_today()?,
             success_rate_7d: repo.get_success_rate_last_n_days(7)?,
-            heatmap,
             category_breakdown,
         };
+
+        // Create GitHub-style heatmap calendar
+        let heatmap_calendar = HeatmapCalendar::new(repo)?;
 
         Ok(Self {
             katas_due,
             locked_katas,
             selected_index: 0,
             stats,
+            heatmap_calendar,
         })
     }
 
@@ -86,7 +88,7 @@ impl Dashboard {
             .constraints([
                 Constraint::Length(3), // Header
                 Constraint::Min(8),    // Main kata list
-                Constraint::Length(3), // Heatmap
+                Constraint::Length(12), // GitHub-style heatmap calendar (7 days + header + legend + borders)
                 Constraint::Length(std::cmp::max(
                     3,
                     self.stats.category_breakdown.len() as u16 + 2,
@@ -120,10 +122,8 @@ impl Dashboard {
             List::new(items).block(Block::default().borders(Borders::ALL).title("Due Today"));
         frame.render_widget(list, chunks[1]);
 
-        // heatmap
-        let heatmap_widget = Paragraph::new(self.stats.heatmap.clone())
-            .block(Block::default().borders(Borders::ALL).title("Activity"));
-        frame.render_widget(heatmap_widget, chunks[2]);
+        // GitHub-style heatmap calendar
+        self.heatmap_calendar.render(frame, chunks[2]);
 
         // category breakdown
         let category_text = if self.stats.category_breakdown.is_empty() {
