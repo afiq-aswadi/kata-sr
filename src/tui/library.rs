@@ -2,22 +2,24 @@
 //!
 //! This module provides a tabbed table view with two tabs:
 //! - My Deck: Shows katas in the user's deck with due dates and last reviewed
-//! - All Katas: Shows all available katas from exercises directory
+//! - All Katas: Shows all available katas from exercises directory with search/filter/sort
 
 use std::collections::HashSet;
 
 use anyhow::Result;
 use chrono::Utc;
 use crossterm::event::KeyCode;
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
+    widgets::{Block, Borders, Cell, List, ListItem, Paragraph, Row, Table},
     Frame,
 };
 
-use crate::core::kata_loader::{load_available_katas, AvailableKata};
+use crate::core::kata_loader::{get_unique_categories, load_available_katas, AvailableKata};
 use crate::db::repo::{Kata, KataRepository};
 
 /// Which tab is currently active in the library view
@@ -46,6 +48,35 @@ pub enum LibraryAction {
     CreateKata,
 }
 
+/// Sort mode for library view
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SortMode {
+    Name,
+    Difficulty,
+    DateAdded,
+    Category,
+}
+
+impl SortMode {
+    fn next(&self) -> Self {
+        match self {
+            Self::Name => Self::Difficulty,
+            Self::Difficulty => Self::Category,
+            Self::Category => Self::DateAdded,
+            Self::DateAdded => Self::Name,
+        }
+    }
+
+    fn as_str(&self) -> &str {
+        match self {
+            Self::Name => "Name",
+            Self::Difficulty => "Difficulty",
+            Self::Category => "Category",
+            Self::DateAdded => "Date Added",
+        }
+    }
+}
+
 /// Library screen state for browsing available katas.
 pub struct Library {
     /// Current active tab
@@ -56,13 +87,28 @@ pub struct Library {
     /// Selected index in My Deck tab
     pub deck_selected: usize,
 
-    /// All available katas from exercises (for All Katas tab)
-    pub available_katas: Vec<AvailableKata>,
-    /// Selected index in All Katas tab
+    /// All available katas from exercises (unfiltered)
+    pub all_available_katas: Vec<AvailableKata>,
+    /// Filtered katas after applying search and category filters
+    pub filtered_available_katas: Vec<AvailableKata>,
+    /// Selected index in All Katas tab (applies to filtered list)
     pub all_selected: usize,
 
-    /// Names of katas already added to the deck (for marking in All Katas tab)
+    /// Names of katas already added to the deck
     pub kata_ids_in_deck: HashSet<String>,
+
+    // Search (for All Katas tab)
+    pub search_mode: bool,
+    pub search_query: String,
+
+    // Category filtering (for All Katas tab)
+    pub category_filter_mode: bool,
+    pub available_categories: Vec<String>,
+    pub selected_categories: Vec<String>,
+    pub category_selected_index: usize,
+
+    // Sorting (for All Katas tab)
+    pub sort_mode: SortMode,
 }
 
 impl Library {
@@ -86,15 +132,27 @@ impl Library {
         let deck_katas = repo.get_all_katas()?;
 
         let kata_ids_in_deck = deck_katas.iter().map(|k| k.name.clone()).collect();
+        let available_categories = get_unique_categories(&available_katas);
 
-        Ok(Self {
+        let mut library = Self {
             active_tab: LibraryTab::MyDeck,
             deck_katas,
             deck_selected: 0,
-            available_katas,
+            all_available_katas: available_katas.clone(),
+            filtered_available_katas: available_katas,
             all_selected: 0,
             kata_ids_in_deck,
-        })
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories,
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
+        };
+
+        library.apply_filters();
+        Ok(library)
     }
 
     /// Renders the library screen with tabs and tabbed content.
@@ -109,10 +167,10 @@ impl Library {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),   // Tab bar
-                Constraint::Length(3),   // Stats
-                Constraint::Min(10),     // Content
-                Constraint::Length(3),   // Footer
+                Constraint::Length(3), // Tab bar
+                Constraint::Length(3), // Stats
+                Constraint::Min(10),   // Content
+                Constraint::Length(3), // Footer
             ])
             .split(frame.size());
 
@@ -121,7 +179,13 @@ impl Library {
 
         match self.active_tab {
             LibraryTab::MyDeck => self.render_my_deck(frame, chunks[2]),
-            LibraryTab::AllKatas => self.render_all_katas(frame, chunks[2]),
+            LibraryTab::AllKatas => {
+                if self.category_filter_mode {
+                    self.render_category_selector(frame, chunks[2]);
+                } else {
+                    self.render_all_katas(frame, chunks[2]);
+                }
+            }
         }
 
         self.render_footer(frame, chunks[3]);
@@ -130,10 +194,7 @@ impl Library {
     fn render_tabs(&self, frame: &mut Frame, area: Rect) {
         let tab_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(50),
-                Constraint::Percentage(50),
-            ])
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(area);
 
         // My Deck tab
@@ -162,7 +223,7 @@ impl Library {
             Style::default().fg(Color::White)
         };
 
-        let all_tab = Paragraph::new(format!(" All Katas ({}) ", self.available_katas.len()))
+        let all_tab = Paragraph::new(format!(" All Katas ({}) ", self.all_available_katas.len()))
             .style(all_style)
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::ALL));
@@ -172,16 +233,35 @@ impl Library {
     fn render_stats(&self, frame: &mut Frame, area: Rect) {
         let stats_text = match self.active_tab {
             LibraryTab::MyDeck => {
-                let due_count = self.deck_katas.iter()
+                let due_count = self
+                    .deck_katas
+                    .iter()
                     .filter(|k| k.next_review_at.map_or(true, |t| t <= Utc::now()))
                     .count();
-                format!("Due today: {} | Total in deck: {}", due_count, self.deck_katas.len())
+                format!(
+                    "Due today: {} | Total in deck: {}",
+                    due_count,
+                    self.deck_katas.len()
+                )
             }
             LibraryTab::AllKatas => {
-                let in_deck_count = self.available_katas.iter()
-                    .filter(|k| self.kata_ids_in_deck.contains(&k.name))
-                    .count();
-                format!("Total katas: {} | In your deck: {}", self.available_katas.len(), in_deck_count)
+                let mut parts = vec![format!(
+                    "Showing {} of {}",
+                    self.filtered_available_katas.len(),
+                    self.all_available_katas.len()
+                )];
+
+                if !self.search_query.is_empty() {
+                    parts.push(format!("Search: {}", self.search_query));
+                }
+
+                if !self.selected_categories.is_empty() {
+                    parts.push(format!("Tags: {}", self.selected_categories.join(", ")));
+                }
+
+                parts.push(format!("Sort: {}", self.sort_mode.as_str()));
+
+                parts.join(" | ")
             }
         };
 
@@ -205,7 +285,8 @@ impl Library {
             .style(Style::default().add_modifier(Modifier::BOLD))
             .bottom_margin(1);
 
-        let rows: Vec<Row> = self.deck_katas
+        let rows: Vec<Row> = self
+            .deck_katas
             .iter()
             .enumerate()
             .map(|(i, kata)| {
@@ -237,13 +318,16 @@ impl Library {
             })
             .collect();
 
-        let table = Table::new(rows, [
-            Constraint::Length(2),
-            Constraint::Percentage(40),
-            Constraint::Percentage(25),
-            Constraint::Percentage(20),
-            Constraint::Percentage(15),
-        ])
+        let table = Table::new(
+            rows,
+            [
+                Constraint::Length(2),
+                Constraint::Percentage(40),
+                Constraint::Percentage(25),
+                Constraint::Percentage(20),
+                Constraint::Percentage(15),
+            ],
+        )
         .header(header)
         .block(Block::default().borders(Borders::ALL).title(" My Deck "));
 
@@ -251,8 +335,13 @@ impl Library {
     }
 
     fn render_all_katas(&self, frame: &mut Frame, area: Rect) {
-        if self.available_katas.is_empty() {
-            let empty_msg = Paragraph::new("No katas found in exercises directory. Press 'n' to create one.")
+        if self.filtered_available_katas.is_empty() {
+            let msg = if self.all_available_katas.is_empty() {
+                "No katas found in exercises directory. Press 'n' to create one."
+            } else {
+                "No katas match your filters. Press 'c' to clear filters."
+            };
+            let empty_msg = Paragraph::new(msg)
                 .alignment(Alignment::Center)
                 .block(Block::default().borders(Borders::ALL).title(" All Katas "));
             frame.render_widget(empty_msg, area);
@@ -263,7 +352,8 @@ impl Library {
             .style(Style::default().add_modifier(Modifier::BOLD))
             .bottom_margin(1);
 
-        let rows: Vec<Row> = self.available_katas
+        let rows: Vec<Row> = self
+            .filtered_available_katas
             .iter()
             .enumerate()
             .map(|(i, kata)| {
@@ -297,17 +387,51 @@ impl Library {
             })
             .collect();
 
-        let table = Table::new(rows, [
-            Constraint::Length(2),
-            Constraint::Percentage(35),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(15),
-        ])
+        let table = Table::new(
+            rows,
+            [
+                Constraint::Length(2),
+                Constraint::Percentage(35),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(15),
+            ],
+        )
         .header(header)
         .block(Block::default().borders(Borders::ALL).title(" All Katas "));
 
         frame.render_widget(table, area);
+    }
+
+    fn render_category_selector(&self, frame: &mut Frame, area: Rect) {
+        let items: Vec<ListItem> = self
+            .available_categories
+            .iter()
+            .enumerate()
+            .map(|(i, category)| {
+                let is_selected = self.selected_categories.contains(category);
+                let checkbox = if is_selected { "[x]" } else { "[ ]" };
+                let mut style = if is_selected {
+                    Style::default().fg(Color::Cyan)
+                } else {
+                    Style::default()
+                };
+
+                if i == self.category_selected_index {
+                    style = style.add_modifier(Modifier::BOLD).fg(Color::Yellow);
+                }
+
+                ListItem::new(format!("{} {}", checkbox, category)).style(style)
+            })
+            .collect();
+
+        let list = List::new(items).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Select Categories (j/k to navigate, Space to toggle, Enter/Esc to close)"),
+        );
+
+        frame.render_widget(list, area);
     }
 
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
@@ -330,32 +454,44 @@ impl Library {
                 }
             }
             LibraryTab::AllKatas => {
-                if self.available_katas.is_empty() {
+                if self.search_mode {
+                    Line::from("Type to search | Enter/Esc: Done")
+                } else if self.category_filter_mode {
+                    Line::from("[j/k] Navigate | [Space] Toggle | [Enter/Esc] Done")
+                } else if self.filtered_available_katas.is_empty() {
                     Line::from(vec![
                         Span::raw("[Tab] Switch tab  "),
+                        Span::raw("[/] Search  "),
+                        Span::raw("[t] Filter  "),
+                        Span::raw("[c] Clear filters  "),
                         Span::raw("[n] Create New  "),
                         Span::raw("[Esc] Back"),
                     ])
                 } else {
-                    let selected_kata = &self.available_katas[self.all_selected];
+                    let selected_kata = &self.filtered_available_katas[self.all_selected];
                     let can_add = !self.kata_ids_in_deck.contains(&selected_kata.name);
 
                     if can_add {
                         Line::from(vec![
-                            Span::raw("[Tab] Switch tab  "),
+                            Span::raw("[Tab] Switch  "),
                             Span::raw("[j/k] Navigate  "),
-                            Span::raw("[a] Add to deck  "),
+                            Span::raw("[a] Add  "),
+                            Span::raw("[/] Search  "),
+                            Span::raw("[t] Filter  "),
+                            Span::raw("[s] Sort  "),
+                            Span::raw("[c] Clear  "),
                             Span::raw("[Enter] Details  "),
-                            Span::raw("[n] Create New  "),
                             Span::raw("[Esc] Back"),
                         ])
                     } else {
                         Line::from(vec![
-                            Span::raw("[Tab] Switch tab  "),
+                            Span::raw("[Tab] Switch  "),
                             Span::raw("[j/k] Navigate  "),
                             Span::styled("Already in deck  ", Style::default().fg(Color::Gray)),
+                            Span::raw("[/] Search  "),
+                            Span::raw("[t] Filter  "),
+                            Span::raw("[s] Sort  "),
                             Span::raw("[Enter] Details  "),
-                            Span::raw("[n] Create New  "),
                             Span::raw("[Esc] Back"),
                         ])
                     }
@@ -363,7 +499,10 @@ impl Library {
             }
         };
 
-        let footer = Paragraph::new(footer_text).block(Block::default().borders(Borders::ALL));
+        let footer = Paragraph::new(footer_text)
+            .block(Block::default().borders(Borders::ALL))
+            .alignment(Alignment::Center);
+
         frame.render_widget(footer, area);
     }
 
@@ -380,10 +519,24 @@ impl Library {
     /// - `k` or `Up`: Move selection up
     /// - `a`: Add selected kata to deck (All Katas tab only)
     /// - `d`: Remove selected kata from deck (My Deck tab only)
+    /// - `/`: Activate search mode (All Katas tab only)
+    /// - `t`: Open category filter selector (All Katas tab only)
+    /// - `s`: Cycle sort modes (All Katas tab only)
+    /// - `c`: Clear all filters (All Katas tab only)
     /// - `n`: Create a new kata
     /// - `Enter`: View details of selected kata (All Katas tab only)
-    /// - `Esc`: Return to dashboard
+    /// - `Esc`: Return to dashboard or exit current mode
     pub fn handle_input(&mut self, code: KeyCode) -> LibraryAction {
+        // Handle search mode (All Katas tab)
+        if self.active_tab == LibraryTab::AllKatas && self.search_mode {
+            return self.handle_search_input(code);
+        }
+
+        // Handle category filter mode (All Katas tab)
+        if self.active_tab == LibraryTab::AllKatas && self.category_filter_mode {
+            return self.handle_category_filter_input(code);
+        }
+
         // Global keybindings that work in all tabs
         match code {
             KeyCode::Tab => {
@@ -432,13 +585,37 @@ impl Library {
     }
 
     fn handle_all_katas_input(&mut self, code: KeyCode) -> LibraryAction {
-        if self.available_katas.is_empty() {
+        // Handle global All Katas keybindings (work even if list is empty)
+        match code {
+            KeyCode::Char('/') => {
+                self.search_mode = true;
+                return LibraryAction::None;
+            }
+            KeyCode::Char('t') => {
+                self.category_filter_mode = true;
+                return LibraryAction::None;
+            }
+            KeyCode::Char('s') => {
+                self.sort_mode = self.sort_mode.next();
+                self.apply_filters();
+                return LibraryAction::None;
+            }
+            KeyCode::Char('c') => {
+                self.search_query.clear();
+                self.selected_categories.clear();
+                self.apply_filters();
+                return LibraryAction::None;
+            }
+            _ => {}
+        }
+
+        if self.filtered_available_katas.is_empty() {
             return LibraryAction::None;
         }
 
         match code {
             KeyCode::Char('j') | KeyCode::Down => {
-                if self.all_selected < self.available_katas.len() - 1 {
+                if self.all_selected < self.filtered_available_katas.len() - 1 {
                     self.all_selected += 1;
                 }
                 LibraryAction::None
@@ -450,7 +627,7 @@ impl Library {
                 LibraryAction::None
             }
             KeyCode::Char('a') => {
-                let selected_kata = &self.available_katas[self.all_selected];
+                let selected_kata = &self.filtered_available_katas[self.all_selected];
                 if self.kata_ids_in_deck.contains(&selected_kata.name) {
                     LibraryAction::None
                 } else {
@@ -458,10 +635,123 @@ impl Library {
                 }
             }
             KeyCode::Enter => {
-                let selected_kata = self.available_katas[self.all_selected].clone();
+                let selected_kata = self.filtered_available_katas[self.all_selected].clone();
                 LibraryAction::ViewDetails(selected_kata)
             }
             _ => LibraryAction::None,
+        }
+    }
+
+    fn handle_search_input(&mut self, code: KeyCode) -> LibraryAction {
+        match code {
+            KeyCode::Char(c) => {
+                self.search_query.push(c);
+                self.apply_filters();
+                LibraryAction::None
+            }
+            KeyCode::Backspace => {
+                self.search_query.pop();
+                self.apply_filters();
+                LibraryAction::None
+            }
+            KeyCode::Enter | KeyCode::Esc => {
+                self.search_mode = false;
+                LibraryAction::None
+            }
+            _ => LibraryAction::None,
+        }
+    }
+
+    fn handle_category_filter_input(&mut self, code: KeyCode) -> LibraryAction {
+        match code {
+            KeyCode::Char('j') | KeyCode::Down => {
+                if self.category_selected_index < self.available_categories.len() - 1 {
+                    self.category_selected_index += 1;
+                }
+                LibraryAction::None
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                if self.category_selected_index > 0 {
+                    self.category_selected_index -= 1;
+                }
+                LibraryAction::None
+            }
+            KeyCode::Char(' ') => {
+                let category = self.available_categories[self.category_selected_index].clone();
+                if let Some(pos) = self.selected_categories.iter().position(|c| c == &category) {
+                    self.selected_categories.remove(pos);
+                } else {
+                    self.selected_categories.push(category);
+                }
+                self.apply_filters();
+                LibraryAction::None
+            }
+            KeyCode::Enter | KeyCode::Esc => {
+                self.category_filter_mode = false;
+                LibraryAction::None
+            }
+            _ => LibraryAction::None,
+        }
+    }
+
+    fn apply_filters(&mut self) {
+        // Start with all katas
+        let mut filtered = self.all_available_katas.clone();
+
+        // Apply search filter with fuzzy matching
+        if !self.search_query.is_empty() {
+            let matcher = SkimMatcherV2::default();
+            let query = &self.search_query;
+
+            // Filter and score
+            let mut scored: Vec<(AvailableKata, i64)> = filtered
+                .into_iter()
+                .filter_map(|kata| {
+                    let name_score = matcher.fuzzy_match(&kata.name, query).unwrap_or(0);
+                    let desc_score = matcher.fuzzy_match(&kata.description, query).unwrap_or(0);
+                    let max_score = name_score.max(desc_score);
+
+                    if max_score > 0 {
+                        Some((kata, max_score))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            // Sort by score (highest first)
+            scored.sort_by(|a, b| b.1.cmp(&a.1));
+
+            filtered = scored.into_iter().map(|(kata, _)| kata).collect();
+        }
+
+        // Apply category filter
+        if !self.selected_categories.is_empty() {
+            filtered.retain(|kata| self.selected_categories.contains(&kata.category));
+        }
+
+        // Apply sorting
+        match self.sort_mode {
+            SortMode::Name => {
+                filtered.sort_by(|a, b| a.name.cmp(&b.name));
+            }
+            SortMode::Difficulty => {
+                filtered.sort_by(|a, b| b.base_difficulty.cmp(&a.base_difficulty));
+            }
+            SortMode::Category => {
+                filtered.sort_by(|a, b| a.category.cmp(&b.category));
+            }
+            SortMode::DateAdded => {
+                // For available katas (not in DB), we can't sort by date added
+                // So we'll just keep the original order
+            }
+        }
+
+        self.filtered_available_katas = filtered;
+
+        // Reset selection if out of bounds
+        if self.all_selected >= self.filtered_available_katas.len() {
+            self.all_selected = self.filtered_available_katas.len().saturating_sub(1);
         }
     }
 
@@ -492,7 +782,7 @@ impl Library {
         self.deck_katas = repo.get_all_katas()?;
 
         // Adjust selected index if it's out of bounds
-        if self.deck_selected >= self.deck_katas.len() && self.deck_katas.len() > 0 {
+        if self.deck_selected >= self.deck_katas.len() && !self.deck_katas.is_empty() {
             self.deck_selected = self.deck_katas.len() - 1;
         }
 
@@ -580,9 +870,17 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
-            available_katas: vec![],
+            all_available_katas: vec![],
+            filtered_available_katas: vec![],
             all_selected: 0,
             kata_ids_in_deck: HashSet::new(),
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories: vec![],
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
         };
 
         library.handle_input(KeyCode::Tab);
@@ -594,7 +892,6 @@ mod tests {
 
     #[test]
     fn test_library_handle_input_navigation_my_deck() {
-        use crate::db::repo::Kata;
         use chrono::Utc;
 
         let mut library = Library {
@@ -614,6 +911,14 @@ mod tests {
                     current_ease_factor: 2.5,
                     current_interval_days: 1,
                     current_repetition_count: 0,
+                    fsrs_stability: 1.0,
+                    fsrs_difficulty: 1.0,
+                    fsrs_elapsed_days: 0,
+                    fsrs_scheduled_days: 0,
+                    fsrs_reps: 0,
+                    fsrs_lapses: 0,
+                    fsrs_state: "New".to_string(),
+                    scheduler_type: "SM2".to_string(),
                     created_at: Utc::now(),
                 },
                 Kata {
@@ -630,13 +935,29 @@ mod tests {
                     current_ease_factor: 2.5,
                     current_interval_days: 1,
                     current_repetition_count: 0,
+                    fsrs_stability: 1.0,
+                    fsrs_difficulty: 1.0,
+                    fsrs_elapsed_days: 0,
+                    fsrs_scheduled_days: 0,
+                    fsrs_reps: 0,
+                    fsrs_lapses: 0,
+                    fsrs_state: "New".to_string(),
+                    scheduler_type: "SM2".to_string(),
                     created_at: Utc::now(),
                 },
             ],
             deck_selected: 0,
-            available_katas: vec![],
+            all_available_katas: vec![],
+            filtered_available_katas: vec![],
             all_selected: 0,
             kata_ids_in_deck: HashSet::new(),
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories: vec![],
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
         };
 
         library.handle_input(KeyCode::Char('j'));
@@ -648,28 +969,38 @@ mod tests {
 
     #[test]
     fn test_library_handle_input_navigation_all_katas() {
+        let katas = vec![
+            AvailableKata {
+                name: "kata1".to_string(),
+                category: "test".to_string(),
+                base_difficulty: 1,
+                description: "Test".to_string(),
+                dependencies: vec![],
+            },
+            AvailableKata {
+                name: "kata2".to_string(),
+                category: "test".to_string(),
+                base_difficulty: 2,
+                description: "Test".to_string(),
+                dependencies: vec![],
+            },
+        ];
+
         let mut library = Library {
             active_tab: LibraryTab::AllKatas,
             deck_katas: vec![],
             deck_selected: 0,
-            available_katas: vec![
-                AvailableKata {
-                    name: "kata1".to_string(),
-                    category: "test".to_string(),
-                    base_difficulty: 1,
-                    description: "Test".to_string(),
-                    dependencies: vec![],
-                },
-                AvailableKata {
-                    name: "kata2".to_string(),
-                    category: "test".to_string(),
-                    base_difficulty: 2,
-                    description: "Test".to_string(),
-                    dependencies: vec![],
-                },
-            ],
+            all_available_katas: katas.clone(),
+            filtered_available_katas: katas,
             all_selected: 0,
             kata_ids_in_deck: HashSet::new(),
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories: vec!["test".to_string()],
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
         };
 
         library.handle_input(KeyCode::Char('j'));
@@ -681,19 +1012,29 @@ mod tests {
 
     #[test]
     fn test_library_handle_input_add_kata() {
+        let katas = vec![AvailableKata {
+            name: "test_kata".to_string(),
+            category: "test".to_string(),
+            base_difficulty: 3,
+            description: "Test".to_string(),
+            dependencies: vec![],
+        }];
+
         let mut library = Library {
             active_tab: LibraryTab::AllKatas,
             deck_katas: vec![],
             deck_selected: 0,
-            available_katas: vec![AvailableKata {
-                name: "test_kata".to_string(),
-                category: "test".to_string(),
-                base_difficulty: 3,
-                description: "Test".to_string(),
-                dependencies: vec![],
-            }],
+            all_available_katas: katas.clone(),
+            filtered_available_katas: katas,
             all_selected: 0,
             kata_ids_in_deck: HashSet::new(),
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories: vec!["test".to_string()],
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
         };
 
         match library.handle_input(KeyCode::Char('a')) {
@@ -708,9 +1049,17 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
-            available_katas: vec![],
+            all_available_katas: vec![],
+            filtered_available_katas: vec![],
             all_selected: 0,
             kata_ids_in_deck: HashSet::new(),
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories: vec![],
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
         };
 
         match library.handle_input(KeyCode::Esc) {
@@ -725,9 +1074,17 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
-            available_katas: vec![],
+            all_available_katas: vec![],
+            filtered_available_katas: vec![],
             all_selected: 0,
             kata_ids_in_deck: HashSet::new(),
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories: vec![],
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
         };
 
         library.mark_as_added("test_kata");
@@ -740,9 +1097,17 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
-            available_katas: vec![],
+            all_available_katas: vec![],
+            filtered_available_katas: vec![],
             all_selected: 0,
             kata_ids_in_deck: HashSet::from_iter(vec!["test_kata".to_string()]),
+            search_mode: false,
+            search_query: String::new(),
+            category_filter_mode: false,
+            available_categories: vec![],
+            selected_categories: Vec::new(),
+            category_selected_index: 0,
+            sort_mode: SortMode::Name,
         };
 
         library.mark_as_removed("test_kata");
@@ -767,10 +1132,18 @@ mod tests {
         // Add enough hours to ensure we cross into the next day
         let tomorrow = Utc::now() + Duration::hours(25);
         let result = format_due_date(Some(tomorrow));
-        assert!(result == "Tomorrow" || result == "1d", "Expected 'Tomorrow' or '1d', got '{}'", result);
+        assert!(
+            result == "Tomorrow" || result == "1d",
+            "Expected 'Tomorrow' or '1d', got '{}'",
+            result
+        );
 
         let in_5_days = Utc::now() + Duration::days(5) + Duration::hours(1);
         let result = format_due_date(Some(in_5_days));
-        assert!(result == "5d" || result == "4d", "Expected '5d' or '4d', got '{}'", result);
+        assert!(
+            result == "5d" || result == "4d",
+            "Expected '5d' or '4d', got '{}'",
+            result
+        );
     }
 }

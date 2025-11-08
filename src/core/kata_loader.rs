@@ -76,6 +76,26 @@ pub fn load_available_katas() -> Result<Vec<AvailableKata>> {
     Ok(katas)
 }
 
+/// Extracts all unique categories from a list of katas.
+///
+/// # Arguments
+///
+/// * `katas` - Slice of available katas
+///
+/// # Returns
+///
+/// Sorted vector of unique category strings
+pub fn get_unique_categories(katas: &[AvailableKata]) -> Vec<String> {
+    let mut categories: Vec<String> = katas
+        .iter()
+        .map(|k| k.category.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+    categories.sort();
+    categories
+}
+
 fn load_kata_from_manifest(manifest_path: &Path) -> Result<AvailableKata> {
     let content = fs::read_to_string(manifest_path).context("failed to read manifest file")?;
 
