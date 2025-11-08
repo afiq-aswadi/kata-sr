@@ -123,10 +123,19 @@ impl Library {
 
                 let difficulty_stars = difficulty_stars(kata.base_difficulty);
 
+                // Display tags as comma-separated list, fallback to category if no tags
+                let tags_str = if !kata.tags.is_empty() {
+                    kata.tags.join(", ")
+                } else if !kata.category.is_empty() {
+                    kata.category.clone()
+                } else {
+                    "—".to_string()
+                };
+
                 let mut row = Row::new(vec![
                     status.to_string(),
                     kata.name.clone(),
-                    kata.category.clone(),
+                    tags_str,
                     difficulty_stars,
                 ]);
 
@@ -303,6 +312,7 @@ mod tests {
                 AvailableKata {
                     name: "kata1".to_string(),
                     category: "test".to_string(),
+                    tags: vec![],
                     base_difficulty: 1,
                     description: "Test".to_string(),
                     dependencies: vec![],
@@ -310,6 +320,7 @@ mod tests {
                 AvailableKata {
                     name: "kata2".to_string(),
                     category: "test".to_string(),
+                    tags: vec![],
                     base_difficulty: 2,
                     description: "Test".to_string(),
                     dependencies: vec![],
@@ -332,6 +343,7 @@ mod tests {
             available_katas: vec![AvailableKata {
                 name: "test_kata".to_string(),
                 category: "test".to_string(),
+                tags: vec![],
                 base_difficulty: 3,
                 description: "Test".to_string(),
                 dependencies: vec![],

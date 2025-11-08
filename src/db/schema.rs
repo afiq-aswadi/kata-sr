@@ -90,6 +90,23 @@ CREATE TABLE IF NOT EXISTS daily_stats (
 );
 "#;
 
+/// SQL migration for creating the kata_tags table.
+///
+/// Manages many-to-many relationships between katas and tags.
+/// Replaces the single category field with flexible tagging.
+const MIGRATION_KATA_TAGS: &str = r#"
+CREATE TABLE IF NOT EXISTS kata_tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kata_id INTEGER NOT NULL,
+    tag TEXT NOT NULL,
+    FOREIGN KEY (kata_id) REFERENCES katas(id) ON DELETE CASCADE,
+    UNIQUE(kata_id, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_kata_tags_tag ON kata_tags(tag);
+CREATE INDEX IF NOT EXISTS idx_kata_tags_kata_id ON kata_tags(kata_id);
+"#;
+
 /// Runs all database migrations.
 ///
 /// Creates all tables and indexes if they don't exist. Safe to call
@@ -114,6 +131,35 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     conn.execute_batch(MIGRATION_KATA_DEPENDENCIES)?;
     conn.execute_batch(MIGRATION_SESSIONS)?;
     conn.execute_batch(MIGRATION_DAILY_STATS)?;
+    conn.execute_batch(MIGRATION_KATA_TAGS)?;
+    migrate_categories_to_tags(conn)?;
+    Ok(())
+}
+
+/// Migrates existing category values to the kata_tags table.
+///
+/// This is a one-time migration that:
+/// - Reads all katas with non-empty category values
+/// - Creates corresponding tag entries in kata_tags
+/// - Preserves the category field for backward compatibility
+///
+/// Safe to run multiple times (uses INSERT OR IGNORE).
+pub fn migrate_categories_to_tags(conn: &Connection) -> Result<()> {
+    let mut stmt =
+        conn.prepare("SELECT id, category FROM katas WHERE category IS NOT NULL AND category != ''")?;
+
+    let katas: Vec<(i64, String)> = stmt
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<Vec<_>>>()?;
+
+    for (kata_id, category) in katas {
+        // Add category as a tag (INSERT OR IGNORE handles duplicates)
+        conn.execute(
+            "INSERT OR IGNORE INTO kata_tags (kata_id, tag) VALUES (?, ?)",
+            rusqlite::params![kata_id, category],
+        )?;
+    }
+
     Ok(())
 }
 
