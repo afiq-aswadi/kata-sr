@@ -324,6 +324,7 @@ impl App {
                 let action = library.handle_input(code);
                 match action {
                     LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
+                    LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
                     LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
                     LibraryAction::ViewDetails(kata) => {
                         let in_deck = library.kata_ids_in_deck.contains(&kata.name);
