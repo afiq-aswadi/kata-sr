@@ -4,6 +4,7 @@ pub mod dashboard;
 pub mod details;
 pub mod done;
 pub mod heatmap;
+pub mod heatmap_calendar;
 pub mod keybindings;
 pub mod library;
 pub mod practice;
