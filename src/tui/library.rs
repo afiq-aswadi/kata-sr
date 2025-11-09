@@ -86,6 +86,8 @@ pub struct Library {
     pub deck_katas: Vec<Kata>,
     /// Selected index in My Deck tab
     pub deck_selected: usize,
+    /// Scroll offset for My Deck tab (first visible row)
+    pub deck_scroll_offset: usize,
 
     /// All available katas from exercises (unfiltered)
     pub all_available_katas: Vec<AvailableKata>,
@@ -93,6 +95,8 @@ pub struct Library {
     pub filtered_available_katas: Vec<AvailableKata>,
     /// Selected index in All Katas tab (applies to filtered list)
     pub all_selected: usize,
+    /// Scroll offset for All Katas tab (first visible row)
+    pub all_scroll_offset: usize,
 
     /// Names of katas already added to the deck
     pub kata_ids_in_deck: HashSet<String>,
@@ -109,6 +113,8 @@ pub struct Library {
 
     // Sorting (for All Katas tab)
     pub sort_mode: SortMode,
+    /// Sort direction: true = ascending, false = descending
+    pub sort_ascending: bool,
 }
 
 impl Library {
@@ -138,9 +144,11 @@ impl Library {
             active_tab: LibraryTab::MyDeck,
             deck_katas,
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: available_katas.clone(),
             filtered_available_katas: available_katas,
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck,
             search_mode: false,
             search_query: String::new(),
@@ -149,10 +157,45 @@ impl Library {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         library.apply_filters();
         Ok(library)
+    }
+
+    /// Updates scroll offset to ensure the selected item is visible.
+    ///
+    /// # Arguments
+    ///
+    /// * `selected` - The currently selected index
+    /// * `scroll_offset` - The current scroll offset (will be updated)
+    /// * `visible_height` - The number of visible rows in the viewport
+    /// * `total_items` - Total number of items in the list
+    fn update_scroll_offset(
+        selected: usize,
+        scroll_offset: &mut usize,
+        visible_height: usize,
+        total_items: usize,
+    ) {
+        if total_items == 0 || visible_height == 0 {
+            return;
+        }
+
+        // If selected item is above the visible area, scroll up
+        if selected < *scroll_offset {
+            *scroll_offset = selected;
+        }
+        // If selected item is below the visible area, scroll down
+        else if selected >= *scroll_offset + visible_height {
+            *scroll_offset = selected.saturating_sub(visible_height - 1);
+        }
+
+        // Ensure scroll offset doesn't exceed bounds
+        let max_offset = total_items.saturating_sub(visible_height);
+        if *scroll_offset > max_offset {
+            *scroll_offset = max_offset;
+        }
     }
 
     /// Renders the library screen with tabs and tabbed content.
@@ -163,7 +206,7 @@ impl Library {
     /// - Stats bar showing tab-specific statistics
     /// - Content area showing table for active tab
     /// - Footer with tab-specific keybindings
-    pub fn render(&self, frame: &mut Frame) {
+    pub fn render(&mut self, frame: &mut Frame) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -259,7 +302,8 @@ impl Library {
                     parts.push(format!("Tags: {}", self.selected_categories.join(", ")));
                 }
 
-                parts.push(format!("Sort: {}", self.sort_mode.as_str()));
+                let sort_arrow = if self.sort_ascending { "↑" } else { "↓" };
+                parts.push(format!("Sort: {} {}", self.sort_mode.as_str(), sort_arrow));
 
                 parts.join(" | ")
             }
@@ -272,7 +316,7 @@ impl Library {
         frame.render_widget(paragraph, area);
     }
 
-    fn render_my_deck(&self, frame: &mut Frame, area: Rect) {
+    fn render_my_deck(&mut self, frame: &mut Frame, area: Rect) {
         if self.deck_katas.is_empty() {
             let empty_msg = Paragraph::new("No katas in your deck. Press Tab to browse All Katas.")
                 .alignment(Alignment::Center)
@@ -281,15 +325,30 @@ impl Library {
             return;
         }
 
+        // Calculate visible height: area height - top border - bottom border - header - header bottom margin
+        let visible_height = area.height.saturating_sub(4) as usize;
+
+        // Update scroll offset to keep selection visible
+        Self::update_scroll_offset(
+            self.deck_selected,
+            &mut self.deck_scroll_offset,
+            visible_height,
+            self.deck_katas.len(),
+        );
+
         let header = Row::new(vec!["", "Name", "Tags", "Due", "Difficulty"])
             .style(Style::default().add_modifier(Modifier::BOLD))
             .bottom_margin(1);
 
-        let rows: Vec<Row> = self
-            .deck_katas
+        // Only render visible rows
+        let end_index = (self.deck_scroll_offset + visible_height).min(self.deck_katas.len());
+        let visible_katas = &self.deck_katas[self.deck_scroll_offset..end_index];
+
+        let rows: Vec<Row> = visible_katas
             .iter()
             .enumerate()
-            .map(|(i, kata)| {
+            .map(|(offset_i, kata)| {
+                let i = self.deck_scroll_offset + offset_i;
                 let is_selected = i == self.deck_selected;
                 let prefix = if is_selected { ">" } else { " " };
 
@@ -343,7 +402,7 @@ impl Library {
         frame.render_widget(table, area);
     }
 
-    fn render_all_katas(&self, frame: &mut Frame, area: Rect) {
+    fn render_all_katas(&mut self, frame: &mut Frame, area: Rect) {
         if self.filtered_available_katas.is_empty() {
             let msg = if self.all_available_katas.is_empty() {
                 "No katas found in exercises directory. Press 'n' to create one."
@@ -357,15 +416,30 @@ impl Library {
             return;
         }
 
+        // Calculate visible height: area height - top border - bottom border - header - header bottom margin
+        let visible_height = area.height.saturating_sub(4) as usize;
+
+        // Update scroll offset to keep selection visible
+        Self::update_scroll_offset(
+            self.all_selected,
+            &mut self.all_scroll_offset,
+            visible_height,
+            self.filtered_available_katas.len(),
+        );
+
         let header = Row::new(vec!["", "Name", "Tags", "Difficulty", "In Deck"])
             .style(Style::default().add_modifier(Modifier::BOLD))
             .bottom_margin(1);
 
-        let rows: Vec<Row> = self
-            .filtered_available_katas
+        // Only render visible rows
+        let end_index = (self.all_scroll_offset + visible_height).min(self.filtered_available_katas.len());
+        let visible_katas = &self.filtered_available_katas[self.all_scroll_offset..end_index];
+
+        let rows: Vec<Row> = visible_katas
             .iter()
             .enumerate()
-            .map(|(i, kata)| {
+            .map(|(offset_i, kata)| {
+                let i = self.all_scroll_offset + offset_i;
                 let is_selected = i == self.all_selected;
                 let prefix = if is_selected { ">" } else { " " };
 
@@ -488,6 +562,7 @@ impl Library {
                             Span::raw("[/] Search  "),
                             Span::raw("[t] Filter  "),
                             Span::raw("[s] Sort  "),
+                            Span::raw("[r] Reverse  "),
                             Span::raw("[c] Clear  "),
                             Span::raw("[Enter] Details  "),
                             Span::raw("[Esc] Back"),
@@ -500,6 +575,7 @@ impl Library {
                             Span::raw("[/] Search  "),
                             Span::raw("[t] Filter  "),
                             Span::raw("[s] Sort  "),
+                            Span::raw("[r] Reverse  "),
                             Span::raw("[Enter] Details  "),
                             Span::raw("[Esc] Back"),
                         ])
@@ -606,6 +682,11 @@ impl Library {
             }
             KeyCode::Char('s') => {
                 self.sort_mode = self.sort_mode.next();
+                self.apply_filters();
+                return LibraryAction::None;
+            }
+            KeyCode::Char('r') => {
+                self.sort_ascending = !self.sort_ascending;
                 self.apply_filters();
                 return LibraryAction::None;
             }
@@ -742,13 +823,31 @@ impl Library {
         // Apply sorting
         match self.sort_mode {
             SortMode::Name => {
-                filtered.sort_by(|a, b| a.name.cmp(&b.name));
+                filtered.sort_by(|a, b| {
+                    if self.sort_ascending {
+                        a.name.cmp(&b.name)
+                    } else {
+                        b.name.cmp(&a.name)
+                    }
+                });
             }
             SortMode::Difficulty => {
-                filtered.sort_by(|a, b| b.base_difficulty.cmp(&a.base_difficulty));
+                filtered.sort_by(|a, b| {
+                    if self.sort_ascending {
+                        a.base_difficulty.cmp(&b.base_difficulty)
+                    } else {
+                        b.base_difficulty.cmp(&a.base_difficulty)
+                    }
+                });
             }
             SortMode::Category => {
-                filtered.sort_by(|a, b| a.category.cmp(&b.category));
+                filtered.sort_by(|a, b| {
+                    if self.sort_ascending {
+                        a.category.cmp(&b.category)
+                    } else {
+                        b.category.cmp(&a.category)
+                    }
+                });
             }
             SortMode::DateAdded => {
                 // For available katas (not in DB), we can't sort by date added
@@ -879,9 +978,11 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: vec![],
             filtered_available_katas: vec![],
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck: HashSet::new(),
             search_mode: false,
             search_query: String::new(),
@@ -890,6 +991,7 @@ mod tests {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         library.handle_input(KeyCode::Tab);
@@ -958,9 +1060,11 @@ mod tests {
                 },
             ],
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: vec![],
             filtered_available_katas: vec![],
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck: HashSet::new(),
             search_mode: false,
             search_query: String::new(),
@@ -969,6 +1073,7 @@ mod tests {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         library.handle_input(KeyCode::Char('j'));
@@ -1003,9 +1108,11 @@ mod tests {
             active_tab: LibraryTab::AllKatas,
             deck_katas: vec![],
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: katas.clone(),
             filtered_available_katas: katas,
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck: HashSet::new(),
             search_mode: false,
             search_query: String::new(),
@@ -1014,6 +1121,7 @@ mod tests {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         library.handle_input(KeyCode::Char('j'));
@@ -1038,9 +1146,11 @@ mod tests {
             active_tab: LibraryTab::AllKatas,
             deck_katas: vec![],
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: katas.clone(),
             filtered_available_katas: katas,
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck: HashSet::new(),
             search_mode: false,
             search_query: String::new(),
@@ -1049,6 +1159,7 @@ mod tests {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         match library.handle_input(KeyCode::Char('a')) {
@@ -1063,9 +1174,11 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: vec![],
             filtered_available_katas: vec![],
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck: HashSet::new(),
             search_mode: false,
             search_query: String::new(),
@@ -1074,6 +1187,7 @@ mod tests {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         match library.handle_input(KeyCode::Esc) {
@@ -1088,9 +1202,11 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: vec![],
             filtered_available_katas: vec![],
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck: HashSet::new(),
             search_mode: false,
             search_query: String::new(),
@@ -1099,6 +1215,7 @@ mod tests {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         library.mark_as_added("test_kata");
@@ -1111,9 +1228,11 @@ mod tests {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
             deck_selected: 0,
+            deck_scroll_offset: 0,
             all_available_katas: vec![],
             filtered_available_katas: vec![],
             all_selected: 0,
+            all_scroll_offset: 0,
             kata_ids_in_deck: HashSet::from_iter(vec!["test_kata".to_string()]),
             search_mode: false,
             search_query: String::new(),
@@ -1122,6 +1241,7 @@ mod tests {
             selected_categories: Vec::new(),
             category_selected_index: 0,
             sort_mode: SortMode::Name,
+            sort_ascending: true,
         };
 
         library.mark_as_removed("test_kata");
