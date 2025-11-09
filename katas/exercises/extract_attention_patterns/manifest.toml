@@ -8,5 +8,5 @@ Extract attention patterns from a transformer model's cache.
 Access the post-softmax attention weights from a specific layer using
 TransformerLens cache interface.
 """
-dependencies = ["transformerlens_hooks"]
+dependencies = ["transformerlens_run_with_cache"]
 tags = ["attention", "interpretability"]

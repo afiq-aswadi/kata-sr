@@ -1,0 +1,13 @@
+[kata]
+name = "transformerlens_selective_cache"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Use selective caching to reduce memory usage when running large models.
+
+Learn to use the names_filter parameter to cache only specific activations instead
+of all intermediate values. Essential for working with larger models and longer sequences.
+
+Key concepts: names_filter, lambda functions, memory optimization, activation filtering
+"""
+dependencies = ["transformerlens_run_with_cache"]

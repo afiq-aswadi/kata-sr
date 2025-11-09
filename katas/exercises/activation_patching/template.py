@@ -1,4 +1,4 @@
-"""Activation patching kata."""
+"""Implement activation patching for causal interventions."""
 
 import torch
 from transformer_lens import HookedTransformer
@@ -6,98 +6,33 @@ from transformer_lens import HookedTransformer
 
 def patch_residual_stream(
     model: HookedTransformer,
-    clean_text: str,
-    corrupted_text: str,
+    clean_prompt: str,
+    corrupted_prompt: str,
     layer: int,
     position: int,
 ) -> torch.Tensor:
-    """Patch residual stream from corrupted into clean run.
+    """Patch residual stream from clean run into corrupted run.
+
+    Run model twice: once on clean prompt, once on corrupted. During the
+    corrupted run, replace the residual stream at (layer, position) with
+    the value from the clean run. Return the patched output logits.
 
     Args:
         model: HookedTransformer model
-        clean_text: clean input text
-        corrupted_text: corrupted input text
-        layer: layer to patch at
-        position: position to patch
+        clean_prompt: the "correct" input
+        corrupted_prompt: the "incorrect" input to patch
+        layer: which layer to patch
+        position: which token position to patch
 
     Returns:
-        logits with patched activation
+        logits from corrupted run with patched activation
     """
-    # TODO:
-    # 1. Run corrupted text with cache
-    # 2. Create hook that replaces activation at (layer, position) with corrupted
-    # 3. Run clean text with hook
     # BLANK_START
-    pass
-    # BLANK_END
-
-
-def patch_attention_head(
-    model: HookedTransformer,
-    clean_text: str,
-    corrupted_text: str,
-    layer: int,
-    head: int,
-) -> torch.Tensor:
-    """Patch attention head output from corrupted into clean run.
-
-    Args:
-        model: HookedTransformer model
-        clean_text: clean input
-        corrupted_text: corrupted input
-        layer: layer number
-        head: head number
-
-    Returns:
-        logits with patched head
-    """
-    # TODO: patch specific attention head (hook_z)
-    # BLANK_START
-    pass
-    # BLANK_END
-
-
-def compute_patching_effect(
-    clean_logits: torch.Tensor,
-    corrupted_logits: torch.Tensor,
-    patched_logits: torch.Tensor,
-    target_token: int,
-) -> float:
-    """Compute how much patching recovered clean behavior.
-
-    Args:
-        clean_logits: logits from clean run
-        corrupted_logits: logits from corrupted run
-        patched_logits: logits from patched run
-        target_token: target token ID to measure
-
-    Returns:
-        recovery percentage (0 = no recovery, 1 = full recovery)
-    """
-    # TODO: compute (patched - corrupted) / (clean - corrupted) for target token
-    # BLANK_START
-    pass
-    # BLANK_END
-
-
-def scan_all_heads(
-    model: HookedTransformer,
-    clean_text: str,
-    corrupted_text: str,
-    target_token: int,
-) -> torch.Tensor:
-    """Scan all attention heads to find most important ones.
-
-    Args:
-        model: HookedTransformer model
-        clean_text: clean input
-        corrupted_text: corrupted input
-        target_token: target token ID
-
-    Returns:
-        tensor of shape (n_layers, n_heads) with patching effects
-    """
-    # TODO: iterate over all layers and heads, compute patching effect
-    # BLANK_START
-    pass
+    raise NotImplementedError(
+        "1. Run clean prompt and cache activations (use remove_batch_dim=False)\n"
+        "2. Extract clean residual at (layer, position): cache[...][0, position, :]\n"
+        "3. Create hook that replaces corrupted residual with clean value\n"
+        "4. Run corrupted prompt with hook and return logits\n"
+        "Hint: use model.run_with_hooks() with fwd_hooks parameter"
+    )
     # BLANK_END

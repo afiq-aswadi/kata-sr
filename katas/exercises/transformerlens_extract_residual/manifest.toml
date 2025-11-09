@@ -1,0 +1,13 @@
+[kata]
+name = "transformerlens_extract_residual"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Extract residual stream activations from a specific layer using the activation cache.
+
+Learn to navigate the TransformerLens activation naming convention and extract
+the residual stream - the main information flow through the transformer.
+
+Key concepts: cache indexing, residual stream, activation naming (blocks.{layer}.hook_resid_post)
+"""
+dependencies = ["transformerlens_run_with_cache"]

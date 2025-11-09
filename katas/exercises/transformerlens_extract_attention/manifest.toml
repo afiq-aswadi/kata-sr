@@ -1,0 +1,13 @@
+[kata]
+name = "transformerlens_extract_attention"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Extract attention output activations from a specific layer using the cache.
+
+Learn to access attention layer outputs (the 'z' values before the output projection).
+Understanding attention outputs is essential for analyzing what information heads extract.
+
+Key concepts: attention output, multi-head structure, cache navigation (blocks.{layer}.attn.hook_z)
+"""
+dependencies = ["transformerlens_run_with_cache"]
