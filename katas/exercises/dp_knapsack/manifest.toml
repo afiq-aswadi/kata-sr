@@ -1,0 +1,13 @@
+[kata]
+name = "dp_knapsack"
+tags = ["dynamic-programming", "algorithms", "micro"]
+base_difficulty = 3
+description = """
+Solve the 0/1 knapsack problem using dynamic programming.
+
+Each item can be taken or not taken (0 or 1). Build 2D table where
+dp[i][w] represents max value using first i items with capacity w.
+
+Key concepts: optimization, 2D DP, decision making, capacity constraints
+"""
+dependencies = ["dp_longest_subsequence"]

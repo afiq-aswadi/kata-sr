@@ -1,0 +1,13 @@
+[kata]
+name = "hook_patch_activation"
+tags = ["interpretability", "transformerlens", "micro"]
+base_difficulty = 3
+description = """
+Patch activations from one input into another using hooks.
+
+Combine caching and intervention: capture activation from source run,
+then inject it into target run. Core technique for causal analysis.
+
+Key concepts: activation patching, causal intervention, hook composition
+"""
+dependencies = ["hook_capture_activation", "hook_ablate_activation"]

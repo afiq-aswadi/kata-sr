@@ -1,0 +1,13 @@
+[kata]
+name = "attention_values"
+tags = ["attention", "transformers", "micro"]
+base_difficulty = 1
+description = """
+Weight and sum value vectors using attention weights.
+
+Third building block of attention: apply weights @ V to get the final output.
+This is a simple matrix multiplication, but understanding what it means is crucial.
+
+Key concepts: weighted sum, value vectors, attention output
+"""
+dependencies = ["attention_weights"]

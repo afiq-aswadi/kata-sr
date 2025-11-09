@@ -18,10 +18,9 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
-use crate::core::fsrs::{FsrsParams, Rating};
-use crate::db::repo::{KataRepository, Session};
+use crate::core::fsrs::FsrsParams;
+use crate::db::repo::KataRepository;
 use rusqlite::Result;
-use std::collections::HashMap;
 
 /// Training case for FSRS optimization.
 ///
