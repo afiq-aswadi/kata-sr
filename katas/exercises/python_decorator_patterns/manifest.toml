@@ -1,0 +1,16 @@
+[kata]
+name = "python_decorator_patterns"
+category = "python"
+base_difficulty = 1
+description = """
+Master Python decorators by implementing common decorator patterns.
+
+Implement:
+- Timing decorator that measures function execution time
+- Memoization decorator that caches function results
+- Retry decorator with exponential backoff for flaky operations
+- Lazy property decorator for deferred evaluation
+
+Key concepts: higher-order functions, functools.wraps, closures, decorator syntax
+"""
+dependencies = []
