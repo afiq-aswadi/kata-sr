@@ -1,0 +1,14 @@
+[kata]
+name = "patch_residual_stream"
+tags = ["interpretability", "activation-patching", "micro"]
+base_difficulty = 3
+description = """
+Measure the direct effect of patching on the residual stream.
+
+Patch clean activation into corrupted run and measure the immediate
+change in the residual stream at that position. Helps understand
+direct vs. indirect effects.
+
+Key concepts: residual stream, direct effects, activation delta
+"""
+dependencies = ["patch_single_position"]

@@ -1,0 +1,13 @@
+[kata]
+name = "dp_longest_subsequence"
+tags = ["dynamic-programming", "algorithms", "micro"]
+base_difficulty = 2
+description = """
+Find the length of the longest common subsequence (LCS).
+
+Classic 2D dynamic programming problem. Build up solution by
+comparing characters and taking max of previous subproblems.
+
+Key concepts: 2D DP table, optimal substructure, sequence alignment
+"""
+dependencies = ["dp_fibonacci"]

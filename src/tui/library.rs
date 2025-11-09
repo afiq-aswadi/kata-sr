@@ -307,10 +307,8 @@ impl Library {
                     Style::default()
                 };
 
-                // Display tags as comma-separated list, fallback to category if no tags
-                let tags_str = if !kata.tags.is_empty() {
-                    kata.tags.join(", ")
-                } else if !kata.category.is_empty() {
+                // Display category as tag
+                let tags_str = if !kata.category.is_empty() {
                     kata.category.clone()
                 } else {
                     "—".to_string()

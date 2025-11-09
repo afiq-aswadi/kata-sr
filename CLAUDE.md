@@ -55,12 +55,13 @@ A personal TUI tool for practicing coding patterns (multi-head attention, DFS/BF
 - Dashboard shows locked katas with 🔒 + explanation
 - Enables structured learning paths
 
-### 4. Kata Variations
+### 4. Atomic Kata Design
 
-- Base kata can have variations with different parameters/constraints
-- Example: "attention" → "attention_causal", "attention_cross"
-- Each variation scheduled independently
-- Linked in UI for easy discovery
+- Each kata focuses on a single function or concept
+- Related concepts are separate independent katas
+- Example: "attention" splits into "attention_scores", "attention_weights", "attention_output"
+- Katas are linked via dependencies to create learning paths
+- Enables focused practice and granular scheduling
 
 ### 5. Progress Analytics
 
@@ -113,7 +114,6 @@ kata-sr/
 
 - id, name, category, description
 - base_difficulty, current_difficulty
-- parent_kata_id, variation_params (for variations)
 - next_review_at (indexed!), last_reviewed_at
 - current_ease_factor, current_interval_days, current_repetition_count
 
@@ -186,19 +186,24 @@ On startup, `main.rs`:
 
 ```toml
 [kata]
-name = "multihead_attention"
+name = "attention_scores"
 category = "transformers"
-base_difficulty = 4
-description = "Implement scaled dot-product multi-head attention"
-dependencies = ["mlp"]
+base_difficulty = 3
+description = """
+Compute scaled attention scores from query and key matrices.
 
-[[variations]]
-name = "attention_causal"
-description = "Add causal masking"
-params = { mask_type = "causal" }
+Implement Q @ K.T / sqrt(d_k).
+"""
+dependencies = []  # Or ["softmax"] to create a dependency chain
 ```
 
-Metadata lives in SQLite (single source of truth). Manifests are imported via `kata-sr add`.
+**Atomic Kata Guidelines:**
+- Each kata implements exactly one function
+- Related concepts are separate katas (e.g., "attention_scores", "attention_weights", "attention_output")
+- Use `dependencies` to create structured learning paths
+- Templates use single `BLANK_START`/`BLANK_END` pair
+
+Metadata lives in SQLite (single source of truth). Manifests are imported via `kata-sr debug reimport`.
 
 ### Python Runner Protocol
 

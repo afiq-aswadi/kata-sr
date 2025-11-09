@@ -1,0 +1,13 @@
+[kata]
+name = "attention_qk_similarity"
+tags = ["attention", "transformers", "micro"]
+base_difficulty = 1
+description = """
+Compute scaled dot-product similarity between queries and keys.
+
+First building block of attention: compute Q @ K^T / sqrt(d_model).
+This produces attention scores before softmax.
+
+Key concepts: dot product, scaling factor, attention scores
+"""
+dependencies = []
