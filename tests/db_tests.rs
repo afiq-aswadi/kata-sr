@@ -308,7 +308,7 @@ fn test_get_success_counts() {
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
     // create sessions with different quality ratings (FSRS 1-4 scale)
-    // ratings >= 3 (Good/Easy) should count as success
+    // ratings >= 2 (Hard/Good/Easy) should count as success
     for rating in [3, 2, 1, 4, 3] {
         let session = NewSession {
             kata_id,
@@ -325,8 +325,8 @@ fn test_get_success_counts() {
     }
 
     let counts = repo.get_success_counts().unwrap();
-    // 3, 4, 3 count as success (3 total), 2 and 1 do not
-    assert_eq!(counts.get(&kata_id), Some(&3));
+    // 3, 2, 4, 3 count as success (4 total), 1 (Again) does not
+    assert_eq!(counts.get(&kata_id), Some(&4));
 }
 
 #[test]

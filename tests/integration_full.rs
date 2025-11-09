@@ -766,7 +766,7 @@ fn test_analytics_success_rate_calculation() {
 
     // create 7 sessions over 7 days with mixed success
     let now = Utc::now();
-    let ratings = [3, 3, 3, 1, 2, 3, 4]; // 5 successes (>=3 in FSRS) out of 7
+    let ratings = [3, 3, 3, 1, 2, 3, 4]; // 6 successes (>=2: Hard/Good/Easy) out of 7
 
     for (i, rating) in ratings.iter().enumerate() {
         let session_time = now - Duration::days(i as i64);
@@ -784,9 +784,9 @@ fn test_analytics_success_rate_calculation() {
         .unwrap();
     }
 
-    // 7-day success rate should be 5/7 ≈ 0.714
+    // 7-day success rate should be 6/7 ≈ 0.857
     let success_rate = repo.get_success_rate_last_n_days(7).unwrap();
-    assert!((success_rate - 5.0 / 7.0).abs() < 0.01);
+    assert!((success_rate - 6.0 / 7.0).abs() < 0.01);
 
     // verify through analytics
     let analytics = Analytics::new(&repo);

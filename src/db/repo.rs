@@ -386,7 +386,7 @@ impl KataRepository {
         let mut stmt = self.conn.prepare(
             "SELECT kata_id, COUNT(*) as count
              FROM sessions
-             WHERE quality_rating >= 3
+             WHERE quality_rating >= 2
              GROUP BY kata_id",
         )?;
 
@@ -582,7 +582,7 @@ impl KataRepository {
 
     /// Calculates success rate over the last n days.
     ///
-    /// Success is defined as quality_rating >= 3 (Good or Easy in FSRS).
+    /// Success is defined as quality_rating >= 2 (Hard, Good, or Easy in FSRS).
     /// Returns 0.0 if there are no completed sessions in the time period.
     ///
     /// # Arguments
@@ -605,7 +605,7 @@ impl KataRepository {
 
         let (total, successful): (i32, i32) = self.conn.query_row(
             "SELECT COUNT(*) as total,
-                    COALESCE(SUM(CASE WHEN quality_rating >= 3 THEN 1 ELSE 0 END), 0) as successful
+                    COALESCE(SUM(CASE WHEN quality_rating >= 2 THEN 1 ELSE 0 END), 0) as successful
              FROM sessions
              WHERE completed_at IS NOT NULL
                AND date(completed_at, 'unixepoch') >= ?1",
@@ -1332,8 +1332,8 @@ impl KataRepository {
 
         let (sessions_passed, sessions_failed): (i64, i64) = self.conn.query_row(
             "SELECT
-                 COALESCE(SUM(CASE WHEN quality_rating >= 3 THEN 1 ELSE 0 END), 0) as passed,
-                 COALESCE(SUM(CASE WHEN quality_rating < 3 THEN 1 ELSE 0 END), 0) as failed
+                 COALESCE(SUM(CASE WHEN quality_rating >= 2 THEN 1 ELSE 0 END), 0) as passed,
+                 COALESCE(SUM(CASE WHEN quality_rating < 2 THEN 1 ELSE 0 END), 0) as failed
              FROM sessions
              WHERE quality_rating IS NOT NULL",
             [],
@@ -1720,7 +1720,7 @@ mod tests {
         }
 
         let counts = repo.get_success_counts().unwrap();
-        assert_eq!(counts.get(&kata_id), Some(&2)); // 2 Good ratings (>= 3)
+        assert_eq!(counts.get(&kata_id), Some(&3)); // 3 successful recalls: 2 Good + 1 Hard (>= 2)
     }
 
     #[test]
@@ -2050,7 +2050,7 @@ mod tests {
             .unwrap();
 
         // create sessions with different quality ratings
-        // 2 successful (rating >= 3), 2 failed (rating < 3) in FSRS
+        // 3 successful (rating >= 2: Hard/Good/Easy), 1 failed (rating < 2: Again) in FSRS
         for rating in [3, 4, 1, 2] { // FSRS: Good, Easy, Again, Hard
             let session = NewSession {
                 kata_id,
@@ -2067,7 +2067,7 @@ mod tests {
         }
 
         let rate = repo.get_success_rate_last_n_days(7).unwrap();
-        assert_eq!(rate, 0.5);
+        assert_eq!(rate, 0.75); // 3 out of 4 are successful
     }
 
     #[test]

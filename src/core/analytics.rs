@@ -29,7 +29,7 @@ impl<'a> Analytics<'a> {
     ///
     /// Aggregates all sessions completed on the given date, calculating:
     /// - Total reviews and successes
-    /// - Success rate (quality_rating >= 3, i.e., Good/Easy in FSRS)
+    /// - Success rate (quality_rating >= 2, i.e., Hard/Good/Easy in FSRS)
     /// - Streak up to this date
     /// - Category breakdown (JSON)
     ///
@@ -45,7 +45,7 @@ impl<'a> Analytics<'a> {
         let total_reviews = sessions.len() as i32;
         let total_successes = sessions
             .iter()
-            .filter(|s| s.quality_rating.map(|r| r >= 3).unwrap_or(false))
+            .filter(|s| s.quality_rating.map(|r| r >= 2).unwrap_or(false))
             .count() as i32;
 
         let success_rate = if total_reviews > 0 {
