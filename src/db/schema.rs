@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     num_failed INTEGER,
     num_skipped INTEGER,
     duration_ms INTEGER,
-    quality_rating INTEGER CHECK(quality_rating >= 0 AND quality_rating <= 3),
+    quality_rating INTEGER CHECK(quality_rating >= 1 AND quality_rating <= 4),
     FOREIGN KEY (kata_id) REFERENCES katas(id)
 );
 
@@ -177,6 +177,9 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     // Migrate all katas to use FSRS-5 as the default scheduler
     migrate_to_fsrs(conn)?;
 
+    // Update sessions table constraint for FSRS 1-4 rating scale
+    update_sessions_rating_constraint(conn)?;
+
     Ok(())
 }
 
@@ -241,6 +244,72 @@ fn add_fsrs_columns_if_needed(conn: &Connection) -> Result<()> {
         // Add all FSRS columns at once
         conn.execute_batch(MIGRATION_ADD_FSRS_COLUMNS)?;
     }
+
+    Ok(())
+}
+
+/// Updates the sessions table constraint to support FSRS 1-4 rating scale.
+///
+/// SQLite doesn't allow modifying CHECK constraints, so we need to recreate
+/// the table. This migration:
+/// 1. Creates a new table with the updated constraint (1-4 instead of 0-3)
+/// 2. Copies all existing data
+/// 3. Drops the old table
+/// 4. Renames the new table
+///
+/// Safe to run multiple times - checks if migration is needed first.
+fn update_sessions_rating_constraint(conn: &Connection) -> Result<()> {
+    // Check if the table already has the new constraint by looking at the schema
+    let schema: String = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='sessions'",
+        [],
+        |row| row.get(0),
+    )?;
+
+    // If the schema already contains "quality_rating >= 1", migration is not needed
+    if schema.contains("quality_rating >= 1") {
+        return Ok(());
+    }
+
+    // Recreate the table with the new constraint
+    conn.execute_batch(
+        r#"
+        -- Create new table with updated constraint
+        CREATE TABLE IF NOT EXISTS sessions_new (
+            id INTEGER PRIMARY KEY,
+            kata_id INTEGER NOT NULL,
+            started_at INTEGER NOT NULL,
+            completed_at INTEGER,
+            test_results_json TEXT,
+            num_passed INTEGER,
+            num_failed INTEGER,
+            num_skipped INTEGER,
+            duration_ms INTEGER,
+            quality_rating INTEGER CHECK(quality_rating >= 1 AND quality_rating <= 4),
+            FOREIGN KEY (kata_id) REFERENCES katas(id)
+        );
+
+        -- Copy existing data
+        INSERT INTO sessions_new
+        SELECT id, kata_id, started_at, completed_at, test_results_json,
+               num_passed, num_failed, num_skipped, duration_ms,
+               CASE
+                   WHEN quality_rating IS NULL THEN NULL
+                   ELSE quality_rating + 1
+               END as quality_rating
+        FROM sessions;
+
+        -- Drop old table
+        DROP TABLE sessions;
+
+        -- Rename new table
+        ALTER TABLE sessions_new RENAME TO sessions;
+
+        -- Recreate indexes
+        CREATE INDEX IF NOT EXISTS idx_sessions_kata ON sessions(kata_id);
+        CREATE INDEX IF NOT EXISTS idx_sessions_completed ON sessions(completed_at);
+        "#,
+    )?;
 
     Ok(())
 }

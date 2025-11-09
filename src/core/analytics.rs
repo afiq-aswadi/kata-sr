@@ -210,7 +210,7 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -248,7 +248,7 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -289,7 +289,7 @@ mod tests {
                 num_failed: Some(0),
                 num_skipped: Some(0),
                 duration_ms: Some(100),
-                quality_rating: Some(2), // Good
+                quality_rating: Some(3), // Good (FSRS)
             })?;
         }
 
@@ -303,7 +303,7 @@ mod tests {
             num_failed: Some(3),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(0), // Again
+            quality_rating: Some(1), // Again (FSRS)
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -347,7 +347,7 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -395,7 +395,7 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })?;
 
         repo.create_session(&NewSession {
@@ -407,7 +407,7 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })?;
 
         let analytics = Analytics::new(&repo);

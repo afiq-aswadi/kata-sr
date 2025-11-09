@@ -104,11 +104,12 @@ fn test_dashboard_filters_katas_by_due_date() {
     let katas = repo.get_all_katas().unwrap();
     let kata_id = katas[0].id;
 
-    let mut state = katas[0].sm2_state();
-    state.update(kata_sr::core::scheduler::QualityRating::Good);
+    let mut card = katas[0].fsrs_card();
+    let params = kata_sr::core::fsrs::FsrsParams::default();
+    card.schedule(kata_sr::core::fsrs::Rating::Good, &params, Utc::now());
 
     let future_review = Utc::now() + Duration::days(5);
-    repo.update_kata_after_review(kata_id, &state, future_review, Utc::now())
+    repo.update_kata_after_fsrs_review(kata_id, &card, future_review, Utc::now())
         .unwrap();
 
     // dashboard should only show 2 katas due
@@ -141,7 +142,7 @@ fn test_dashboard_shows_stats_after_reviews() {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
     }
@@ -443,15 +444,16 @@ fn test_end_to_end_kata_workflow() {
             num_failed: Some(results.num_failed),
             num_skipped: Some(results.num_skipped),
             duration_ms: Some(results.duration_ms),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
 
         // update kata state
-        let mut state = kata.sm2_state();
-        let interval = state.update(kata_sr::core::scheduler::QualityRating::Good);
-        let next_review = Utc::now() + Duration::days(interval);
-        repo.update_kata_after_review(kata.id, &state, next_review, Utc::now())
+        let mut card = kata.fsrs_card();
+        let params = kata_sr::core::fsrs::FsrsParams::default();
+        card.schedule(kata_sr::core::fsrs::Rating::Good, &params, Utc::now());
+        let next_review = Utc::now() + Duration::days(card.scheduled_days as i64);
+        repo.update_kata_after_fsrs_review(kata.id, &card, next_review, Utc::now())
             .unwrap();
 
         // verify kata is no longer due

@@ -1,12 +1,12 @@
 //! Full end-to-end integration tests.
 //!
 //! These tests verify the complete workflow from database initialization
-//! through kata management, sessions, SM-2 scheduling, and dependency graphs.
+//! through kata management, sessions, FSRS-5 scheduling, and dependency graphs.
 //! All tests use in-memory databases to avoid filesystem side effects.
 
 use chrono::{Duration, Utc};
 use kata_sr::core::analytics::Analytics;
-use kata_sr::core::scheduler::QualityRating;
+use kata_sr::core::fsrs::{FsrsCard, FsrsParams, Rating};
 use kata_sr::db::repo::{KataRepository, NewKata, NewSession};
 use std::collections::HashMap;
 
@@ -33,12 +33,12 @@ fn test_end_to_end_kata_lifecycle() {
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
     assert!(kata_id > 0);
 
-    // verify kata was created with correct defaults
+    // verify kata was created with correct FSRS defaults
     let kata = repo.get_kata_by_id(kata_id).unwrap().unwrap();
     assert_eq!(kata.name, "attention_mechanism");
-    assert_eq!(kata.current_ease_factor, 2.5);
-    assert_eq!(kata.current_interval_days, 1);
-    assert_eq!(kata.current_repetition_count, 0);
+    assert_eq!(kata.fsrs_stability, 0.0);
+    assert_eq!(kata.fsrs_difficulty, 0.0);
+    assert_eq!(kata.fsrs_reps, 0);
     assert!(kata.next_review_at.is_none());
 
     // kata should be due for review (never reviewed)
@@ -46,7 +46,7 @@ fn test_end_to_end_kata_lifecycle() {
     assert_eq!(due.len(), 1);
     assert_eq!(due[0].id, kata_id);
 
-    // create a session with Good rating
+    // create a session with Good rating (3 in FSRS 1-4 scale)
     let session = NewSession {
         kata_id,
         started_at: Utc::now(),
@@ -56,19 +56,19 @@ fn test_end_to_end_kata_lifecycle() {
         num_failed: Some(0),
         num_skipped: Some(0),
         duration_ms: Some(3000),
-        quality_rating: Some(2),
+        quality_rating: Some(3), // FSRS Good = 3
     };
 
     let session_id = repo.create_session(&session).unwrap();
     assert!(session_id > 0);
 
-    // update SM-2 state
-    let mut state = kata.sm2_state();
-    let interval = state.update(QualityRating::Good);
-    assert_eq!(interval, 1);
+    // update FSRS state
+    let mut card = kata.fsrs_card();
+    let params = FsrsParams::default();
+    card.schedule(Rating::Good, &params, Utc::now());
 
-    let next_review = Utc::now() + Duration::days(interval);
-    repo.update_kata_after_review(kata_id, &state, next_review, Utc::now())
+    let next_review = Utc::now() + Duration::days(card.scheduled_days as i64);
+    repo.update_kata_after_fsrs_review(kata_id, &card, next_review, Utc::now())
         .unwrap();
 
     // verify kata is no longer due
@@ -76,19 +76,20 @@ fn test_end_to_end_kata_lifecycle() {
     assert_eq!(due.len(), 0);
 
     // but should be due after the interval
-    let future = Utc::now() + Duration::days(2);
+    // FSRS Good rating for new card schedules further out than SM-2
+    let future = Utc::now() + Duration::days(card.scheduled_days as i64 + 1);
     let due = repo.get_katas_due(future).unwrap();
     assert_eq!(due.len(), 1);
 }
 
 #[test]
-fn test_sm2_progression_through_multiple_reviews() {
+fn test_fsrs_progression_through_multiple_reviews() {
     let repo = setup_repo();
 
     let new_kata = NewKata {
         name: "test_kata".to_string(),
         category: "test".to_string(),
-        description: "SM-2 progression test".to_string(),
+        description: "FSRS-5 progression test".to_string(),
         base_difficulty: 2,
         parent_kata_id: None,
         variation_params: None,
@@ -97,14 +98,15 @@ fn test_sm2_progression_through_multiple_reviews() {
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
     let ratings = [
-        QualityRating::Good,
-        QualityRating::Good,
-        QualityRating::Good,
-        QualityRating::Hard,
-        QualityRating::Again,
+        Rating::Good,   // 3
+        Rating::Good,   // 3
+        Rating::Good,   // 3
+        Rating::Hard,   // 2
+        Rating::Again,  // 1
     ];
 
     let mut current_time = Utc::now();
+    let params = FsrsParams::default();
 
     for (i, rating) in ratings.iter().enumerate() {
         // create session
@@ -121,44 +123,43 @@ fn test_sm2_progression_through_multiple_reviews() {
         };
         repo.create_session(&session).unwrap();
 
-        // update state
+        // update FSRS state
         let kata = repo.get_kata_by_id(kata_id).unwrap().unwrap();
-        let mut state = kata.sm2_state();
-        let interval = state.update(*rating);
+        let mut card = kata.fsrs_card();
+        card.schedule(*rating, &params, current_time);
 
-        let next_review = current_time + Duration::days(interval);
-        repo.update_kata_after_review(kata_id, &state, next_review, current_time)
+        let next_review = current_time + Duration::days(card.scheduled_days as i64);
+        repo.update_kata_after_fsrs_review(kata_id, &card, next_review, current_time)
             .unwrap();
 
         // verify state after each review
         let kata = repo.get_kata_by_id(kata_id).unwrap().unwrap();
         match i {
             0 => {
-                assert_eq!(kata.current_interval_days, 1);
-                assert_eq!(kata.current_repetition_count, 1);
+                // First Good: should have stability and reps = 1
+                assert!(kata.fsrs_stability > 0.0);
+                assert_eq!(kata.fsrs_reps, 1);
             }
             1 => {
-                assert_eq!(kata.current_interval_days, 6);
-                assert_eq!(kata.current_repetition_count, 2);
+                // Second Good: stability increases, reps = 2
+                assert_eq!(kata.fsrs_reps, 2);
             }
             2 => {
-                assert_eq!(kata.current_interval_days, 15);
-                assert_eq!(kata.current_repetition_count, 3);
+                // Third Good: continued progression
+                assert_eq!(kata.fsrs_reps, 3);
             }
             3 => {
-                // Hard: minimal growth
-                assert_eq!(kata.current_repetition_count, 4);
-                assert!(kata.current_interval_days > 15);
+                // Hard: still progresses but slower
+                assert_eq!(kata.fsrs_reps, 4);
             }
             4 => {
-                // Again: reset
-                assert_eq!(kata.current_interval_days, 1);
-                assert_eq!(kata.current_repetition_count, 0);
+                // Again: lapses increases
+                assert_eq!(kata.fsrs_lapses, 1);
             }
             _ => {}
         }
 
-        current_time += Duration::days(interval);
+        current_time += Duration::days(card.scheduled_days as i64);
     }
 
     // verify we have 5 sessions recorded
@@ -220,7 +221,7 @@ fn test_dependency_graph_with_unlocking() {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
     }
@@ -376,7 +377,7 @@ fn test_data_persistence_across_connections() {
             num_failed: Some(1),
             num_skipped: Some(0),
             duration_ms: Some(2000),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
 
         repo.create_session(&session).unwrap();
@@ -443,7 +444,7 @@ fn test_adaptive_difficulty_workflow() {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(0),
+            quality_rating: Some(1), // Again (FSRS)
         };
         repo.create_session(&session).unwrap();
     }
@@ -564,7 +565,7 @@ fn test_analytics_daily_stats_accuracy() {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2), // Good
+            quality_rating: Some(3), // Good (FSRS) // Good
         })
         .unwrap();
     }
@@ -579,7 +580,7 @@ fn test_analytics_daily_stats_accuracy() {
         num_failed: Some(3),
         num_skipped: Some(0),
         duration_ms: Some(100),
-        quality_rating: Some(0), // Again
+        quality_rating: Some(1), // Again (FSRS)
     })
     .unwrap();
 
@@ -630,7 +631,7 @@ fn test_analytics_streak_calculation() {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })
         .unwrap();
     }
@@ -765,7 +766,7 @@ fn test_analytics_success_rate_calculation() {
 
     // create 7 sessions over 7 days with mixed success
     let now = Utc::now();
-    let ratings = [2, 2, 2, 0, 1, 2, 3]; // 5 successes (>=2) out of 7
+    let ratings = [3, 3, 3, 1, 2, 3, 4]; // 5 successes (>=3 in FSRS) out of 7
 
     for (i, rating) in ratings.iter().enumerate() {
         let session_time = now - Duration::days(i as i64);
@@ -829,7 +830,7 @@ fn test_analytics_category_breakdown() {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })
         .unwrap();
     }
@@ -844,7 +845,7 @@ fn test_analytics_category_breakdown() {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(100),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })
         .unwrap();
     }

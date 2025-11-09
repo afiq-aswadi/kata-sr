@@ -4,7 +4,7 @@
 //! CRUD operations, constraint enforcement, and complex queries.
 
 use chrono::{Duration, Utc};
-use kata_sr::core::scheduler::{QualityRating, SM2State};
+use kata_sr::core::fsrs::{FsrsCard, FsrsParams, Rating};
 use kata_sr::db::repo::{KataRepository, NewKata, NewSession};
 use std::collections::HashMap;
 
@@ -147,8 +147,8 @@ fn test_get_katas_due_returns_overdue() {
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
     let yesterday = Utc::now() - Duration::days(1);
-    let state = SM2State::new();
-    repo.update_kata_after_review(kata_id, &state, yesterday, yesterday)
+    let card = FsrsCard::new();
+    repo.update_kata_after_fsrs_review(kata_id, &card, yesterday, yesterday)
         .unwrap();
 
     let due = repo.get_katas_due(Utc::now()).unwrap();
@@ -171,8 +171,8 @@ fn test_get_katas_due_excludes_future() {
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
     let tomorrow = Utc::now() + Duration::days(1);
-    let state = SM2State::new();
-    repo.update_kata_after_review(kata_id, &state, tomorrow, Utc::now())
+    let card = FsrsCard::new();
+    repo.update_kata_after_fsrs_review(kata_id, &card, tomorrow, Utc::now())
         .unwrap();
 
     let due = repo.get_katas_due(Utc::now()).unwrap();
@@ -180,12 +180,12 @@ fn test_get_katas_due_excludes_future() {
 }
 
 #[test]
-fn test_update_kata_after_review() {
+fn test_update_kata_after_fsrs_review() {
     let repo = setup_test_repo();
     let new_kata = NewKata {
         name: "review_test".to_string(),
         category: "test".to_string(),
-        description: "Testing review update".to_string(),
+        description: "Testing FSRS review update".to_string(),
         base_difficulty: 3,
         parent_kata_id: None,
         variation_params: None,
@@ -193,21 +193,22 @@ fn test_update_kata_after_review() {
 
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
-    let mut state = SM2State::new();
-    state.update(QualityRating::Good);
-    state.update(QualityRating::Good);
+    let mut card = FsrsCard::new();
+    let params = FsrsParams::default();
+    card.schedule(Rating::Good, &params, Utc::now());
+    card.schedule(Rating::Good, &params, Utc::now());
 
-    let next_review = Utc::now() + Duration::days(6);
+    let next_review = Utc::now() + Duration::days(card.scheduled_days as i64);
     let reviewed_at = Utc::now();
 
-    repo.update_kata_after_review(kata_id, &state, next_review, reviewed_at)
+    repo.update_kata_after_fsrs_review(kata_id, &card, next_review, reviewed_at)
         .unwrap();
 
     let kata = repo.get_kata_by_id(kata_id).unwrap().unwrap();
     assert!(kata.last_reviewed_at.is_some());
     assert!(kata.next_review_at.is_some());
-    assert_eq!(kata.current_interval_days, 6);
-    assert_eq!(kata.current_repetition_count, 2);
+    assert!(kata.fsrs_stability > 0.0);
+    assert_eq!(kata.fsrs_reps, 2);
 }
 
 #[test]
@@ -252,7 +253,7 @@ fn test_create_session() {
         num_failed: Some(1),
         num_skipped: Some(0),
         duration_ms: Some(2345),
-        quality_rating: Some(2),
+        quality_rating: Some(3), // Good (FSRS)
     };
 
     let session_id = repo.create_session(&session).unwrap();
@@ -283,7 +284,7 @@ fn test_get_recent_sessions() {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
     }
@@ -306,9 +307,9 @@ fn test_get_success_counts() {
 
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
-    // create sessions with different quality ratings
-    // ratings >= 1 should count as success
-    for rating in [2, 1, 0, 3, 2] {
+    // create sessions with different quality ratings (FSRS 1-4 scale)
+    // ratings >= 3 (Good/Easy) should count as success
+    for rating in [3, 2, 1, 4, 3] {
         let session = NewSession {
             kata_id,
             started_at: Utc::now(),
@@ -324,8 +325,8 @@ fn test_get_success_counts() {
     }
 
     let counts = repo.get_success_counts().unwrap();
-    // 2, 1, 3, 2 count as success (4 total), 0 does not
-    assert_eq!(counts.get(&kata_id), Some(&4));
+    // 3, 4, 3 count as success (3 total), 2 and 1 do not
+    assert_eq!(counts.get(&kata_id), Some(&3));
 }
 
 #[test]
@@ -371,7 +372,7 @@ fn test_success_counts_multiple_katas() {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         })
         .unwrap();
     }
@@ -387,7 +388,7 @@ fn test_success_counts_multiple_katas() {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(1),
+            quality_rating: Some(3), // Good (FSRS) // Hard (FSRS)
         })
         .unwrap();
     }
@@ -466,12 +467,12 @@ fn test_dependency_constraint_enforcement() {
 }
 
 #[test]
-fn test_kata_sm2_state_method() {
+fn test_kata_fsrs_card_method() {
     let repo = setup_test_repo();
     let new_kata = NewKata {
         name: "state_test".to_string(),
         category: "test".to_string(),
-        description: "Testing SM2 state extraction".to_string(),
+        description: "Testing FSRS card extraction".to_string(),
         base_difficulty: 3,
         parent_kata_id: None,
         variation_params: None,
@@ -479,18 +480,19 @@ fn test_kata_sm2_state_method() {
 
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
-    let mut state = SM2State::new();
-    state.update(QualityRating::Easy);
+    let mut card = FsrsCard::new();
+    let params = FsrsParams::default();
+    card.schedule(Rating::Easy, &params, Utc::now());
 
-    repo.update_kata_after_review(kata_id, &state, Utc::now(), Utc::now())
+    repo.update_kata_after_fsrs_review(kata_id, &card, Utc::now(), Utc::now())
         .unwrap();
 
     let kata = repo.get_kata_by_id(kata_id).unwrap().unwrap();
-    let extracted_state = kata.sm2_state();
+    let extracted_card = kata.fsrs_card();
 
-    assert_eq!(extracted_state.ease_factor, state.ease_factor);
-    assert_eq!(extracted_state.interval_days, state.interval_days);
-    assert_eq!(extracted_state.repetition_count, state.repetition_count);
+    assert_eq!(extracted_card.stability, card.stability);
+    assert_eq!(extracted_card.difficulty, card.difficulty);
+    assert_eq!(extracted_card.reps, card.reps);
 }
 
 #[test]
@@ -577,8 +579,8 @@ fn test_quality_rating_bounds_in_constraint() {
         )
         .unwrap();
 
-    // quality_rating must be between 0 and 3
-    let invalid_session = NewSession {
+    // quality_rating must be between 1 and 4 (FSRS scale)
+    let invalid_session_low = NewSession {
         kata_id,
         started_at: Utc::now(),
         completed_at: Some(Utc::now()),
@@ -587,10 +589,26 @@ fn test_quality_rating_bounds_in_constraint() {
         num_failed: None,
         num_skipped: None,
         duration_ms: None,
-        quality_rating: Some(4),
+        quality_rating: Some(0),
     };
 
-    let result = repo.create_session(&invalid_session);
+    let result = repo.create_session(&invalid_session_low);
+    assert!(result.is_err());
+
+    // Also test upper bound
+    let invalid_session_high = NewSession {
+        kata_id,
+        started_at: Utc::now(),
+        completed_at: Some(Utc::now()),
+        test_results_json: None,
+        num_passed: None,
+        num_failed: None,
+        num_skipped: None,
+        duration_ms: None,
+        quality_rating: Some(5),
+    };
+
+    let result = repo.create_session(&invalid_session_high);
     assert!(result.is_err());
 }
 
