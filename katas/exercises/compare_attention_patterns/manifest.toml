@@ -1,0 +1,12 @@
+[kata]
+name = "compare_attention_patterns"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Compare attention patterns and entropies across different prompts.
+
+Analyze how attention heads behave differently on various inputs by
+extracting and comparing patterns and their statistics.
+"""
+dependencies = ["compute_attention_entropy"]
+tags = ["attention", "interpretability", "analysis"]
