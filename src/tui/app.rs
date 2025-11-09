@@ -288,10 +288,31 @@ impl App {
                     DashboardAction::RemoveKata(kata) => {
                         Some(ScreenAction::RemoveKataFromDeck(kata))
                     }
+                    DashboardAction::ToggleFlagKata(kata) => {
+                        // Toggle the problematic flag
+                        if kata.is_problematic {
+                            self.repo.unflag_kata(kata.id)?;
+                        } else {
+                            self.repo.flag_kata(kata.id, None)?;
+                        }
+                        self.refresh_dashboard_screen()?;
+                        None
+                    }
                     DashboardAction::None => None,
                 }
             }
-            Screen::Practice(_kata, practice_screen) => {
+            Screen::Practice(kata, practice_screen) => {
+                // Handle 'f' to toggle flag on current kata
+                if code == KeyCode::Char('f') {
+                    if kata.is_problematic {
+                        self.repo.unflag_kata(kata.id)?;
+                    } else {
+                        self.repo.flag_kata(kata.id, None)?;
+                    }
+                    self.refresh_dashboard_screen()?;
+                    return Ok(());
+                }
+
                 let action = practice_screen.handle_input(code, self.event_tx.clone())?;
                 match action {
                     PracticeAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
@@ -307,6 +328,17 @@ impl App {
                 DoneAction::None => None,
             },
             Screen::Results(kata, results_screen) => {
+                // Handle 'f' to toggle flag on current kata
+                if code == KeyCode::Char('f') {
+                    if kata.is_problematic {
+                        self.repo.unflag_kata(kata.id)?;
+                    } else {
+                        self.repo.flag_kata(kata.id, None)?;
+                    }
+                    self.refresh_dashboard_screen()?;
+                    return Ok(());
+                }
+
                 let action = results_screen.handle_input(code);
                 match action {
                     ResultsAction::SubmitRating(rating) => {
@@ -325,6 +357,16 @@ impl App {
                 match action {
                     LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
                     LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
+                    LibraryAction::ToggleFlagKata(kata) => {
+                        // Toggle the problematic flag
+                        if kata.is_problematic {
+                            self.repo.unflag_kata(kata.id)?;
+                        } else {
+                            self.repo.flag_kata(kata.id, None)?;
+                        }
+                        self.refresh_dashboard_screen()?;
+                        return self.execute_action(ScreenAction::OpenLibrary);
+                    }
                     LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
                     LibraryAction::ViewDetails(kata) => {
                         let in_deck = library.kata_ids_in_deck.contains(&kata.name);

@@ -80,30 +80,26 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("k / ↑", "Move up in kata list"),
             Keybinding::new("Enter", "Start practicing selected kata"),
             Keybinding::new("d", "Remove selected kata from deck"),
+            Keybinding::new("f", "Flag/unflag kata as problematic (toggle)"),
             Keybinding::new("l", "Open kata library to browse and add katas"),
+            Keybinding::new("s", "Change sort order"),
         ],
         practice: vec![
             Keybinding::new("e", "Edit kata in nvim and auto-run tests"),
             Keybinding::new("t", "Re-run tests without reopening the editor"),
+            Keybinding::new("f", "Flag/unflag kata as problematic (toggle)"),
             Keybinding::new("Esc", "Return to dashboard"),
         ],
         results: vec![
-            Keybinding::new("0", "Rate as Again (complete failure)"),
             Keybinding::new("1", "Rate as Hard (struggled but passed)"),
             Keybinding::new("2", "Rate as Good (normal difficulty)"),
             Keybinding::new("3", "Rate as Easy (too easy)"),
+            Keybinding::new("4", "Rate as Very Easy"),
             Keybinding::new("h / ←", "Move to harder rating option"),
             Keybinding::new("l / →", "Move to easier rating option"),
-            Keybinding::new(
-                "j / ↓",
-                "When rating focused: select lower rating; when tests focused: move down",
-            ),
-            Keybinding::new(
-                "k / ↑",
-                "When rating focused: select higher rating; when tests focused: move up",
-            ),
             Keybinding::new("Tab", "Toggle focus between rating panel and test list"),
             Keybinding::new("o", "Open/close detailed output for selected test"),
+            Keybinding::new("f", "Flag/unflag kata as problematic (toggle)"),
             Keybinding::new(
                 "Enter",
                 "Submit rating (before submission) or confirm dashboard navigation (after)",
@@ -120,11 +116,14 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("Esc", "If tests failed: return to dashboard"),
         ],
         library: vec![
+            Keybinding::new("Tab", "Switch between My Deck and All Katas tabs"),
             Keybinding::new("j / ↓", "Navigate to next kata"),
             Keybinding::new("k / ↑", "Navigate to previous kata"),
-            Keybinding::new("a", "Add selected kata to deck"),
+            Keybinding::new("a", "Add selected kata to deck (All Katas tab)"),
+            Keybinding::new("d", "Remove selected kata from deck (My Deck tab)"),
+            Keybinding::new("f", "Flag/unflag kata as problematic (My Deck tab)"),
             Keybinding::new("n", "Create a brand new kata"),
-            Keybinding::new("Enter", "View kata details"),
+            Keybinding::new("Enter", "View kata details (All Katas tab)"),
             Keybinding::new("Esc", "Return to dashboard"),
         ],
     }
@@ -176,10 +175,10 @@ pub fn render_help_screen(frame: &mut Frame) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(4),  // Global
-            Constraint::Length(8),  // Dashboard
+            Constraint::Length(9),  // Dashboard (added one for 'f')
             Constraint::Length(6),  // Practice
             Constraint::Length(10), // Results
-            Constraint::Length(7),  // Library
+            Constraint::Length(11), // Library (added some for new keybindings)
             Constraint::Min(1),     // Spacer
             Constraint::Length(2),  // Footer
         ])

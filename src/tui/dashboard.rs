@@ -218,9 +218,10 @@ impl Dashboard {
             .enumerate()
             .map(|(i, kata)| {
                 let marker = if i == self.selected_index { ">" } else { " " };
+                let flag_indicator = if kata.is_problematic { "⚠️ " } else { "" };
                 let text = format!(
-                    "{} {} (difficulty: {:.1})",
-                    marker, kata.name, kata.current_difficulty
+                    "{} {}{}  (difficulty: {:.1})",
+                    marker, flag_indicator, kata.name, kata.current_difficulty
                 );
                 ListItem::new(text)
             })
@@ -281,6 +282,13 @@ impl Dashboard {
                     DashboardAction::None
                 }
             }
+            KeyCode::Char('f') => {
+                if let Some(kata) = self.katas_due.get(self.selected_index) {
+                    DashboardAction::ToggleFlagKata(kata.clone())
+                } else {
+                    DashboardAction::None
+                }
+            }
             KeyCode::Char('s') => {
                 self.cycle_sort_mode();
                 DashboardAction::None
@@ -294,4 +302,5 @@ pub enum DashboardAction {
     None,
     SelectKata(Kata),
     RemoveKata(Kata),
+    ToggleFlagKata(Kata),
 }

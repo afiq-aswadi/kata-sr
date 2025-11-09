@@ -40,6 +40,8 @@ pub enum LibraryAction {
     AddKata(String),
     /// Remove a kata from the deck
     RemoveKata(Kata),
+    /// Toggle flag on a kata as problematic
+    ToggleFlagKata(Kata),
     /// View detailed information about a kata
     ViewDetails(AvailableKata),
     /// Return to dashboard
@@ -392,9 +394,13 @@ impl Library {
                     "—".to_string()
                 };
 
+                // Add warning indicator for problematic katas
+                let flag_indicator = if kata.is_problematic { "⚠️ " } else { "" };
+                let kata_name = format!("{}{}", flag_indicator, kata.name);
+
                 Row::new(vec![
                     Cell::from(prefix),
-                    Cell::from(kata.name.clone()),
+                    Cell::from(kata_name),
                     Cell::from(tags_str),
                     Cell::from(due_str).style(due_style),
                     Cell::from(format!("{:.1}", kata.current_difficulty)),
@@ -681,6 +687,10 @@ impl Library {
             KeyCode::Char('d') => {
                 let kata = self.deck_katas[self.deck_selected].clone();
                 LibraryAction::RemoveKata(kata)
+            }
+            KeyCode::Char('f') => {
+                let kata = self.deck_katas[self.deck_selected].clone();
+                LibraryAction::ToggleFlagKata(kata)
             }
             _ => LibraryAction::None,
         }

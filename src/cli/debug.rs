@@ -61,6 +61,15 @@ pub enum DebugOperation {
         #[arg(long)]
         due: bool,
     },
+
+    /// List all problematic katas (JSON output)
+    ListProblematic,
+
+    /// Unflag a kata as no longer problematic
+    Unflag {
+        /// ID of the kata to unflag
+        kata_id: i64,
+    },
 }
 
 impl DebugOperation {
@@ -75,6 +84,8 @@ impl DebugOperation {
             DebugOperation::Delete { kata_name } => delete_kata(repo, kata_name),
             DebugOperation::Stats { json } => show_stats(repo, *json),
             DebugOperation::List { due } => list_katas(repo, *due),
+            DebugOperation::ListProblematic => list_problematic(repo),
+            DebugOperation::Unflag { kata_id } => unflag_kata(repo, *kata_id),
         }
     }
 }
@@ -218,5 +229,66 @@ fn list_katas(repo: &KataRepository, due: bool) -> Result<()> {
         println!();
     }
 
+    Ok(())
+}
+
+fn list_problematic(repo: &KataRepository) -> Result<()> {
+    use serde::Serialize;
+
+    let katas = repo
+        .get_problematic_katas()
+        .context("Failed to get problematic katas")?;
+
+    #[derive(Serialize)]
+    struct ProblematicKata {
+        id: i64,
+        name: String,
+        directory: String,
+        notes: Option<String>,
+        flagged_at: String,
+    }
+
+    let output: Vec<ProblematicKata> = katas
+        .iter()
+        .map(|kata| {
+            let directory = format!("katas/exercises/{}", kata.name);
+            let flagged_at = kata
+                .flagged_at
+                .map(|dt| dt.to_rfc3339())
+                .unwrap_or_else(|| "unknown".to_string());
+
+            ProblematicKata {
+                id: kata.id,
+                name: kata.name.clone(),
+                directory,
+                notes: kata.problematic_notes.clone(),
+                flagged_at,
+            }
+        })
+        .collect();
+
+    let json_output = serde_json::to_string_pretty(&output)
+        .context("Failed to serialize problematic katas to JSON")?;
+    println!("{}", json_output);
+
+    Ok(())
+}
+
+fn unflag_kata(repo: &KataRepository, kata_id: i64) -> Result<()> {
+    // Verify kata exists
+    let kata = repo
+        .get_kata_by_id(kata_id)
+        .context("Failed to look up kata")?
+        .ok_or_else(|| anyhow::anyhow!("Kata with ID {} not found", kata_id))?;
+
+    if !kata.is_problematic {
+        println!("⚠ Kata '{}' (ID {}) is not currently flagged as problematic", kata.name, kata_id);
+        return Ok(());
+    }
+
+    repo.unflag_kata(kata_id)
+        .context("Failed to unflag kata")?;
+
+    println!("✓ Unflagged kata: {} (ID {})", kata.name, kata_id);
     Ok(())
 }
