@@ -1,0 +1,12 @@
+[kata]
+name = "get_max_attention_positions"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Find the top-k positions each query attends to most strongly.
+
+Extract the key positions with highest attention weights for each
+query position, useful for understanding attention flow.
+"""
+dependencies = ["extract_attention_patterns"]
+tags = ["attention", "interpretability", "analysis"]
