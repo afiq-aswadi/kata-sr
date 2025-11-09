@@ -1,0 +1,13 @@
+[kata]
+name = "attention_pattern_analysis"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Analyze and visualize attention patterns in transformer models using TransformerLens.
+
+Learn to extract attention weights, identify important heads, and understand information
+flow through attention layers. Master attention pattern statistics and head ablation.
+
+Key concepts: attention extraction, pattern interpretation, entropy, head ablation, induction heads
+"""
+dependencies = ["transformerlens_hooks"]
