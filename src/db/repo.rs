@@ -125,9 +125,14 @@ impl KataRepository {
              ORDER BY next_review_at ASC NULLS FIRST",
         )?;
 
-        let katas = stmt
+        let mut katas = stmt
             .query_map([timestamp], row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
+
+        // load tags for each kata
+        for kata in &mut katas {
+            kata.tags = self.get_kata_tags(kata.id)?;
+        }
 
         Ok(katas)
     }
@@ -156,9 +161,14 @@ impl KataRepository {
              ORDER BY created_at DESC",
         )?;
 
-        let katas = stmt
+        let mut katas = stmt
             .query_map([], row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
+
+        // load tags for each kata
+        for kata in &mut katas {
+            kata.tags = self.get_kata_tags(kata.id)?;
+        }
 
         Ok(katas)
     }
@@ -193,7 +203,9 @@ impl KataRepository {
 
         let mut rows = stmt.query([id])?;
         if let Some(row) = rows.next()? {
-            Ok(Some(row_to_kata(row)?))
+            let mut kata = row_to_kata(row)?;
+            kata.tags = self.get_kata_tags(kata.id)?;
+            Ok(Some(kata))
         } else {
             Ok(None)
         }
@@ -974,7 +986,9 @@ impl KataRepository {
         let mut rows = stmt.query([name])?;
 
         if let Some(row) = rows.next()? {
-            Ok(Some(row_to_kata(row)?))
+            let mut kata = row_to_kata(row)?;
+            kata.tags = self.get_kata_tags(kata.id)?;
+            Ok(Some(kata))
         } else {
             Ok(None)
         }
@@ -1055,16 +1069,26 @@ impl KataRepository {
             "SELECT DISTINCT k.id, k.name, k.category, k.description, k.base_difficulty,
                     k.current_difficulty, k.parent_kata_id, k.variation_params,
                     k.next_review_at, k.last_reviewed_at, k.current_ease_factor,
-                    k.current_interval_days, k.current_repetition_count, k.created_at
+                    k.current_interval_days, k.current_repetition_count,
+                    COALESCE(k.fsrs_stability, 0.0), COALESCE(k.fsrs_difficulty, 0.0),
+                    COALESCE(k.fsrs_elapsed_days, 0), COALESCE(k.fsrs_scheduled_days, 0),
+                    COALESCE(k.fsrs_reps, 0), COALESCE(k.fsrs_lapses, 0),
+                    COALESCE(k.fsrs_state, 'New'), COALESCE(k.scheduler_type, 'SM2'),
+                    k.created_at
              FROM katas k
              JOIN kata_tags kt ON k.id = kt.kata_id
              WHERE kt.tag = ?
              ORDER BY k.name",
         )?;
 
-        let katas = stmt
+        let mut katas = stmt
             .query_map([tag], row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
+
+        // load tags for each kata
+        for kata in &mut katas {
+            kata.tags = self.get_kata_tags(kata.id)?;
+        }
 
         Ok(katas)
     }
@@ -1095,7 +1119,12 @@ impl KataRepository {
             "SELECT k.id, k.name, k.category, k.description, k.base_difficulty,
                     k.current_difficulty, k.parent_kata_id, k.variation_params,
                     k.next_review_at, k.last_reviewed_at, k.current_ease_factor,
-                    k.current_interval_days, k.current_repetition_count, k.created_at
+                    k.current_interval_days, k.current_repetition_count,
+                    COALESCE(k.fsrs_stability, 0.0), COALESCE(k.fsrs_difficulty, 0.0),
+                    COALESCE(k.fsrs_elapsed_days, 0), COALESCE(k.fsrs_scheduled_days, 0),
+                    COALESCE(k.fsrs_reps, 0), COALESCE(k.fsrs_lapses, 0),
+                    COALESCE(k.fsrs_state, 'New'), COALESCE(k.scheduler_type, 'SM2'),
+                    k.created_at
              FROM katas k
              JOIN kata_tags kt ON k.id = kt.kata_id
              WHERE kt.tag IN ({})
@@ -1111,9 +1140,14 @@ impl KataRepository {
         let tag_count = tags.len();
         params.push(&tag_count);
 
-        let katas = stmt
+        let mut katas = stmt
             .query_map(params.as_slice(), row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
+
+        // load tags for each kata
+        for kata in &mut katas {
+            kata.tags = self.get_kata_tags(kata.id)?;
+        }
 
         Ok(katas)
     }
@@ -1434,6 +1468,7 @@ pub struct Kata {
     pub name: String,
     pub category: String,
     pub description: String,
+    pub tags: Vec<String>,
     pub base_difficulty: i32,
     pub current_difficulty: f64,
     pub parent_kata_id: Option<i64>,
@@ -1560,6 +1595,7 @@ fn row_to_kata(row: &Row) -> Result<Kata> {
         name: row.get(1)?,
         category: row.get(2)?,
         description: row.get(3)?,
+        tags: vec![],
         base_difficulty: row.get(4)?,
         current_difficulty: row.get(5)?,
         parent_kata_id: row.get(6)?,
