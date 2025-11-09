@@ -602,59 +602,92 @@ impl App {
                 let exercises_dir = std::path::Path::new("katas/exercises");
                 let name_changed = original_slug != new_slug;
 
-                // Update database first
+                // Get tags from database to preserve them
+                let tags = self.repo.get_kata_tags(kata_id)?;
+
                 if name_changed {
-                    // Rename directory first (can fail and be rolled back)
-                    match rename_kata_directory(exercises_dir, &original_slug, &new_slug) {
+                    // 1. Update database first
+                    match self.repo.update_kata_full_metadata(
+                        kata_id,
+                        &new_slug,
+                        &form_data.description,
+                        &form_data.category,
+                        form_data.difficulty as i32,
+                    ) {
                         Ok(_) => {
-                            // Directory renamed, now update database
-                            self.repo.update_kata_full_metadata(
-                                kata_id,
-                                &new_slug,
-                                &form_data.description,
-                                &form_data.category,
-                                form_data.difficulty as i32,
-                            )?;
-
-                            // Update manifest in new location
-                            let kata_dir = exercises_dir.join(&new_slug);
-                            update_manifest(&kata_dir, &form_data, &new_slug)?;
-
-                            // Update dependencies
+                            // 2. Update dependencies in DB
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
-                            self.repo.replace_dependencies(kata_id, &dep_ids)?;
+                            if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
+                                // Rollback database name change
+                                let _ = self.repo.update_kata_name(kata_id, &original_slug);
+                                eprintln!("Failed to update dependencies: {}", e);
+                                return Ok(());
+                            }
 
-                            // Success! Return to library
-                            let library = Library::load(&self.repo)?;
-                            self.current_screen = Screen::Library(library);
-                            eprintln!("Kata '{}' updated successfully!", new_slug);
+                            // 3. Now rename directory (if this fails, rollback DB)
+                            match rename_kata_directory(exercises_dir, &original_slug, &new_slug) {
+                                Ok(_) => {
+                                    // 4. Update manifest in new location
+                                    let kata_dir = exercises_dir.join(&new_slug);
+                                    if let Err(e) =
+                                        update_manifest(&kata_dir, &form_data, &new_slug, &tags)
+                                    {
+                                        // Rollback: rename directory back and revert database
+                                        let _ = rename_kata_directory(
+                                            exercises_dir,
+                                            &new_slug,
+                                            &original_slug,
+                                        );
+                                        let _ = self.repo.update_kata_name(kata_id, &original_slug);
+                                        eprintln!("Failed to update manifest: {}", e);
+                                        return Ok(());
+                                    }
+
+                                    // Success! Return to library
+                                    let library = Library::load(&self.repo)?;
+                                    self.current_screen = Screen::Library(library);
+                                    eprintln!("Kata '{}' updated successfully!", new_slug);
+                                }
+                                Err(e) => {
+                                    // Rollback database changes
+                                    let _ = self.repo.update_kata_name(kata_id, &original_slug);
+                                    eprintln!("Failed to rename kata directory: {}", e);
+                                    // Stay on edit screen
+                                }
+                            }
                         }
                         Err(e) => {
-                            eprintln!("Failed to rename kata directory: {}", e);
+                            eprintln!("Failed to update database: {}", e);
                             // Stay on edit screen
                         }
                     }
                 } else {
                     // Name didn't change, just update metadata
-                    self.repo.update_kata_metadata(
+                    match self.repo.update_kata_metadata(
                         kata_id,
                         &form_data.description,
                         &form_data.category,
                         form_data.difficulty as i32,
-                    )?;
+                    ) {
+                        Ok(_) => {
+                            // Update dependencies
+                            let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
+                            self.repo.replace_dependencies(kata_id, &dep_ids)?;
 
-                    // Update manifest
-                    let kata_dir = exercises_dir.join(&original_slug);
-                    update_manifest(&kata_dir, &form_data, &original_slug)?;
+                            // Update manifest with tags preserved
+                            let kata_dir = exercises_dir.join(&original_slug);
+                            update_manifest(&kata_dir, &form_data, &original_slug, &tags)?;
 
-                    // Update dependencies
-                    let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
-                    self.repo.replace_dependencies(kata_id, &dep_ids)?;
-
-                    // Success! Return to library
-                    let library = Library::load(&self.repo)?;
-                    self.current_screen = Screen::Library(library);
-                    eprintln!("Kata '{}' updated successfully!", original_slug);
+                            // Success! Return to library
+                            let library = Library::load(&self.repo)?;
+                            self.current_screen = Screen::Library(library);
+                            eprintln!("Kata '{}' updated successfully!", original_slug);
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to update kata: {}", e);
+                            // Stay on edit screen
+                        }
+                    }
                 }
             }
             ScreenAction::OpenEditorFile(file_path) => {

@@ -217,18 +217,24 @@ def kata_{}():
 /// Updates an existing kata's manifest.toml file.
 ///
 /// This function rewrites the manifest.toml file with new metadata while
-/// preserving the file structure. Used by the edit kata screen.
+/// preserving the file structure and tags. Used by the edit kata screen.
 ///
 /// # Arguments
 ///
 /// * `kata_dir` - Path to the kata directory (e.g., "katas/exercises/kata_name/")
 /// * `form_data` - Updated kata metadata
 /// * `slug` - The kata slug (directory name)
+/// * `tags` - Tags to preserve (read from existing manifest or database)
 ///
 /// # Returns
 ///
 /// Ok(()) on success, error on filesystem failures.
-pub fn update_manifest(kata_dir: &Path, form_data: &KataFormData, slug: &str) -> Result<()> {
+pub fn update_manifest(
+    kata_dir: &Path,
+    form_data: &KataFormData,
+    slug: &str,
+    tags: &[String],
+) -> Result<()> {
     let manifest_path = kata_dir.join("manifest.toml");
 
     let dependencies_toml = if form_data.dependencies.is_empty() {
@@ -243,6 +249,18 @@ pub fn update_manifest(kata_dir: &Path, form_data: &KataFormData, slug: &str) ->
         format!("dependencies = [{}]\n", deps_list)
     };
 
+    // Include tags if present
+    let tags_toml = if !tags.is_empty() {
+        let tags_list = tags
+            .iter()
+            .map(|t| format!("\"{}\"", t))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("tags = [{}]\n", tags_list)
+    } else {
+        String::new()
+    };
+
     let content = format!(
         r#"[kata]
 name = "{}"
@@ -251,9 +269,14 @@ base_difficulty = {}
 description = """
 {}
 """
-{}
+{}{}
 "#,
-        slug, form_data.category, form_data.difficulty, form_data.description, dependencies_toml
+        slug,
+        form_data.category,
+        form_data.difficulty,
+        form_data.description,
+        tags_toml,
+        dependencies_toml
     );
 
     fs::write(&manifest_path, content).context("Failed to update manifest.toml")?;
