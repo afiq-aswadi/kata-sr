@@ -24,6 +24,6 @@ class ValidatedBase:
         """
         # BLANK_START
         raise NotImplementedError(
-            "Call super().__init_subclass__(**kwargs), check required_attrs in cls.__dict__"
+            "Call super().__init_subclass__(**kwargs), check required_attrs with hasattr(cls, attr)"
         )
         # BLANK_END

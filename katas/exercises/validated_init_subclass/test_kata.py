@@ -86,3 +86,18 @@ def test_none_value():
 
     c = Config()
     assert c.setting is None
+
+
+def test_inherited_attributes():
+    """Test ValidatedBase accepts inherited attributes."""
+    from template import ValidatedBase
+
+    class Base(ValidatedBase):
+        name = "base"
+
+    class Child(Base, required_attrs=['name']):
+        pass  # name is inherited from Base
+
+    # Should work because name is inherited
+    c = Child()
+    assert c.name == "base"
