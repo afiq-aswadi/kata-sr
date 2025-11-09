@@ -7,6 +7,7 @@ use anyhow::Context;
 use chrono::{Duration, Utc};
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::backend::CrosstermBackend;
+use ratatui::layout::Rect;
 use ratatui::{Frame, Terminal};
 use std::io;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -23,6 +24,23 @@ use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
 use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
 use crate::runner::python_runner::TestResults;
+
+/// Style for popup messages.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PopupStyle {
+    /// Success message (green)
+    Success,
+    /// Error message (red)
+    Error,
+}
+
+/// A popup message to display to the user.
+#[derive(Debug, Clone)]
+pub struct PopupMessage {
+    pub title: String,
+    pub message: String,
+    pub style: PopupStyle,
+}
 
 /// Events that can be sent to the main application loop.
 ///
@@ -100,6 +118,8 @@ pub struct App {
     showing_help: bool,
     /// Whether terminal needs to be cleared (after external editor)
     needs_terminal_clear: bool,
+    /// Popup message to display to the user
+    popup_message: Option<PopupMessage>,
 }
 
 impl App {
@@ -132,6 +152,7 @@ impl App {
             event_rx: rx,
             showing_help: false,
             needs_terminal_clear: false,
+            popup_message: None,
         };
 
         app.refresh_dashboard_screen()?;
@@ -265,6 +286,11 @@ impl App {
                 create_kata.render(frame);
             }
         }
+
+        // Render popup overlay if present
+        if self.popup_message.is_some() {
+            self.render_popup_overlay(frame);
+        }
     }
 
     /// Handles keyboard input by delegating to the current screen.
@@ -272,6 +298,12 @@ impl App {
         if self.showing_help {
             // any key exits help screen
             self.showing_help = false;
+            return Ok(());
+        }
+
+        // If popup is showing, any key dismisses it
+        if self.popup_message.is_some() {
+            self.popup_message = None;
             return Ok(());
         }
 
@@ -484,24 +516,29 @@ impl App {
                 // Generate the kata files
                 match generate_kata_files(&form_data, exercises_dir) {
                     Ok(created_slug) => {
-                        // Success! Return to library
+                        // Success! Return to library and show success popup
                         let library = Library::load(&self.repo)?;
                         self.current_screen = Screen::Library(library);
 
-                        // TODO: Show success message to user
-                        eprintln!(
-                            "Created kata '{}'! Press 'a' in Library to add to deck.",
-                            created_slug
-                        );
+                        self.popup_message = Some(PopupMessage {
+                            title: "Success!".to_string(),
+                            message: format!(
+                                "Created kata '{}'!\n\nPress 'a' in the All Katas tab to add it to your deck.",
+                                created_slug
+                            ),
+                            style: PopupStyle::Success,
+                        });
                     }
                     Err(e) => {
-                        // Error! Stay on CreateKata screen
-                        // TODO: Show error message to user
-                        eprintln!("Failed to create kata: {}", e);
-
-                        // For now, return to library on error
+                        // Error! Return to library and show error popup
                         let library = Library::load(&self.repo)?;
                         self.current_screen = Screen::Library(library);
+
+                        self.popup_message = Some(PopupMessage {
+                            title: "Error Creating Kata".to_string(),
+                            message: format!("Failed to create kata:\n\n{}", e),
+                            style: PopupStyle::Error,
+                        });
                     }
                 }
             }
@@ -609,4 +646,85 @@ impl App {
 
         Ok(())
     }
+
+    /// Renders a popup overlay with a message to the user.
+    fn render_popup_overlay(&self, frame: &mut Frame) {
+        use ratatui::{
+            style::{Color, Style},
+            widgets::{Block, Borders, Clear, Paragraph, Wrap},
+        };
+
+        let popup_msg = match &self.popup_message {
+            Some(msg) => msg,
+            None => return,
+        };
+
+        // Create centered rectangle for popup (60% width, 40% height)
+        let area = centered_rect(60, 40, frame.size());
+
+        // Clear the area behind the popup
+        frame.render_widget(Clear, area);
+
+        // Determine colors based on popup style
+        let (title_color, border_color) = match popup_msg.style {
+            PopupStyle::Success => (Color::Green, Color::Green),
+            PopupStyle::Error => (Color::Red, Color::Red),
+        };
+
+        // Render the popup
+        let popup = Paragraph::new(popup_msg.message.clone())
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(border_color))
+                    .title(format!(" {} ", popup_msg.title))
+                    .title_style(Style::default().fg(title_color)),
+            );
+
+        frame.render_widget(popup, area);
+
+        // Render instructions at the bottom of popup
+        let instructions_area = Rect {
+            x: area.x,
+            y: area.y + area.height - 2,
+            width: area.width,
+            height: 1,
+        };
+
+        let instructions = Paragraph::new("Press any key to dismiss")
+            .style(Style::default().fg(Color::Gray));
+        frame.render_widget(instructions, instructions_area);
+    }
+}
+
+/// Creates a centered rectangle for popup overlays.
+///
+/// # Arguments
+///
+/// * `percent_x` - Width as percentage of parent area
+/// * `percent_y` - Height as percentage of parent area
+/// * `r` - Parent rectangle
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    use ratatui::layout::{Constraint, Direction, Layout};
+
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    let vertical = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1]);
+
+    vertical[1]
 }
