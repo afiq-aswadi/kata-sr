@@ -1,0 +1,12 @@
+[kata]
+name = "plotly_subplots"
+category = "plotly"
+base_difficulty = 2
+description = """
+Create complex multi-panel layouts using make_subplots and combine different trace types.
+
+Learn to manage shared axes, secondary axes, and coordinated interactivity across panels.
+
+Key concepts: make_subplots, row/col positioning, shared axes, secondary y-axes, subplot annotations
+"""
+dependencies = []
