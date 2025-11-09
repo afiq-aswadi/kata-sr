@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_artist_animation"
+category = "matplotlib"
+base_difficulty = 3
+description = """
+Master matplotlib's Artist API to create custom plot elements and implement frame-based animations using FuncAnimation.
+
+Learn low-level control over plot rendering and create efficient, smooth animations for data visualization.
+
+Key concepts: Artist base class, draw() method, Transform stack, FuncAnimation, blitting, animation saving
+"""
+dependencies = []
