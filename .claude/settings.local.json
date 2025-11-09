@@ -33,7 +33,17 @@
       "Bash(git -C /Users/afiqabdillah/kata-sr-fix-issue-6 log --oneline -5)",
       "Bash(git -C /Users/afiqabdillah/kata-sr-fix-issue-6 show HEAD:src/tui/app.rs)",
       "Bash(gh pr create:*)",
-      "Bash(gh issue comment:*)"
+      "Bash(gh issue comment:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nMerge branch ''main'' into library search/filter/sort feature\n\nMerged main branch changes including:\n- FSRS-5 spaced repetition algorithm\n- GitHub-style heatmap calendar\n- Library tabs view\n\nResolved conflict by keeping the merged implementation that combines:\n- Tabbed interface (My Deck / All Katas) from main\n- Search, filtering, and sorting features for All Katas tab from this PR\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr:*)"
     ],
     "deny": [],
     "ask": []
