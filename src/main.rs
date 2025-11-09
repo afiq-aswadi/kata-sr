@@ -14,6 +14,7 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use kata_sr::cli::{Cli, Command};
+use kata_sr::config::AppConfig;
 use kata_sr::db::repo::KataRepository;
 use kata_sr::python_env::PythonEnv;
 use kata_sr::tui::app::App;
@@ -48,6 +49,9 @@ fn main() -> Result<()> {
     // parse CLI arguments
     let cli = Cli::parse();
 
+    // load configuration
+    let config = AppConfig::load().context("Failed to load configuration")?;
+
     // setup Python environment (required for TUI, optional for debug commands)
     let python_env = match &cli.command {
         Some(Command::Debug { .. }) => {
@@ -71,7 +75,10 @@ fn main() -> Result<()> {
     let db_path = if let Some(ref path) = cli.db_path {
         PathBuf::from(path)
     } else {
-        get_db_path()?
+        // Use config path, fallback to default
+        config
+            .database_path()
+            .unwrap_or_else(|_| get_db_path().unwrap())
     };
 
     let repo = KataRepository::new(&db_path).context("Failed to open database connection")?;
@@ -86,7 +93,7 @@ fn main() -> Result<()> {
         }
         None => {
             // launch TUI application (default behavior)
-            let mut app = App::new(repo)?;
+            let mut app = App::new(repo, config)?;
             app.run()?;
         }
     }

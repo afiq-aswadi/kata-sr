@@ -22,6 +22,8 @@ use super::practice::{PracticeAction, PracticeScreen};
 use super::results::{ResultsAction, ResultsScreen};
 use super::session_detail::{SessionDetailAction, SessionDetailScreen};
 use super::session_history::{SessionHistoryAction, SessionHistoryScreen};
+use super::settings::{SettingsAction, SettingsScreen};
+use crate::config::AppConfig;
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
 use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
@@ -72,6 +74,8 @@ pub enum Screen {
     Results(Kata, ResultsScreen),
     /// Help screen showing keybindings
     Help,
+    /// Settings screen for editing configuration
+    Settings(SettingsScreen),
     /// Library screen for browsing and adding katas
     Library(Library),
     /// Details screen for viewing kata information
@@ -103,6 +107,8 @@ enum ScreenAction {
         slug: String,
     },
     CancelCreateKata,
+    OpenSettings,
+    CloseSettings,
     ViewSessionHistory(Kata),
     ViewSessionDetail(i64), // session_id
     BackFromSessionHistory,
@@ -120,6 +126,8 @@ pub struct App {
     pub dashboard: Dashboard,
     /// Database repository for kata and session management
     pub repo: KataRepository,
+    /// Application configuration
+    pub config: AppConfig,
     /// Sender for async events
     pub event_tx: Sender<AppEvent>,
     /// Receiver for async events
@@ -133,24 +141,27 @@ pub struct App {
 }
 
 impl App {
-    /// Creates a new App with the given repository.
+    /// Creates a new App with the given repository and configuration.
     ///
     /// Loads initial dashboard state from the database.
     ///
     /// # Arguments
     ///
     /// * `repo` - Database repository for kata management
+    /// * `config` - Application configuration
     ///
     /// # Examples
     ///
     /// ```no_run
     /// # use kata_sr::db::repo::KataRepository;
     /// # use kata_sr::tui::app::App;
+    /// # use kata_sr::config::AppConfig;
     /// let repo = KataRepository::new("kata.db")?;
-    /// let app = App::new(repo)?;
+    /// let config = AppConfig::load()?;
+    /// let app = App::new(repo, config)?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn new(repo: KataRepository) -> anyhow::Result<Self> {
+    pub fn new(repo: KataRepository, config: AppConfig) -> anyhow::Result<Self> {
         let (tx, rx) = channel();
         let dashboard = Dashboard::load(&repo)?;
 
@@ -158,6 +169,7 @@ impl App {
             current_screen: Screen::Dashboard,
             dashboard,
             repo,
+            config,
             event_tx: tx,
             event_rx: rx,
             showing_help: false,
@@ -286,6 +298,9 @@ impl App {
             Screen::Help => {
                 keybindings::render_help_screen(frame);
             }
+            Screen::Settings(settings_screen) => {
+                settings_screen.render(frame);
+            }
             Screen::Library(library) => {
                 library.render(frame);
             }
@@ -329,6 +344,10 @@ impl App {
                 // handle library key 'l' in dashboard
                 if code == KeyCode::Char('l') {
                     return self.execute_action(ScreenAction::OpenLibrary);
+                }
+                // handle settings key 's' in dashboard
+                if code == KeyCode::Char('s') {
+                    return self.execute_action(ScreenAction::OpenSettings);
                 }
                 // handle history key 'h' in dashboard (only if kata is selected)
                 if code == KeyCode::Char('h') && !self.dashboard.katas_due.is_empty() {
@@ -374,6 +393,17 @@ impl App {
                 }
             }
             Screen::Help => Some(ScreenAction::ReturnToDashboard),
+            Screen::Settings(settings_screen) => {
+                let action = settings_screen.handle_input(code);
+                match action {
+                    SettingsAction::Cancel => Some(ScreenAction::CloseSettings),
+                    SettingsAction::Save => {
+                        // TODO: implement save
+                        Some(ScreenAction::CloseSettings)
+                    }
+                    SettingsAction::None => None,
+                }
+            }
             Screen::Library(library) => {
                 // handle history key 'h' in My Deck tab
                 if code == KeyCode::Char('h') {
@@ -596,6 +626,13 @@ impl App {
                 // Return to library
                 let library = Library::load(&self.repo)?;
                 self.current_screen = Screen::Library(library);
+            }
+            ScreenAction::OpenSettings => {
+                let settings_screen = SettingsScreen::new(self.config.clone());
+                self.current_screen = Screen::Settings(settings_screen);
+            }
+            ScreenAction::CloseSettings => {
+                self.refresh_dashboard_screen()?;
             }
             ScreenAction::ViewSessionHistory(kata) => {
                 let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
