@@ -41,9 +41,8 @@ class lazy_property:
         Args:
             func: The method to be lazily evaluated
         """
-        # TODO: Store the function
-        # Hint: Use functools.update_wrapper(self, func) to copy metadata
-        pass
+        self.func = func
+        functools.update_wrapper(self, func)
 
     def __get__(self, obj: Any, objtype: Any = None) -> T:
         """
@@ -56,13 +55,10 @@ class lazy_property:
         Returns:
             The computed or cached property value
         """
-        # TODO: Implement the descriptor protocol
-        # Hints:
-        # 1. If obj is None (class access), return self
-        # 2. Use self.func.__name__ to get the attribute name
-        # 3. Check if the value is already cached in obj.__dict__
-        # 4. If not cached:
-        #    - Call self.func(obj) to compute the value
-        #    - Store it in obj.__dict__[attr_name]
-        # 5. Return obj.__dict__[attr_name]
-        pass
+        # BLANK_START
+        raise NotImplementedError(
+            "Return self if obj is None. "
+            "Otherwise check obj.__dict__[self.func.__name__], "
+            "compute with self.func(obj) if not cached, and return cached value"
+        )
+        # BLANK_END

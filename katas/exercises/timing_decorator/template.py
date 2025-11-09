@@ -26,12 +26,9 @@ def timing(func: Callable[P, T]) -> Callable[P, T]:
 
         slow_function()  # Prints: Function 'slow_function' took 0.1002s
     """
-    # TODO: Implement the timing decorator
-    # Hints:
-    # 1. Use @functools.wraps(func) to preserve function metadata
-    # 2. Create a wrapper function that will replace the original
-    # 3. Use time.perf_counter() before and after calling func
-    # 4. Calculate elapsed time and print the message
-    # 5. Return the function's result
-    # 6. Return the wrapper function
-    pass
+    # BLANK_START
+    raise NotImplementedError(
+        "Create a wrapper function using @functools.wraps(func), "
+        "measure time with time.perf_counter(), and print elapsed time"
+    )
+    # BLANK_END

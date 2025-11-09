@@ -38,17 +38,10 @@ def retry(max_attempts: int = 3, backoff: float = 1.0) -> Callable[[Callable[P, 
 
         # Will retry up to 3 times with 0.5s, 1.0s, 2.0s delays
     """
-    # TODO: Implement the retry decorator
-    # Hints:
-    # 1. This is a PARAMETERIZED decorator - it returns a decorator function
-    # 2. You need THREE levels of nesting:
-    #    - retry(params) -> returns decorator
-    #    - decorator(func) -> returns wrapper
-    #    - wrapper(*args, **kwargs) -> calls func with retries
-    # 3. In the wrapper, use a for loop for attempts (0 to max_attempts-1)
-    # 4. Wrap func() call in try/except
-    # 5. On exception, calculate delay: backoff * (2 ** attempt)
-    # 6. Use time.sleep(delay) before next retry
-    # 7. If it's the last attempt, re-raise the exception
-    # 8. Don't forget @functools.wraps(func) on the wrapper
-    pass
+    # BLANK_START
+    raise NotImplementedError(
+        "Create decorator function that returns wrapper. "
+        "Use try/except in loop, calculate delay as backoff * (2 ** attempt), "
+        "re-raise last exception if all attempts fail"
+    )
+    # BLANK_END

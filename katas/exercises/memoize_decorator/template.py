@@ -29,14 +29,9 @@ def memoize(func: Callable[P, T]) -> Callable[P, T]:
         fibonacci(10)  # Computes once
         fibonacci(10)  # Returns cached result instantly
     """
-    # TODO: Implement the memoization decorator
-    # Hints:
-    # 1. Create a cache dictionary outside the wrapper (closure variable)
-    # 2. Convert args and kwargs into a hashable cache key
-    #    - args is already a tuple (hashable)
-    #    - kwargs needs to be converted: tuple(sorted(kwargs.items()))
-    # 3. Check if key exists in cache before calling function
-    # 4. Store result in cache if not present
-    # 5. Return the cached or computed result
-    # 6. Don't forget @functools.wraps(func)
-    pass
+    # BLANK_START
+    raise NotImplementedError(
+        "Create a cache dict, wrapper with @functools.wraps, "
+        "check cache using (args, tuple(sorted(kwargs.items()))) as key"
+    )
+    # BLANK_END
