@@ -1,0 +1,14 @@
+[kata]
+name = "singleton_metaclass"
+category = "python"
+base_difficulty = 2
+description = """
+Implement the Singleton pattern using Python metaclasses.
+
+Create a metaclass that ensures only one instance of a class exists, no matter
+how many times the class is instantiated. This is a classic design pattern
+used for database connections, loggers, and configuration managers.
+
+Key concepts: metaclass __call__, instance caching, singleton pattern
+"""
+dependencies = ["dynamic_class_creation"]

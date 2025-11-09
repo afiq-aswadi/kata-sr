@@ -1,0 +1,14 @@
+[kata]
+name = "validated_init_subclass"
+category = "python"
+base_difficulty = 2
+description = """
+Use __init_subclass__ to validate required attributes.
+
+Implement attribute validation using __init_subclass__ instead of metaclasses.
+This simpler approach enforces that subclasses define required attributes,
+raising TypeError if any are missing.
+
+Key concepts: __init_subclass__, validation, required_attrs kwarg
+"""
+dependencies = ["plugin_registration"]

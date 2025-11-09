@@ -1,0 +1,11 @@
+[kata]
+name = "plotly_spanning_subplot"
+category = "plotly"
+base_difficulty = 3
+description = """
+Create a subplot that spans multiple columns using colspan.
+
+Use specs parameter to define layouts where one cell spans across columns.
+"""
+dependencies = ["plotly_basic_grid"]
+tags = ["plotly", "subplots", "layout"]

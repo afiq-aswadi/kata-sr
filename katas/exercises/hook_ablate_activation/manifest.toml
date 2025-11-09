@@ -1,0 +1,13 @@
+[kata]
+name = "hook_ablate_activation"
+tags = ["interpretability", "transformerlens", "micro"]
+base_difficulty = 2
+description = """
+Ablate (zero out) activations at specific positions using hooks.
+
+Learn to modify activations during the forward pass. Ablation is a key technique
+for understanding which components are important for model behavior.
+
+Key concepts: intervention, ablation, hook functions, forward hooks
+"""
+dependencies = ["hook_capture_activation"]

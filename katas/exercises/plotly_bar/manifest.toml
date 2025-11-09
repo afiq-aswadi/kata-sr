@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_bar"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 1
+description = """
+Create a basic bar chart using Plotly.
+
+Learn to use go.Bar to create categorical data visualizations.
+Essential for comparing values across categories.
+
+Key concepts: go.Bar, categorical axes, bar charts
+"""
+dependencies = []

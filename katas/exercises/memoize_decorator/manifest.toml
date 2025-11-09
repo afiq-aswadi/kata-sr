@@ -1,0 +1,14 @@
+[kata]
+name = "memoize_decorator"
+category = "python"
+base_difficulty = 1
+description = """
+Implement a memoization decorator that caches function results.
+
+Learn how to create a decorator that remembers previous function calls and returns
+cached results for the same arguments. This is a powerful optimization technique
+for expensive computations like recursive algorithms.
+
+Key concepts: closures, dictionaries as caches, hashable types, functools.wraps
+"""
+dependencies = []

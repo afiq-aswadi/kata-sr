@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_line"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 1
+description = """
+Create a basic line plot using Plotly.
+
+Learn to use go.Scatter with mode='lines' to create line charts.
+Essential for time series and continuous data visualization.
+
+Key concepts: line mode, line styling, named traces
+"""
+dependencies = []

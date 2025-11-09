@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_animation_init"
+category = "matplotlib"
+base_difficulty = 3
+description = """
+Create a matplotlib animation with both init_func and update_func.
+
+Implement the init/update pattern where init() sets up the blank canvas and update() draws each frame. This pattern is essential for efficient animations with blitting.
+"""
+dependencies = ["matplotlib_simple_animation"]

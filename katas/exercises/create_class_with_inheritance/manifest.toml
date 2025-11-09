@@ -1,0 +1,14 @@
+[kata]
+name = "create_class_with_inheritance"
+category = "python"
+base_difficulty = 2
+description = """
+Create a class with inheritance using type().
+
+Build on basic class creation by adding inheritance. Learn how to pass a
+base class to type() to create a child class that inherits all parent
+attributes and methods.
+
+Key concepts: type() with bases tuple, inheritance, issubclass
+"""
+dependencies = ["create_simple_class"]

@@ -1,13 +1,18 @@
 [kata]
 name = "dynamic_programming"
-category = "algorithms"
-base_difficulty = 3
+tags = ["algorithms", "deprecated", "composite"]
+base_difficulty = 4
 description = """
-Implement classic dynamic programming problems.
+[DEPRECATED - Use micro-katas instead]
 
-Practice memoization and tabulation: Fibonacci, knapsack, longest common subsequence.
-Build optimal solutions from subproblems.
+This kata has been split into focused micro-exercises:
+1. dp_fibonacci - basic memoization
+2. dp_longest_subsequence - LCS with 2D table
+3. dp_knapsack - 0/1 knapsack optimization
+4. dp_edit_distance - Levenshtein distance
+
+This composite kata combines multiple DP problems for advanced practice.
 
 Key concepts: memoization, tabulation, optimal substructure, overlapping subproblems
 """
-dependencies = []
+dependencies = ["dp_fibonacci", "dp_longest_subsequence", "dp_knapsack", "dp_edit_distance"]

@@ -1,0 +1,18 @@
+[kata]
+name = "python_batch_generator"
+category = "python"
+base_difficulty = 1
+description = """
+Learn the basics of Python generators and the yield keyword. Implement a simple
+generator that yields batches from a sequence. This is the foundation for understanding
+how generators work: they produce values on demand without materializing the entire
+sequence in memory.
+
+Key concepts:
+- yield keyword for producing values
+- Generator state preservation between yields
+- Lazy evaluation and memory efficiency
+- StopIteration protocol
+"""
+dependencies = []
+tags = ["python", "generators", "yield", "iteration"]

@@ -68,6 +68,7 @@ impl PracticeScreen {
     /// #     name: "test".to_string(),
     /// #     category: "test".to_string(),
     /// #     description: "test".to_string(),
+    /// #     tags: vec![],
     /// #     base_difficulty: 1,
     /// #     current_difficulty: 1.0,
     /// #     parent_kata_id: None,

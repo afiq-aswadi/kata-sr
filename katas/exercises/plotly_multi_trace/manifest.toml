@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_multi_trace"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 2
+description = """
+Create a figure with multiple traces (scatter and line).
+
+Learn to combine different trace types in a single figure.
+Essential for overlaying data and comparing multiple series.
+
+Key concepts: multiple add_trace calls, trace styling, legends
+"""
+dependencies = ["plotly_scatter", "plotly_line"]

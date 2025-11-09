@@ -8,9 +8,11 @@ fn test_load_real_katas() {
 
     for kata in &katas {
         assert!(!kata.name.is_empty(), "kata name should not be empty");
+        // Category is optional if tags are provided (multi-tag support)
         assert!(
-            !kata.category.is_empty(),
-            "kata category should not be empty"
+            !kata.category.is_empty() || !kata.tags.is_empty(),
+            "kata '{}' should have either category or tags",
+            kata.name
         );
         assert!(
             kata.base_difficulty >= 1 && kata.base_difficulty <= 5,

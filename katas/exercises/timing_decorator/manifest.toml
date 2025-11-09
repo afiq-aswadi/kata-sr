@@ -1,0 +1,14 @@
+[kata]
+name = "timing_decorator"
+category = "python"
+base_difficulty = 1
+description = """
+Implement a timing decorator that measures function execution time.
+
+Learn the fundamentals of Python decorators by creating a wrapper that tracks
+how long a function takes to execute. This teaches the core pattern of functions
+that take functions and return modified functions.
+
+Key concepts: higher-order functions, functools.wraps, closure variable capture
+"""
+dependencies = []

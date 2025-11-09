@@ -1,0 +1,14 @@
+[kata]
+name = "plugin_registration"
+category = "python"
+base_difficulty = 2
+description = """
+Implement plugin registration using __init_subclass__.
+
+Use Python's __init_subclass__ hook to automatically register subclasses
+in a plugin registry. This is a modern, simpler alternative to metaclasses
+for building plugin systems.
+
+Key concepts: __init_subclass__, keyword arguments, plugin pattern, class registry
+"""
+dependencies = ["singleton_metaclass"]
