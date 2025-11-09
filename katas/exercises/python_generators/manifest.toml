@@ -1,0 +1,20 @@
+[kata]
+name = "python_generators"
+category = "python"
+base_difficulty = 2
+description = """
+Deep dive into Python generators and the iteration protocol. Implement generators
+using yield, generator expressions, and the full send/throw protocol for bidirectional
+communication. Understanding generators is crucial for memory-efficient iteration and
+coroutine patterns.
+
+Key concepts:
+- yield vs return
+- Generator state suspension/resumption
+- send() for bidirectional communication
+- throw() for exception injection
+- yield from for delegation
+- Generator expressions vs list comprehensions
+"""
+dependencies = []
+tags = ["python", "generators", "iterators", "coroutines", "yield"]
