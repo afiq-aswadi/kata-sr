@@ -11,12 +11,14 @@ def model():
     return HookedTransformer.from_pretrained("gpt2-small")
 
 
-def test_cache_only_residual_returns_dict(model):
-    """Test that function returns a dict."""
+def test_cache_only_residual_returns_cache(model):
+    """Test that function returns a cache object."""
     from template import cache_only_residual
 
     cache = cache_only_residual(model, "Test")
-    assert isinstance(cache, dict)
+    # Cache should be dict-like (support keys(), indexing, etc.)
+    assert hasattr(cache, 'keys')
+    assert hasattr(cache, '__getitem__')
 
 
 def test_cache_contains_residual(model):

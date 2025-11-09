@@ -42,8 +42,8 @@ def test_cache_contains_activations(model):
     prompt = "Test"
     logits, cache = run_with_cache(model, prompt)
 
-    # Cache should be a dict with activation names
-    assert isinstance(cache, dict)
+    # Cache should be dict-like with activation names
+    assert hasattr(cache, 'keys')
     assert len(cache) > 0
 
 
