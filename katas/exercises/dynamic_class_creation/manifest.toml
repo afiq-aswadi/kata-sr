@@ -1,0 +1,14 @@
+[kata]
+name = "dynamic_class_creation"
+category = "python"
+base_difficulty = 2
+description = """
+Learn to create classes dynamically at runtime using type().
+
+Master the three-argument form of type() to create new classes programmatically.
+This is the foundation for understanding metaclasses and how Python's class
+creation machinery works.
+
+Key concepts: type(name, bases, dict), class creation, runtime class generation
+"""
+dependencies = []

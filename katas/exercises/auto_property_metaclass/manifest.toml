@@ -1,0 +1,14 @@
+[kata]
+name = "auto_property_metaclass"
+category = "python"
+base_difficulty = 3
+description = """
+Implement a metaclass that automatically creates property getters/setters.
+
+Create a metaclass that converts specified attributes into properties with
+automatic getter and setter methods. This pattern provides controlled access
+to attributes and is used in ORMs and validation frameworks.
+
+Key concepts: property creation, closure, setattr on class, getter/setter
+"""
+dependencies = ["validated_metaclass"]

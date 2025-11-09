@@ -1,0 +1,14 @@
+[kata]
+name = "registry_metaclass"
+category = "python"
+base_difficulty = 2
+description = """
+Implement a metaclass that automatically registers all subclasses.
+
+Create a metaclass that maintains a registry of all classes created with it.
+This pattern is used in plugin systems, model registries (Django/SQLAlchemy),
+and factory patterns.
+
+Key concepts: metaclass __new__, class registration, plugin architecture
+"""
+dependencies = ["singleton_metaclass"]
