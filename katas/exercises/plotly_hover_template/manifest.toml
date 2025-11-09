@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_hover_template"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 2
+description = """
+Apply custom hover template to figure traces.
+
+Learn to use update_traces() to customize hover information display.
+Essential for creating informative interactive visualizations.
+
+Key concepts: update_traces, hovertemplate, hover customization
+"""
+dependencies = ["plotly_scatter"]

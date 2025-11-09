@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_layout"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 2
+description = """
+Configure figure layout with titles, axis labels, and legend settings.
+
+Learn to use update_layout() to customize plot appearance.
+Essential for creating professional, publication-ready visualizations.
+
+Key concepts: update_layout, titles, axes, legend control
+"""
+dependencies = ["plotly_scatter"]
