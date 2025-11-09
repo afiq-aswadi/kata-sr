@@ -1,0 +1,14 @@
+[kata]
+name = "compute_attribution_scores"
+tags = ["interpretability", "activation-patching", "micro"]
+base_difficulty = 4
+description = """
+Systematically compute attribution scores across all layers and positions.
+
+Complete attribution patching workflow: patch every position in every layer,
+measuring how much each contributes to a target metric. Core technique for
+circuit discovery and understanding model computation.
+
+Key concepts: systematic attribution, layer-wise analysis, metric functions, circuit discovery
+"""
+dependencies = ["patch_residual_stream"]

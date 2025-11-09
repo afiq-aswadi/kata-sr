@@ -1,0 +1,13 @@
+[kata]
+name = "dp_edit_distance"
+tags = ["dynamic-programming", "algorithms", "micro"]
+base_difficulty = 3
+description = """
+Compute edit distance (Levenshtein distance) between two strings.
+
+Minimum number of insertions, deletions, and substitutions needed
+to transform one string into another. Classic 2D DP problem.
+
+Key concepts: string alignment, edit operations, minimum cost paths
+"""
+dependencies = ["dp_longest_subsequence"]
