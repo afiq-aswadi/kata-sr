@@ -1,0 +1,14 @@
+[kata]
+name = "typed_meta"
+category = "python"
+base_difficulty = 3
+description = """
+Implement a metaclass that validates attribute types.
+
+Create a metaclass that enforces type checking at class definition time. Classes
+define 'attribute_types' as a dict mapping attribute names to expected types.
+The metaclass validates that all specified attributes have the correct type.
+
+Key concepts: metaclass __new__, type checking with isinstance, enforcing constraints
+"""
+dependencies = ["validated_meta"]
