@@ -1,11 +1,12 @@
 """Tests for matplotlib span highlight kata."""
 
 import matplotlib
-import matplotlib.pyplot as plt
-import pytest
 
 # Use non-interactive backend for testing
 matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import pytest
 
 
 @pytest.fixture(autouse=True)

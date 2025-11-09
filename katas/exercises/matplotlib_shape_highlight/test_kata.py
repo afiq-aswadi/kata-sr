@@ -1,12 +1,13 @@
 """Tests for matplotlib shape highlight kata."""
 
 import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
-import pytest
 
 # Use non-interactive backend for testing
 matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
 
 
 @pytest.fixture(autouse=True)
