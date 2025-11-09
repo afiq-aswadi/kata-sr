@@ -6,7 +6,6 @@
 //! consistent error handling and transaction management.
 
 use crate::core::dependencies::DependencyGraph;
-use crate::core::scheduler::SM2State;
 use chrono::{DateTime, LocalResult, TimeZone, Utc};
 use rusqlite::types::Type;
 use rusqlite::{params, Connection, Result, Row};
