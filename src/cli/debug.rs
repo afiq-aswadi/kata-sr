@@ -61,6 +61,18 @@ pub enum DebugOperation {
         #[arg(long)]
         due: bool,
     },
+
+    /// Export session history for a kata
+    ExportSessions {
+        /// Name of the kata to export sessions for
+        kata_name: String,
+        /// Output format (json or csv)
+        #[arg(long, default_value = "json")]
+        format: String,
+        /// Output file path (optional, defaults to stdout)
+        #[arg(long)]
+        output: Option<String>,
+    },
 }
 
 impl DebugOperation {
@@ -75,6 +87,11 @@ impl DebugOperation {
             DebugOperation::Delete { kata_name } => delete_kata(repo, kata_name),
             DebugOperation::Stats { json } => show_stats(repo, *json),
             DebugOperation::List { due } => list_katas(repo, *due),
+            DebugOperation::ExportSessions {
+                kata_name,
+                format,
+                output,
+            } => export_sessions(repo, kata_name, format, output.as_deref()),
         }
     }
 }
@@ -219,4 +236,134 @@ fn list_katas(repo: &KataRepository, due: bool) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn export_sessions(
+    repo: &KataRepository,
+    kata_name: &str,
+    format: &str,
+    output_path: Option<&str>,
+) -> Result<()> {
+    // Get the kata
+    let kata = repo
+        .get_kata_by_name(kata_name)
+        .context("Failed to look up kata")?
+        .ok_or_else(|| anyhow::anyhow!("Kata not found: {}", kata_name))?;
+
+    // Get all sessions for this kata
+    let sessions = repo
+        .get_all_sessions_for_kata(kata.id)
+        .context("Failed to get sessions")?;
+
+    if sessions.is_empty() {
+        println!("No sessions found for kata: {}", kata_name);
+        return Ok(());
+    }
+
+    // Generate output based on format
+    let output = match format.to_lowercase().as_str() {
+        "json" => export_sessions_json(&kata, &sessions)?,
+        "csv" => export_sessions_csv(&kata, &sessions)?,
+        _ => return Err(anyhow::anyhow!("Unsupported format: {}. Use 'json' or 'csv'", format)),
+    };
+
+    // Write to file or stdout
+    if let Some(path) = output_path {
+        std::fs::write(path, output).context("Failed to write output file")?;
+        println!("✓ Exported {} sessions to {}", sessions.len(), path);
+    } else {
+        println!("{}", output);
+    }
+
+    Ok(())
+}
+
+fn export_sessions_json(
+    kata: &crate::db::repo::Kata,
+    sessions: &[crate::db::repo::Session],
+) -> Result<String> {
+    use serde::Serialize;
+
+    #[derive(Serialize)]
+    struct SessionExport {
+        session_id: i64,
+        kata_id: i64,
+        kata_name: String,
+        started_at: String,
+        completed_at: Option<String>,
+        duration_ms: Option<i64>,
+        num_passed: Option<i32>,
+        num_failed: Option<i32>,
+        num_skipped: Option<i32>,
+        quality_rating: Option<i32>,
+        quality_rating_label: Option<String>,
+    }
+
+    let exports: Vec<SessionExport> = sessions
+        .iter()
+        .map(|s| {
+            let quality_label = s.quality_rating.map(|r| match r {
+                1 => "Again".to_string(),
+                2 => "Hard".to_string(),
+                3 => "Good".to_string(),
+                4 => "Easy".to_string(),
+                _ => format!("{}", r),
+            });
+
+            SessionExport {
+                session_id: s.id,
+                kata_id: kata.id,
+                kata_name: kata.name.clone(),
+                started_at: s.started_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                completed_at: s.completed_at.map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+                duration_ms: s.duration_ms,
+                num_passed: s.num_passed,
+                num_failed: s.num_failed,
+                num_skipped: s.num_skipped,
+                quality_rating: s.quality_rating,
+                quality_rating_label: quality_label,
+            }
+        })
+        .collect();
+
+    serde_json::to_string_pretty(&exports).context("Failed to serialize sessions to JSON")
+}
+
+fn export_sessions_csv(
+    kata: &crate::db::repo::Kata,
+    sessions: &[crate::db::repo::Session],
+) -> Result<String> {
+    let mut output = String::new();
+
+    // Header
+    output.push_str("date,kata,passed,failed,skipped,duration_ms,rating,rating_label\n");
+
+    // Rows
+    for session in sessions {
+        let date = if let Some(completed_at) = session.completed_at {
+            completed_at.format("%Y-%m-%d %H:%M:%S").to_string()
+        } else {
+            session.started_at.format("%Y-%m-%d %H:%M:%S").to_string()
+        };
+
+        let passed = session.num_passed.map_or("-".to_string(), |n| n.to_string());
+        let failed = session.num_failed.map_or("-".to_string(), |n| n.to_string());
+        let skipped = session.num_skipped.map_or("-".to_string(), |n| n.to_string());
+        let duration = session.duration_ms.map_or("-".to_string(), |ms| ms.to_string());
+        let rating = session.quality_rating.map_or("-".to_string(), |r| r.to_string());
+        let rating_label = session.quality_rating.map_or("-".to_string(), |r| match r {
+            1 => "Again".to_string(),
+            2 => "Hard".to_string(),
+            3 => "Good".to_string(),
+            4 => "Easy".to_string(),
+            _ => format!("{}", r),
+        });
+
+        output.push_str(&format!(
+            "{},{},{},{},{},{},{},{}\n",
+            date, kata.name, passed, failed, skipped, duration, rating, rating_label
+        ));
+    }
+
+    Ok(output)
 }

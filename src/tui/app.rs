@@ -19,6 +19,8 @@ use super::keybindings;
 use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
 use super::results::{ResultsAction, ResultsScreen};
+use super::session_detail::{SessionDetailAction, SessionDetailScreen};
+use super::session_history::{SessionHistoryAction, SessionHistoryScreen};
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
 use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
@@ -58,6 +60,10 @@ pub enum Screen {
     Details(DetailsScreen),
     /// Create kata screen for generating new kata files
     CreateKata(CreateKataScreen),
+    /// Session history screen showing past sessions for a kata
+    SessionHistory(SessionHistoryScreen),
+    /// Session detail screen showing full test results for a session
+    SessionDetail(SessionDetailScreen),
 }
 
 /// Internal enum for handling screen transitions without borrow conflicts.
@@ -79,6 +85,10 @@ enum ScreenAction {
         slug: String,
     },
     CancelCreateKata,
+    ViewSessionHistory(Kata),
+    ViewSessionDetail(i64), // session_id
+    BackFromSessionHistory,
+    BackFromSessionDetail,
 }
 
 /// Main application state and event loop coordinator.
@@ -264,6 +274,12 @@ impl App {
             Screen::CreateKata(create_kata) => {
                 create_kata.render(frame);
             }
+            Screen::SessionHistory(session_history) => {
+                session_history.render(frame);
+            }
+            Screen::SessionDetail(session_detail) => {
+                session_detail.render(frame);
+            }
         }
     }
 
@@ -281,6 +297,12 @@ impl App {
                 // handle library key 'l' in dashboard
                 if code == KeyCode::Char('l') {
                     return self.execute_action(ScreenAction::OpenLibrary);
+                }
+                // handle history key 'h' in dashboard (only if kata is selected)
+                if code == KeyCode::Char('h') && !self.dashboard.katas_due.is_empty() {
+                    if let Some(kata) = self.dashboard.katas_due.get(self.dashboard.selected_index) {
+                        return self.execute_action(ScreenAction::ViewSessionHistory(kata.clone()));
+                    }
                 }
                 let action = self.dashboard.handle_input(code);
                 match action {
@@ -321,17 +343,28 @@ impl App {
             }
             Screen::Help => Some(ScreenAction::ReturnToDashboard),
             Screen::Library(library) => {
-                let action = library.handle_input(code);
-                match action {
-                    LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
-                    LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
-                    LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
-                    LibraryAction::ViewDetails(kata) => {
-                        let in_deck = library.kata_ids_in_deck.contains(&kata.name);
-                        Some(ScreenAction::ViewDetails(kata, in_deck))
+                // handle history key 'h' in My Deck tab
+                if code == KeyCode::Char('h') {
+                    use super::library::LibraryTab;
+                    if library.active_tab == LibraryTab::MyDeck && library.deck_selected < library.deck_katas.len() {
+                        let kata = library.deck_katas[library.deck_selected].clone();
+                        Some(ScreenAction::ViewSessionHistory(kata))
+                    } else {
+                        None
                     }
-                    LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
-                    LibraryAction::None => None,
+                } else {
+                    let action = library.handle_input(code);
+                    match action {
+                        LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
+                        LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
+                        LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
+                        LibraryAction::ViewDetails(kata) => {
+                            let in_deck = library.kata_ids_in_deck.contains(&kata.name);
+                            Some(ScreenAction::ViewDetails(kata, in_deck))
+                        }
+                        LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
+                        LibraryAction::None => None,
+                    }
                 }
             }
             Screen::Details(details) => {
@@ -351,6 +384,23 @@ impl App {
                     }
                     CreateKataAction::Cancel => Some(ScreenAction::CancelCreateKata),
                     CreateKataAction::None => None,
+                }
+            }
+            Screen::SessionHistory(session_history) => {
+                let action = session_history.handle_input(code);
+                match action {
+                    SessionHistoryAction::ViewDetails(session_id) => {
+                        Some(ScreenAction::ViewSessionDetail(session_id))
+                    }
+                    SessionHistoryAction::Back => Some(ScreenAction::BackFromSessionHistory),
+                    SessionHistoryAction::None => None,
+                }
+            }
+            Screen::SessionDetail(session_detail) => {
+                let action = session_detail.handle_input(code);
+                match action {
+                    SessionDetailAction::Back => Some(ScreenAction::BackFromSessionDetail),
+                    SessionDetailAction::None => None,
                 }
             }
         };
@@ -509,6 +559,27 @@ impl App {
                 // Return to library
                 let library = Library::load(&self.repo)?;
                 self.current_screen = Screen::Library(library);
+            }
+            ScreenAction::ViewSessionHistory(kata) => {
+                let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                self.current_screen = Screen::SessionHistory(session_history);
+            }
+            ScreenAction::ViewSessionDetail(session_id) => {
+                let session_detail = SessionDetailScreen::new(session_id, &self.repo)?;
+                self.current_screen = Screen::SessionDetail(session_detail);
+            }
+            ScreenAction::BackFromSessionHistory => {
+                self.refresh_dashboard_screen()?;
+            }
+            ScreenAction::BackFromSessionDetail => {
+                // Navigate back to session history
+                // We need to get the kata from the session detail screen
+                if let Screen::SessionDetail(ref session_detail) = &self.current_screen {
+                    let kata = self.repo.get_kata_by_id(session_detail.session.kata_id)?
+                        .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
+                    let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                    self.current_screen = Screen::SessionHistory(session_history);
+                }
             }
         }
         Ok(())
