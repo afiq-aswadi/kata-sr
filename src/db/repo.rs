@@ -6,7 +6,6 @@
 //! consistent error handling and transaction management.
 
 use crate::core::dependencies::DependencyGraph;
-use crate::core::scheduler::SM2State;
 use chrono::{DateTime, LocalResult, TimeZone, Utc};
 use rusqlite::types::Type;
 use rusqlite::{params, Connection, Result, Row};
@@ -343,6 +342,70 @@ impl KataRepository {
             .collect::<Result<Vec<_>>>()?;
 
         Ok(sessions)
+    }
+
+    /// Retrieves all sessions for a kata, ordered by most recent first.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - The kata to get sessions for
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let all_sessions = repo.get_all_sessions_for_kata(1)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_all_sessions_for_kata(&self, kata_id: i64) -> Result<Vec<Session>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, kata_id, started_at, completed_at, test_results_json,
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+             FROM sessions
+             WHERE kata_id = ?1
+             ORDER BY started_at DESC",
+        )?;
+
+        let sessions = stmt
+            .query_map([kata_id], row_to_session)?
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(sessions)
+    }
+
+    /// Retrieves a single session by ID.
+    ///
+    /// Returns `None` if the session doesn't exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - The session ID to retrieve
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// if let Some(session) = repo.get_session_by_id(1)? {
+    ///     println!("Session passed: {:?}", session.num_passed);
+    /// }
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_session_by_id(&self, session_id: i64) -> Result<Option<Session>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, kata_id, started_at, completed_at, test_results_json,
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+             FROM sessions
+             WHERE id = ?1",
+        )?;
+
+        let mut rows = stmt.query([session_id])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(row_to_session(row)?))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Retrieves all sessions for a specific date.

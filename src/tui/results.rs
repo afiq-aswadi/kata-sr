@@ -10,6 +10,7 @@ use ratatui::{
 };
 
 const RATING_LABELS: [&str; 4] = ["Again", "Hard", "Good", "Easy"];
+const DETAIL_PAGE_SIZE: u16 = 20; // Lines to scroll per page in detail mode
 
 pub struct ResultsScreen {
     kata: Kata,
@@ -242,7 +243,10 @@ impl ResultsScreen {
         frame.render_widget(Clear, area);
 
         let (title, body) = if let Some(test) = self.selected_test_result() {
-            let title = format!("{} output (press o or Esc to close)", test.test_name);
+            let title = format!(
+                "{} output · [↑↓/jk] scroll · [PgUp/PgDn/Space/b] page · [Home/End] jump · [o/Esc] close",
+                test.test_name
+            );
             let body = if test.output.trim().is_empty() {
                 "No additional output captured for this test.".to_string()
             } else {
@@ -275,11 +279,21 @@ impl ResultsScreen {
                 KeyCode::Up | KeyCode::Char('k') => {
                     self.detail_scroll = self.detail_scroll.saturating_sub(1);
                 }
-                KeyCode::PageDown => {
-                    self.detail_scroll = self.detail_scroll.saturating_add(5);
+                KeyCode::PageDown | KeyCode::Char(' ') => {
+                    // Scroll down one viewport height
+                    self.detail_scroll = self.detail_scroll.saturating_add(DETAIL_PAGE_SIZE);
                 }
-                KeyCode::PageUp => {
-                    self.detail_scroll = self.detail_scroll.saturating_sub(5);
+                KeyCode::PageUp | KeyCode::Char('b') => {
+                    // Scroll up one viewport height
+                    self.detail_scroll = self.detail_scroll.saturating_sub(DETAIL_PAGE_SIZE);
+                }
+                KeyCode::Home | KeyCode::Char('g') => {
+                    // Jump to top
+                    self.detail_scroll = 0;
+                }
+                KeyCode::End | KeyCode::Char('G') => {
+                    // Jump to bottom (use large number, ratatui will clamp)
+                    self.detail_scroll = u16::MAX;
                 }
                 _ => {}
             }

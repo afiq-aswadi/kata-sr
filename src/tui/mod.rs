@@ -10,3 +10,5 @@ pub mod keybindings;
 pub mod library;
 pub mod practice;
 pub mod results;
+pub mod session_detail;
+pub mod session_history;
