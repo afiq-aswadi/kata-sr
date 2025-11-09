@@ -1,0 +1,14 @@
+[kata]
+name = "create_class_with_methods"
+category = "python"
+base_difficulty = 2
+description = """
+Create a class with methods using type().
+
+Learn to add methods to dynamically created classes. Understand that methods
+are just functions stored in the class dictionary, and how to include them
+when calling type().
+
+Key concepts: methods as class attributes, function binding to instances
+"""
+dependencies = ["create_simple_class"]

@@ -11,4 +11,4 @@ to attributes and is used in ORMs and validation frameworks.
 
 Key concepts: property creation, closure, setattr on class, getter/setter
 """
-dependencies = ["validated_metaclass"]
+dependencies = ["validated_meta"]
