@@ -15,6 +15,7 @@ use super::create_kata::{CreateKataAction, CreateKataScreen};
 use super::dashboard::{Dashboard, DashboardAction};
 use super::details::{DetailsAction, DetailsScreen};
 use super::done::{DoneAction, DoneScreen};
+use super::edit_kata::{EditKataAction, EditKataScreen};
 use super::keybindings;
 use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
@@ -58,6 +59,8 @@ pub enum Screen {
     Details(DetailsScreen),
     /// Create kata screen for generating new kata files
     CreateKata(CreateKataScreen),
+    /// Edit kata screen for modifying existing katas
+    EditKata(EditKataScreen),
 }
 
 /// Internal enum for handling screen transitions without borrow conflicts.
@@ -79,6 +82,15 @@ enum ScreenAction {
         slug: String,
     },
     CancelCreateKata,
+    OpenEditKata(i64),
+    SubmitEditKata {
+        kata_id: i64,
+        original_slug: String,
+        form_data: crate::core::kata_generator::KataFormData,
+        new_slug: String,
+    },
+    OpenEditorFile(std::path::PathBuf),
+    CancelEditKata,
 }
 
 /// Main application state and event loop coordinator.
@@ -264,6 +276,9 @@ impl App {
             Screen::CreateKata(create_kata) => {
                 create_kata.render(frame);
             }
+            Screen::EditKata(edit_kata) => {
+                edit_kata.render(frame);
+            }
         }
     }
 
@@ -288,6 +303,7 @@ impl App {
                     DashboardAction::RemoveKata(kata) => {
                         Some(ScreenAction::RemoveKataFromDeck(kata))
                     }
+                    DashboardAction::EditKata(kata) => Some(ScreenAction::OpenEditKata(kata.id)),
                     DashboardAction::None => None,
                 }
             }
@@ -331,6 +347,15 @@ impl App {
                         Some(ScreenAction::ViewDetails(kata, in_deck))
                     }
                     LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
+                    LibraryAction::EditKataById(kata_id) => Some(ScreenAction::OpenEditKata(kata_id)),
+                    LibraryAction::EditKataByName(name) => {
+                        // Look up kata by name to get ID
+                        if let Ok(Some(kata)) = self.repo.get_kata_by_name(&name) {
+                            Some(ScreenAction::OpenEditKata(kata.id))
+                        } else {
+                            None
+                        }
+                    }
                     LibraryAction::None => None,
                 }
             }
@@ -339,6 +364,14 @@ impl App {
                 match action {
                     DetailsAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
                     DetailsAction::Back => Some(ScreenAction::BackFromDetails),
+                    DetailsAction::EditKata(name) => {
+                        // Look up kata by name to get ID
+                        if let Ok(Some(kata)) = self.repo.get_kata_by_name(&name) {
+                            Some(ScreenAction::OpenEditKata(kata.id))
+                        } else {
+                            None
+                        }
+                    }
                     DetailsAction::None => None,
                 }
             }
@@ -351,6 +384,28 @@ impl App {
                     }
                     CreateKataAction::Cancel => Some(ScreenAction::CancelCreateKata),
                     CreateKataAction::None => None,
+                }
+            }
+            Screen::EditKata(edit_kata) => {
+                let exercises_dir = std::path::Path::new("katas/exercises");
+                let action = edit_kata.handle_input(code, exercises_dir);
+                match action {
+                    EditKataAction::Submit {
+                        kata_id,
+                        original_slug,
+                        form_data,
+                        new_slug,
+                    } => Some(ScreenAction::SubmitEditKata {
+                        kata_id,
+                        original_slug,
+                        form_data,
+                        new_slug,
+                    }),
+                    EditKataAction::OpenEditor { file_path } => {
+                        Some(ScreenAction::OpenEditorFile(file_path))
+                    }
+                    EditKataAction::Cancel => Some(ScreenAction::CancelEditKata),
+                    EditKataAction::None => None,
                 }
             }
         };
@@ -510,8 +565,138 @@ impl App {
                 let library = Library::load(&self.repo)?;
                 self.current_screen = Screen::Library(library);
             }
+            ScreenAction::OpenEditKata(kata_id) => {
+                // Load kata from database
+                if let Some(kata) = self.repo.get_kata_by_id(kata_id)? {
+                    // Load tags and dependencies
+                    let tags = self.repo.get_kata_tags(kata_id)?;
+                    let dependencies = self.repo.get_kata_dependencies(kata_id)?;
+
+                    // Get dependency names (not IDs)
+                    let dep_names: Vec<String> = dependencies
+                        .iter()
+                        .filter_map(|dep_id| {
+                            self.repo.get_kata_by_id(*dep_id).ok().flatten().map(|k| k.name)
+                        })
+                        .collect();
+
+                    // Load available katas for dependency selection
+                    let available_katas = crate::core::kata_loader::load_available_katas()?;
+                    let kata_names: Vec<String> =
+                        available_katas.iter().map(|k| k.name.clone()).collect();
+
+                    let exercises_dir = std::path::PathBuf::from("katas/exercises");
+                    let edit_kata_screen =
+                        EditKataScreen::new(&kata, tags, dep_names, kata_names, exercises_dir);
+                    self.current_screen = Screen::EditKata(edit_kata_screen);
+                }
+            }
+            ScreenAction::SubmitEditKata {
+                kata_id,
+                original_slug,
+                form_data,
+                new_slug,
+            } => {
+                use crate::core::kata_generator::{rename_kata_directory, update_manifest};
+
+                let exercises_dir = std::path::Path::new("katas/exercises");
+                let name_changed = original_slug != new_slug;
+
+                // Update database first
+                if name_changed {
+                    // Rename directory first (can fail and be rolled back)
+                    match rename_kata_directory(exercises_dir, &original_slug, &new_slug) {
+                        Ok(_) => {
+                            // Directory renamed, now update database
+                            self.repo.update_kata_full_metadata(
+                                kata_id,
+                                &new_slug,
+                                &form_data.description,
+                                &form_data.category,
+                                form_data.difficulty as i32,
+                            )?;
+
+                            // Update manifest in new location
+                            let kata_dir = exercises_dir.join(&new_slug);
+                            update_manifest(&kata_dir, &form_data, &new_slug)?;
+
+                            // Update dependencies
+                            let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
+                            self.repo.replace_dependencies(kata_id, &dep_ids)?;
+
+                            // Success! Return to library
+                            let library = Library::load(&self.repo)?;
+                            self.current_screen = Screen::Library(library);
+                            eprintln!("Kata '{}' updated successfully!", new_slug);
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to rename kata directory: {}", e);
+                            // Stay on edit screen
+                        }
+                    }
+                } else {
+                    // Name didn't change, just update metadata
+                    self.repo.update_kata_metadata(
+                        kata_id,
+                        &form_data.description,
+                        &form_data.category,
+                        form_data.difficulty as i32,
+                    )?;
+
+                    // Update manifest
+                    let kata_dir = exercises_dir.join(&original_slug);
+                    update_manifest(&kata_dir, &form_data, &original_slug)?;
+
+                    // Update dependencies
+                    let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
+                    self.repo.replace_dependencies(kata_id, &dep_ids)?;
+
+                    // Success! Return to library
+                    let library = Library::load(&self.repo)?;
+                    self.current_screen = Screen::Library(library);
+                    eprintln!("Kata '{}' updated successfully!", original_slug);
+                }
+            }
+            ScreenAction::OpenEditorFile(file_path) => {
+                // Spawn external editor (nvim by default)
+                use std::process::Command;
+
+                // Save terminal state
+                self.needs_terminal_clear = true;
+
+                // Get editor from environment or use nvim
+                let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
+
+                // Spawn editor
+                let status = Command::new(&editor)
+                    .arg(&file_path)
+                    .status()
+                    .context("Failed to spawn external editor")?;
+
+                if !status.success() {
+                    eprintln!("Editor exited with non-zero status");
+                }
+
+                // Return to edit screen (don't change screen)
+            }
+            ScreenAction::CancelEditKata => {
+                // Return to library
+                let library = Library::load(&self.repo)?;
+                self.current_screen = Screen::Library(library);
+            }
         }
         Ok(())
+    }
+
+    /// Resolves kata dependency names to their database IDs.
+    fn resolve_dependency_ids(&self, dep_names: &[String]) -> anyhow::Result<Vec<i64>> {
+        let mut dep_ids = Vec::new();
+        for name in dep_names {
+            if let Some(kata) = self.repo.get_kata_by_name(name)? {
+                dep_ids.push(kata.id);
+            }
+        }
+        Ok(dep_ids)
     }
 
     /// Handles async events from background threads.

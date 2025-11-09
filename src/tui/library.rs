@@ -46,6 +46,9 @@ pub enum LibraryAction {
     Back,
     /// Open create kata screen
     CreateKata,
+    /// Edit an existing kata (by kata ID or name to look up)
+    EditKataById(i64),
+    EditKataByName(String),
 }
 
 /// Sort mode for library view
@@ -682,6 +685,10 @@ impl Library {
                 let kata = self.deck_katas[self.deck_selected].clone();
                 LibraryAction::RemoveKata(kata)
             }
+            KeyCode::Char('e') => {
+                let kata = self.deck_katas[self.deck_selected].clone();
+                LibraryAction::EditKataById(kata.id)
+            }
             _ => LibraryAction::None,
         }
     }
@@ -739,6 +746,15 @@ impl Library {
                     LibraryAction::None
                 } else {
                     LibraryAction::AddKata(selected_kata.name.clone())
+                }
+            }
+            KeyCode::Char('e') => {
+                let selected_kata = &self.filtered_available_katas[self.all_selected];
+                // Only allow editing if kata is in deck (i.e., in database)
+                if self.kata_ids_in_deck.contains(&selected_kata.name) {
+                    LibraryAction::EditKataByName(selected_kata.name.clone())
+                } else {
+                    LibraryAction::None
                 }
             }
             KeyCode::Enter => {

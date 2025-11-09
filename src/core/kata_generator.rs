@@ -214,6 +214,98 @@ def kata_{}():
     Ok(())
 }
 
+/// Updates an existing kata's manifest.toml file.
+///
+/// This function rewrites the manifest.toml file with new metadata while
+/// preserving the file structure. Used by the edit kata screen.
+///
+/// # Arguments
+///
+/// * `kata_dir` - Path to the kata directory (e.g., "katas/exercises/kata_name/")
+/// * `form_data` - Updated kata metadata
+/// * `slug` - The kata slug (directory name)
+///
+/// # Returns
+///
+/// Ok(()) on success, error on filesystem failures.
+pub fn update_manifest(kata_dir: &Path, form_data: &KataFormData, slug: &str) -> Result<()> {
+    let manifest_path = kata_dir.join("manifest.toml");
+
+    let dependencies_toml = if form_data.dependencies.is_empty() {
+        String::new()
+    } else {
+        let deps_list = form_data
+            .dependencies
+            .iter()
+            .map(|d| format!("\"{}\"", d))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("dependencies = [{}]\n", deps_list)
+    };
+
+    let content = format!(
+        r#"[kata]
+name = "{}"
+category = "{}"
+base_difficulty = {}
+description = """
+{}
+"""
+{}
+"#,
+        slug, form_data.category, form_data.difficulty, form_data.description, dependencies_toml
+    );
+
+    fs::write(&manifest_path, content).context("Failed to update manifest.toml")?;
+
+    Ok(())
+}
+
+/// Renames a kata directory atomically.
+///
+/// This function renames a kata directory and verifies the operation succeeded.
+/// Used when editing a kata's name through the edit kata screen.
+///
+/// # Arguments
+///
+/// * `exercises_dir` - Path to the exercises directory
+/// * `old_slug` - Current directory name
+/// * `new_slug` - New directory name
+///
+/// # Returns
+///
+/// Ok(()) on success, error if rename fails or new directory already exists.
+///
+/// # Safety
+///
+/// This operation should be called AFTER database updates are validated but
+/// BEFORE committing the database transaction. If this fails, the database
+/// update should be rolled back.
+pub fn rename_kata_directory(
+    exercises_dir: &Path,
+    old_slug: &str,
+    new_slug: &str,
+) -> Result<()> {
+    let old_path = exercises_dir.join(old_slug);
+    let new_path = exercises_dir.join(new_slug);
+
+    // Verify old directory exists
+    if !old_path.exists() {
+        anyhow::bail!("Kata directory '{}' does not exist", old_slug);
+    }
+
+    // Verify new directory doesn't exist
+    if new_path.exists() {
+        anyhow::bail!("Kata directory '{}' already exists", new_slug);
+    }
+
+    // Perform the rename
+    fs::rename(&old_path, &new_path)
+        .with_context(|| format!("Failed to rename directory '{}' to '{}'", old_slug, new_slug))?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
