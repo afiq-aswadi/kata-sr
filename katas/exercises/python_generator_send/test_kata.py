@@ -4,10 +4,14 @@ Tests for Python Generator Send kata
 
 import pytest
 
+try:
+    from user_kata import running_average
+except ImportError:
+    from .reference import running_average
+
 
 def test_running_average_basic():
     """Test running_average computes correct averages"""
-    from template import running_average
 
     avg = running_average()
     next(avg)  # Prime the generator
@@ -19,7 +23,6 @@ def test_running_average_basic():
 
 def test_running_average_negative_numbers():
     """Test running_average with negative numbers"""
-    from template import running_average
 
     avg = running_average()
     next(avg)  # Prime the generator
@@ -31,7 +34,6 @@ def test_running_average_negative_numbers():
 
 def test_running_average_float_precision():
     """Test running_average maintains precision"""
-    from template import running_average
 
     avg = running_average()
     next(avg)  # Prime the generator
@@ -44,7 +46,6 @@ def test_running_average_float_precision():
 
 def test_send_protocol():
     """Test that send() works correctly"""
-    from template import running_average
 
     avg = running_average()
 
@@ -62,7 +63,6 @@ def test_send_protocol():
 
 def test_generator_state_preservation():
     """Test that generator state is preserved between yields"""
-    from template import running_average
 
     avg = running_average()
     next(avg)
@@ -79,7 +79,6 @@ def test_generator_state_preservation():
 
 def test_multiple_generators():
     """Test that multiple generator instances maintain separate state"""
-    from template import running_average
 
     avg1 = running_average()
     avg2 = running_average()
@@ -101,7 +100,6 @@ def test_multiple_generators():
 
 def test_large_sequence():
     """Test running_average with larger sequence"""
-    from template import running_average
 
     avg = running_average()
     next(avg)
@@ -115,7 +113,6 @@ def test_large_sequence():
 
 def test_floating_point_values():
     """Test running_average with floating point values"""
-    from template import running_average
 
     avg = running_average()
     next(avg)
@@ -127,7 +124,6 @@ def test_floating_point_values():
 
 def test_zeros():
     """Test running_average with zeros"""
-    from template import running_average
 
     avg = running_average()
     next(avg)
@@ -139,7 +135,6 @@ def test_zeros():
 
 def test_prime_before_send():
     """Test that generator must be primed before send()"""
-    from template import running_average
 
     avg = running_average()
 
@@ -151,7 +146,6 @@ def test_prime_before_send():
 
 def test_alternating_positive_negative():
     """Test with alternating positive and negative values"""
-    from template import running_average
 
     avg = running_average()
     next(avg)
@@ -164,7 +158,6 @@ def test_alternating_positive_negative():
 
 def test_is_infinite_generator():
     """Test that generator continues indefinitely"""
-    from template import running_average
 
     avg = running_average()
     next(avg)
@@ -179,7 +172,6 @@ def test_is_infinite_generator():
 
 def test_returns_generator():
     """Test that function returns a generator"""
-    from template import running_average
 
     gen = running_average()
 

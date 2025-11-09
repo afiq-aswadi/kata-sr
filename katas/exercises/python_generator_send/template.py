@@ -37,24 +37,7 @@ def running_average() -> Iterator[float]:
         >>> avg.send(30)
         20.0
 
-    Hints:
-        - Initialize total = 0, count = 0, average = None
-        - Use infinite loop: while True
-        - Use: value = yield average
-          - This yields the current average
-          - Then receives the next value via send()
-        - Update total and count after receiving each value
-        - Compute new average: total / count
-        - First yield returns None (before any values sent)
     """
-    # TODO: Implement stateful generator with send()
-    #
-    # 1. Initialize: total = 0, count = 0, average = None
-    # 2. Start infinite loop (while True)
-    # 3. Use: value = yield average
-    #    - Yields current average to caller
-    #    - Receives new value from send()
-    # 4. Update: total += value, count += 1
-    # 5. Compute: average = total / count
-    # 6. Loop continues, yielding new average
-    pass
+    # BLANK_START
+    raise NotImplementedError("Initialize state, use while True loop with 'value = yield average', update total/count")
+    # BLANK_END

@@ -5,10 +5,14 @@ Tests for Python Batch Generator kata
 import pytest
 import itertools
 
+try:
+    from user_kata import batch_generator
+except ImportError:
+    from .reference import batch_generator
+
 
 def test_batch_generator_basic():
     """Test batch_generator yields correct batches"""
-    from template import batch_generator
 
     data = list(range(10))
     batches = list(batch_generator(data, 3))
@@ -22,7 +26,6 @@ def test_batch_generator_basic():
 
 def test_batch_generator_exact_division():
     """Test batch_generator with exact division"""
-    from template import batch_generator
 
     data = list(range(12))
     batches = list(batch_generator(data, 4))
@@ -35,7 +38,6 @@ def test_batch_generator_exact_division():
 
 def test_batch_generator_empty():
     """Test batch_generator with empty sequence"""
-    from template import batch_generator
 
     batches = list(batch_generator([], 3))
     assert batches == []
@@ -43,7 +45,6 @@ def test_batch_generator_empty():
 
 def test_batch_generator_single_batch():
     """Test batch_generator when batch size is larger than data"""
-    from template import batch_generator
 
     data = [1, 2, 3]
     batches = list(batch_generator(data, 10))
@@ -54,7 +55,6 @@ def test_batch_generator_single_batch():
 
 def test_batch_generator_batch_size_one():
     """Test batch_generator with batch_size=1"""
-    from template import batch_generator
 
     data = [1, 2, 3, 4]
     batches = list(batch_generator(data, 1))
@@ -65,7 +65,6 @@ def test_batch_generator_batch_size_one():
 
 def test_generator_is_lazy():
     """Test that generator is lazy (doesn't compute until needed)"""
-    from template import batch_generator
 
     call_count = [0]
 
@@ -90,7 +89,6 @@ def test_generator_is_lazy():
 
 def test_memory_efficiency():
     """Test that generator doesn't materialize entire sequence"""
-    from template import batch_generator
 
     # Create a large range (would be huge if materialized)
     large_range = range(10**6)
@@ -111,7 +109,6 @@ def test_memory_efficiency():
 
 def test_stopiteration_handling():
     """Test that StopIteration is raised correctly"""
-    from template import batch_generator
 
     data = [1, 2, 3]
     gen = batch_generator(data, 2)
@@ -129,7 +126,6 @@ def test_stopiteration_handling():
 
 def test_itertools_integration():
     """Test that generator works with itertools"""
-    from template import batch_generator
 
     data = range(20)
     gen = batch_generator(data, 5)
@@ -143,7 +139,6 @@ def test_itertools_integration():
 
 def test_generator_attributes():
     """Test that function returns a generator"""
-    from template import batch_generator
 
     gen = batch_generator(range(10), 3)
 
@@ -154,7 +149,6 @@ def test_generator_attributes():
 
 def test_batch_with_strings():
     """Test batching with different types (strings)"""
-    from template import batch_generator
 
     data = "abcdefghij"
     batches = list(batch_generator(data, 3))
@@ -168,7 +162,6 @@ def test_batch_with_strings():
 
 def test_batch_with_mixed_types():
     """Test batching with mixed types"""
-    from template import batch_generator
 
     data = [1, "two", 3.0, None, True]
     batches = list(batch_generator(data, 2))

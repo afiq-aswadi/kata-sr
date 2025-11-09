@@ -38,18 +38,7 @@ def batch_generator(data: Iterator[Any], batch_size: int) -> Iterator[List[Any]]
         >>> list(batch_generator([1, 2, 3, 4, 5, 6], 3))
         [[1, 2, 3], [4, 5, 6]]
 
-    Hints:
-        - Create an empty list to accumulate items
-        - Iterate through the data
-        - Add each item to the batch list
-        - When batch reaches batch_size, use yield to return it
-        - Reset the batch list after yielding
-        - Don't forget to yield the final partial batch after the loop
     """
-    # TODO: Implement batch_generator
-    # 1. Create empty batch list
-    # 2. Loop through data
-    # 3. Append items to batch
-    # 4. When batch is full (len == batch_size), yield it and reset
-    # 5. After loop, yield remaining items if any
-    pass
+    # BLANK_START
+    raise NotImplementedError("Create a batch list, iterate through data, yield when full, don't forget final batch")
+    # BLANK_END

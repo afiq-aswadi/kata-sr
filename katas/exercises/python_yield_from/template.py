@@ -37,20 +37,7 @@ def flatten_nested(nested: List[Any]) -> Iterator[Any]:
         >>> list(flatten_nested([1, [2, [3, [4, [5]]]]]))
         [1, 2, 3, 4, 5]
 
-    Hints:
-        - Iterate through items in the list
-        - Check if item is a list: isinstance(item, list)
-        - If it's a list: yield from flatten_nested(item)
-          - This delegates to recursive call
-          - All values from sub-generator are yielded
-        - If it's not a list: yield item
-        - This is recursive - base case is non-list items
     """
-    # TODO: Implement recursive flattening with yield from
-    #
-    # 1. for item in nested:
-    # 2.     if isinstance(item, list):
-    # 3.         yield from flatten_nested(item)  # Recursive delegation
-    # 4.     else:
-    # 5.         yield item  # Base case
-    pass
+    # BLANK_START
+    raise NotImplementedError("Iterate through items, use 'yield from flatten_nested(item)' for lists, 'yield item' otherwise")
+    # BLANK_END

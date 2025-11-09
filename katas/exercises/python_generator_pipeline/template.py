@@ -43,28 +43,7 @@ def generator_pipeline(numbers: Iterator[int]) -> Iterator[int]:
         - 3: 3² = 9 (odd) → filtered out
         - 4: 4² = 16 (even) → 16 × 2 = 32
 
-    Hints:
-        - Define three inner generator functions (one for each stage)
-        - Each generator takes an iterator and yields transformed values
-        - Chain them: double_gen(filter_even(square_gen(numbers)))
-        - Return the final generator (don't consume it with list())
     """
-    # TODO: Implement generator pipeline
-    #
-    # Define three generators:
-    #
-    # def square_gen(nums):
-    #     for n in nums:
-    #         yield n ** 2
-    #
-    # def filter_even(nums):
-    #     for n in nums:
-    #         if n % 2 == 0:
-    #             yield n
-    #
-    # def double_gen(nums):
-    #     for n in nums:
-    #         yield n * 2
-    #
-    # Then chain and return them
-    pass
+    # BLANK_START
+    raise NotImplementedError("Define three generators (square, filter_even, double) and chain them together")
+    # BLANK_END

@@ -3,13 +3,17 @@ Tests for Python Generator Cleanup kata
 """
 
 import pytest
+
+try:
+    from user_kata import file_reader_generator
+except ImportError:
+    from .reference import file_reader_generator
 import tempfile
 import os
 
 
 def test_file_reader_generator_basic():
     """Test file_reader_generator reads all lines"""
-    from template import file_reader_generator
 
     # Create a temporary file
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -26,7 +30,6 @@ def test_file_reader_generator_basic():
 
 def test_file_reader_generator_partial_read():
     """Test file_reader_generator with partial consumption"""
-    from template import file_reader_generator
 
     # Create a temporary file
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -54,7 +57,6 @@ def test_file_reader_generator_partial_read():
 
 def test_file_reader_generator_empty_file():
     """Test file_reader_generator with empty file"""
-    from template import file_reader_generator
 
     # Create an empty file
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -70,7 +72,6 @@ def test_file_reader_generator_empty_file():
 
 def test_file_reader_generator_single_line():
     """Test file_reader_generator with single line"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("only line\n")
@@ -86,7 +87,6 @@ def test_file_reader_generator_single_line():
 
 def test_cleanup_on_close():
     """Test that cleanup happens when generator.close() is called"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("line1\nline2\nline3\n")
@@ -111,7 +111,6 @@ def test_cleanup_on_close():
 
 def test_cleanup_on_exception():
     """Test that cleanup happens even with exceptions"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("line1\nline2\nline3\n")
@@ -139,7 +138,6 @@ def test_cleanup_on_exception():
 
 def test_cleanup_on_normal_completion():
     """Test that cleanup happens on normal completion"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("line1\nline2\n")
@@ -164,7 +162,6 @@ def test_cleanup_on_normal_completion():
 
 def test_multiple_generators_same_file():
     """Test multiple generators can read the same file"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("line1\nline2\nline3\n")
@@ -193,7 +190,6 @@ def test_multiple_generators_same_file():
 
 def test_file_with_no_newline_at_end():
     """Test file without trailing newline"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("line1\nline2")  # No newline at end
@@ -209,7 +205,6 @@ def test_file_with_no_newline_at_end():
 
 def test_returns_generator():
     """Test that function returns a generator"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("test\n")
@@ -226,7 +221,6 @@ def test_returns_generator():
 
 def test_whitespace_preservation():
     """Test that whitespace in lines is preserved"""
-    from template import file_reader_generator
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write("  spaces  \n\ttabs\t\n")

@@ -36,21 +36,7 @@ def file_reader_generator(filepath: str) -> Iterator[str]:
         >>> first_line = next(gen)
         >>> gen.close()  # Cleanup happens in finally block
 
-    Hints:
-        - Open file BEFORE try block: f = open(filepath, 'r')
-        - In try block: iterate and yield lines
-        - In finally block: close the file
-        - finally always executes, even if:
-          - Generator is closed early with close()
-          - Generator raises an exception
-          - Generator completes normally
     """
-    # TODO: Implement generator with cleanup
-    #
-    # 1. Open file: f = open(filepath, 'r')
-    # 2. try:
-    # 3.     for line in f:
-    # 4.         yield line
-    # 5. finally:
-    # 6.     f.close()
-    pass
+    # BLANK_START
+    raise NotImplementedError("Open file, use try/finally, yield lines in try, close file in finally")
+    # BLANK_END

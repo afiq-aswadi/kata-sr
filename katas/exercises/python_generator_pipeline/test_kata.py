@@ -3,12 +3,16 @@ Tests for Python Generator Pipeline kata
 """
 
 import pytest
+
+try:
+    from user_kata import generator_pipeline
+except ImportError:
+    from .reference import generator_pipeline
 import itertools
 
 
 def test_generator_pipeline_basic():
     """Test generator_pipeline with basic input"""
-    from template import generator_pipeline
 
     result = list(generator_pipeline(range(5)))
     # 0^2=0(even)->0, 2^2=4(even)->8, 4^2=16(even)->32
@@ -18,7 +22,6 @@ def test_generator_pipeline_basic():
 
 def test_generator_pipeline_larger_range():
     """Test generator_pipeline with larger range"""
-    from template import generator_pipeline
 
     result = list(generator_pipeline(range(10)))
     # Even squares doubled: 0->0, 4->8, 16->32, 36->72, 64->128
@@ -28,7 +31,6 @@ def test_generator_pipeline_larger_range():
 
 def test_generator_pipeline_empty():
     """Test generator_pipeline with empty input"""
-    from template import generator_pipeline
 
     result = list(generator_pipeline([]))
     assert result == []
@@ -36,7 +38,6 @@ def test_generator_pipeline_empty():
 
 def test_generator_pipeline_single_element():
     """Test generator_pipeline with single element"""
-    from template import generator_pipeline
 
     # 2^2 = 4 (even) -> 8
     result = list(generator_pipeline([2]))
@@ -49,7 +50,6 @@ def test_generator_pipeline_single_element():
 
 def test_generator_pipeline_all_odd():
     """Test generator_pipeline filters out all odd squares"""
-    from template import generator_pipeline
 
     # 1^2=1, 3^2=9, 5^2=25, 7^2=49 - all odd
     result = list(generator_pipeline([1, 3, 5, 7]))
@@ -58,7 +58,6 @@ def test_generator_pipeline_all_odd():
 
 def test_generator_pipeline_all_even_input():
     """Test generator_pipeline with all even input"""
-    from template import generator_pipeline
 
     # 0^2=0, 2^2=4, 4^2=16, 6^2=36
     result = list(generator_pipeline([0, 2, 4, 6]))
@@ -68,7 +67,6 @@ def test_generator_pipeline_all_even_input():
 
 def test_pipeline_is_lazy():
     """Test that pipeline doesn't process until needed"""
-    from template import generator_pipeline
 
     call_count = [0]
 
@@ -93,7 +91,6 @@ def test_pipeline_is_lazy():
 
 def test_memory_efficiency():
     """Test that pipeline handles large input without memory issues"""
-    from template import generator_pipeline
 
     # Large range - would be huge if materialized
     large_range = range(10**6)
@@ -106,7 +103,6 @@ def test_memory_efficiency():
 
 def test_pipeline_with_itertools():
     """Test that pipeline works with itertools"""
-    from template import generator_pipeline
 
     gen = generator_pipeline(range(20))
 
@@ -117,7 +113,6 @@ def test_pipeline_with_itertools():
 
 def test_generator_is_not_reusable():
     """Test that generator can only be consumed once"""
-    from template import generator_pipeline
 
     gen = generator_pipeline(range(5))
 
@@ -132,7 +127,6 @@ def test_generator_is_not_reusable():
 
 def test_negative_numbers():
     """Test generator_pipeline with negative numbers"""
-    from template import generator_pipeline
 
     # -2^2=4(even)->8, -1^2=1(odd), 0^2=0(even)->0, 1^2=1(odd), 2^2=4(even)->8
     result = list(generator_pipeline([-2, -1, 0, 1, 2]))
@@ -142,7 +136,6 @@ def test_negative_numbers():
 
 def test_returns_generator():
     """Test that function returns a generator"""
-    from template import generator_pipeline
 
     result = generator_pipeline(range(5))
 
@@ -152,7 +145,6 @@ def test_returns_generator():
 
 def test_intermediate_stages_not_materialized():
     """Test that intermediate stages aren't materialized as lists"""
-    from template import generator_pipeline
 
     # This is more of a conceptual test
     # The pipeline should pass items through without creating intermediate lists

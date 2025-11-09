@@ -4,10 +4,14 @@ Tests for Python Yield From kata
 
 import pytest
 
+try:
+    from user_kata import flatten_nested
+except ImportError:
+    from .reference import flatten_nested
+
 
 def test_flatten_nested_basic():
     """Test flatten_nested with basic nested structure"""
-    from template import flatten_nested
 
     nested = [1, [2, 3], [4, [5, 6]], 7]
     result = list(flatten_nested(nested))
@@ -17,7 +21,6 @@ def test_flatten_nested_basic():
 
 def test_flatten_nested_deeply_nested():
     """Test flatten_nested with deeply nested structure"""
-    from template import flatten_nested
 
     nested = [1, [2, [3, [4, [5]]]]]
     result = list(flatten_nested(nested))
@@ -27,7 +30,6 @@ def test_flatten_nested_deeply_nested():
 
 def test_flatten_nested_empty():
     """Test flatten_nested with empty lists"""
-    from template import flatten_nested
 
     nested = [[], [1, []], [[]], [2]]
     result = list(flatten_nested(nested))
@@ -37,7 +39,6 @@ def test_flatten_nested_empty():
 
 def test_flatten_nested_all_flat():
     """Test flatten_nested with already flat list"""
-    from template import flatten_nested
 
     nested = [1, 2, 3, 4, 5]
     result = list(flatten_nested(nested))
@@ -47,7 +48,6 @@ def test_flatten_nested_all_flat():
 
 def test_flatten_nested_all_nested():
     """Test flatten_nested with fully nested structure"""
-    from template import flatten_nested
 
     nested = [[[[[1]]]]]
     result = list(flatten_nested(nested))
@@ -57,7 +57,6 @@ def test_flatten_nested_all_nested():
 
 def test_flatten_nested_empty_list():
     """Test flatten_nested with completely empty list"""
-    from template import flatten_nested
 
     result = list(flatten_nested([]))
     assert result == []
@@ -65,7 +64,6 @@ def test_flatten_nested_empty_list():
 
 def test_flatten_nested_mixed_depths():
     """Test flatten_nested with mixed nesting depths"""
-    from template import flatten_nested
 
     nested = [1, [2], [[3]], [[[4]]], 5]
     result = list(flatten_nested(nested))
@@ -75,7 +73,6 @@ def test_flatten_nested_mixed_depths():
 
 def test_flatten_nested_preserves_order():
     """Test that flatten_nested preserves order"""
-    from template import flatten_nested
 
     nested = [5, [4, [3]], 2, [1]]
     result = list(flatten_nested(nested))
@@ -85,7 +82,6 @@ def test_flatten_nested_preserves_order():
 
 def test_flatten_nested_strings():
     """Test flatten_nested with strings"""
-    from template import flatten_nested
 
     nested = ["a", ["b", "c"], [["d"]]]
     result = list(flatten_nested(nested))
@@ -95,7 +91,6 @@ def test_flatten_nested_strings():
 
 def test_flatten_nested_mixed_types():
     """Test flatten_nested with mixed types"""
-    from template import flatten_nested
 
     nested = [1, ["two", [3.0, [None, True]]]]
     result = list(flatten_nested(nested))
@@ -105,7 +100,6 @@ def test_flatten_nested_mixed_types():
 
 def test_flatten_nested_large_structure():
     """Test flatten_nested with larger structure"""
-    from template import flatten_nested
 
     nested = [
         1,
@@ -123,7 +117,6 @@ def test_flatten_nested_large_structure():
 
 def test_flatten_nested_only_nested_lists():
     """Test flatten_nested with only nested lists"""
-    from template import flatten_nested
 
     nested = [[1], [2], [3]]
     result = list(flatten_nested(nested))
@@ -133,7 +126,6 @@ def test_flatten_nested_only_nested_lists():
 
 def test_returns_generator():
     """Test that function returns a generator"""
-    from template import flatten_nested
 
     result = flatten_nested([1, [2, 3]])
 
@@ -143,7 +135,6 @@ def test_returns_generator():
 
 def test_generator_is_lazy():
     """Test that generator doesn't process until consumed"""
-    from template import flatten_nested
 
     nested = [1, [2, [3, [4, [5]]]]]
     gen = flatten_nested(nested)
@@ -158,7 +149,6 @@ def test_generator_is_lazy():
 
 def test_complex_nesting_pattern():
     """Test with complex nesting pattern"""
-    from template import flatten_nested
 
     nested = [
         [[1, 2], [3, 4]],
@@ -171,7 +161,6 @@ def test_complex_nesting_pattern():
 
 def test_empty_nested_lists():
     """Test with multiple empty nested lists"""
-    from template import flatten_nested
 
     nested = [[], [[]], [[[]]], 1, []]
     result = list(flatten_nested(nested))
@@ -181,7 +170,6 @@ def test_empty_nested_lists():
 
 def test_single_element():
     """Test with single element at various nesting levels"""
-    from template import flatten_nested
 
     assert list(flatten_nested([1])) == [1]
     assert list(flatten_nested([[1]])) == [1]
