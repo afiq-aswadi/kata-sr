@@ -1,14 +1,21 @@
 [kata]
 name = "attention_patterns"
-category = "interpretability"
-base_difficulty = 3
+tags = ["interpretability", "deprecated", "composite"]
+base_difficulty = 5
 description = """
-Analyze and visualize attention patterns in transformer models using TransformerLens.
+[DEPRECATED - Use micro-katas instead]
 
-Learn to extract attention weights, identify important heads, and understand information
-flow through attention layers. Extract patterns from cache, compute statistics like entropy,
-and ablate specific heads to measure their impact.
+This kata has been split into focused micro-exercises:
+1. extract_attention_pattern - extract patterns from cache
+2. compute_attention_entropy - measure attention focus/diffusion
+3. find_previous_token_heads - identify previous-token heads
+4. ablate_attention_head - ablate heads to measure impact
+5. get_max_attention_position - find max attention targets
+6. compare_attention_patterns - compare patterns across prompts
+7. analyze_induction_head - detect induction behavior
+
+This composite kata combines all attention analysis techniques for advanced practice.
 
 Key concepts: attention pattern extraction, visualization, entropy, head ablation, induction heads
 """
-dependencies = ["transformerlens_hooks"]
+dependencies = ["analyze_induction_head"]

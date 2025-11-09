@@ -1,0 +1,12 @@
+[kata]
+name = "compare_attention_patterns"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Compare attention patterns between two prompts using cosine similarity.
+
+Extract patterns for both texts, handle different sequence lengths by truncating.
+Use torch.nn.functional.cosine_similarity to measure pattern similarity.
+"""
+dependencies = ["extract_attention_pattern"]
+tags = ["attention", "comparison", "similarity"]

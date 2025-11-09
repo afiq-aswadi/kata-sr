@@ -1,0 +1,13 @@
+[kata]
+name = "compute_attention_entropy"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Compute entropy of attention patterns to measure focus vs diffusion.
+
+Entropy formula: -sum(p * log(p)) for each query position.
+High entropy = attention spread across many tokens.
+Low entropy = attention focused on few tokens.
+"""
+dependencies = []
+tags = ["attention", "entropy", "metrics"]

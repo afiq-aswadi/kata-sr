@@ -1,0 +1,12 @@
+[kata]
+name = "extract_attention_pattern"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Extract attention patterns from a specific layer using TransformerLens cache.
+
+Access cache[f"blocks.{layer}.attn.hook_pattern"] to get post-softmax attention weights.
+Returns shape (batch, n_heads, query_pos, key_pos).
+"""
+dependencies = ["transformerlens_hooks"]
+tags = ["attention", "transformerlens"]

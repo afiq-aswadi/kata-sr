@@ -1,0 +1,12 @@
+[kata]
+name = "get_max_attention_position"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Find which position receives maximum attention from a query position.
+
+Extract attention weights for specific query/head, find argmax and max value.
+Useful for understanding which tokens a position attends to most strongly.
+"""
+dependencies = []
+tags = ["attention", "analysis"]

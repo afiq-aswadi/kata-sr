@@ -1,0 +1,12 @@
+[kata]
+name = "analyze_induction_head"
+category = "interpretability"
+base_difficulty = 4
+description = """
+Compute metrics to analyze if a head exhibits induction-like behavior.
+
+Return dict with induction_score, avg_entropy, and max_attention_mean.
+Induction heads attend to tokens that previously followed the current token.
+"""
+dependencies = ["compute_attention_entropy", "extract_attention_pattern"]
+tags = ["attention", "induction", "analysis"]

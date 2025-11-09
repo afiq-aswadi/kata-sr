@@ -1,0 +1,12 @@
+[kata]
+name = "ablate_attention_head"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Ablate a specific attention head by replacing with uniform distribution.
+
+Use run_with_hooks to set pattern[:, head, :, :] = 1.0 / seq_len.
+Measures the causal impact of specific heads on model output.
+"""
+dependencies = ["hook_patch_activation"]
+tags = ["attention", "ablation", "hooks"]

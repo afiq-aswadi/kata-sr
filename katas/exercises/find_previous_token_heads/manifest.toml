@@ -1,0 +1,12 @@
+[kata]
+name = "find_previous_token_heads"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Identify attention heads that primarily attend to the previous token.
+
+Previous-token heads have high attention weight on diagonal offset by 1.
+Extract patterns[:, :, i, i-1] and check if average exceeds threshold.
+"""
+dependencies = []
+tags = ["attention", "head-detection", "analysis"]
