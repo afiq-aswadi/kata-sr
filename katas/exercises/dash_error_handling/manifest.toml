@@ -1,0 +1,13 @@
+[kata]
+name = "dash_error_handling"
+category = "plotly"
+base_difficulty = 3
+description = """
+Validate user input and provide error messages in Dash callbacks.
+
+Learn to handle edge cases (None, invalid ranges) and return appropriate feedback.
+This is essential for building robust dashboards that guide users when they provide invalid input.
+
+Key concepts: input validation, conditional returns, error messages, empty figures
+"""
+dependencies = ["dash_single_callback"]
