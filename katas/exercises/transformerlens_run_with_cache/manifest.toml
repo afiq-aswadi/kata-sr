@@ -1,0 +1,13 @@
+[kata]
+name = "transformerlens_run_with_cache"
+category = "interpretability"
+base_difficulty = 1
+description = """
+Run a TransformerLens model with activation caching enabled.
+
+Learn the fundamental operation of run_with_cache() which captures all intermediate
+activations for analysis. This is the foundation for mechanistic interpretability work.
+
+Key concepts: HookedTransformer, run_with_cache, activation cache structure
+"""
+dependencies = []

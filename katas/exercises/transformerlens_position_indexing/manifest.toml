@@ -1,0 +1,13 @@
+[kata]
+name = "transformerlens_position_indexing"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Extract activations from a specific token position in the sequence.
+
+Learn to index into activation tensors to get position-specific vectors. This is
+essential for analyzing how specific tokens are processed through the model.
+
+Key concepts: tensor indexing, position-specific analysis, sequence dimension navigation
+"""
+dependencies = ["transformerlens_extract_residual"]
