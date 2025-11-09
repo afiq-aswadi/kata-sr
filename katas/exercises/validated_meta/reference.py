@@ -12,7 +12,7 @@ class ValidatedMeta(type):
         if 'required_attributes' in namespace:
             required = namespace['required_attributes']
             for attr in required:
-                if attr not in namespace:
+                if not hasattr(cls, attr):
                     raise TypeError(
                         f"Class {name} missing required attribute: {attr}"
                     )

@@ -103,3 +103,19 @@ def test_none_value_accepted():
 
     c = Config()
     assert c.setting is None
+
+
+def test_inherited_attributes():
+    """Test ValidatedMeta accepts inherited attributes."""
+    from template import ValidatedMeta
+
+    class Base(metaclass=ValidatedMeta):
+        name = "base"
+
+    class Child(Base):
+        required_attributes = ['name']
+        # name is inherited from Base
+
+    # Should work because name is inherited
+    c = Child()
+    assert c.name == "base"

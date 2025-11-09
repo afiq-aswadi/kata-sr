@@ -38,6 +38,6 @@ class ValidatedMeta(type):
         """
         # BLANK_START
         raise NotImplementedError(
-            "Create class with super().__new__, check required_attributes, raise TypeError if missing"
+            "Create class with super().__new__, check required_attributes with hasattr(cls, attr)"
         )
         # BLANK_END
