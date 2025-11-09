@@ -1,0 +1,15 @@
+[kata]
+name = "lazy_property"
+category = "python"
+base_difficulty = 3
+description = """
+Implement a lazy property decorator using Python's descriptor protocol.
+
+Learn to create a property-like decorator that defers computation until first
+access and caches the result. This combines decorators with descriptors for
+efficient lazy evaluation of expensive properties.
+
+Key concepts: descriptor protocol (__get__), instance __dict__, lazy evaluation,
+functools.update_wrapper
+"""
+dependencies = []
