@@ -689,7 +689,10 @@ impl App {
                 let exercises_dir = std::path::Path::new("katas/exercises");
                 let name_changed = original_slug != new_slug;
 
-                // Get tags from database to preserve them
+                // Get original state for rollback
+                let original_kata = self.repo.get_kata_by_id(kata_id)?
+                    .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
+                let original_dependencies = self.repo.get_kata_dependencies(kata_id)?;
                 let tags = self.repo.get_kata_tags(kata_id)?;
 
                 if name_changed {
@@ -705,8 +708,14 @@ impl App {
                             // 2. Update dependencies in DB
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
                             if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
-                                // Rollback database name change
-                                let _ = self.repo.update_kata_name(kata_id, &original_slug);
+                                // Rollback ALL database changes
+                                let _ = self.repo.update_kata_full_metadata(
+                                    kata_id,
+                                    &original_kata.name,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
                                 eprintln!("Failed to update dependencies: {}", e);
                                 return Ok(());
                             }
@@ -719,13 +728,20 @@ impl App {
                                     if let Err(e) =
                                         update_manifest(&kata_dir, &form_data, &new_slug, &tags)
                                     {
-                                        // Rollback: rename directory back and revert database
+                                        // Rollback: rename directory back and revert ALL database changes
                                         let _ = rename_kata_directory(
                                             exercises_dir,
                                             &new_slug,
                                             &original_slug,
                                         );
-                                        let _ = self.repo.update_kata_name(kata_id, &original_slug);
+                                        let _ = self.repo.update_kata_full_metadata(
+                                            kata_id,
+                                            &original_kata.name,
+                                            &original_kata.description,
+                                            &original_kata.category,
+                                            original_kata.base_difficulty,
+                                        );
+                                        let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                         eprintln!("Failed to update manifest: {}", e);
                                         return Ok(());
                                     }
@@ -736,8 +752,15 @@ impl App {
                                     eprintln!("Kata '{}' updated successfully!", new_slug);
                                 }
                                 Err(e) => {
-                                    // Rollback database changes
-                                    let _ = self.repo.update_kata_name(kata_id, &original_slug);
+                                    // Rollback ALL database changes
+                                    let _ = self.repo.update_kata_full_metadata(
+                                        kata_id,
+                                        &original_kata.name,
+                                        &original_kata.description,
+                                        &original_kata.category,
+                                        original_kata.base_difficulty,
+                                    );
+                                    let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                     eprintln!("Failed to rename kata directory: {}", e);
                                     // Stay on edit screen
                                 }
@@ -745,7 +768,7 @@ impl App {
                         }
                         Err(e) => {
                             eprintln!("Failed to update database: {}", e);
-                            // Stay on edit screen
+                            // Stay on edit screen (nothing to rollback - first operation failed)
                         }
                     }
                 } else {
@@ -759,11 +782,32 @@ impl App {
                         Ok(_) => {
                             // Update dependencies
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
-                            self.repo.replace_dependencies(kata_id, &dep_ids)?;
+                            if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
+                                // Rollback metadata changes
+                                let _ = self.repo.update_kata_metadata(
+                                    kata_id,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                eprintln!("Failed to update dependencies: {}", e);
+                                return Ok(());
+                            }
 
                             // Update manifest with tags preserved
                             let kata_dir = exercises_dir.join(&original_slug);
-                            update_manifest(&kata_dir, &form_data, &original_slug, &tags)?;
+                            if let Err(e) = update_manifest(&kata_dir, &form_data, &original_slug, &tags) {
+                                // Rollback ALL database changes
+                                let _ = self.repo.update_kata_metadata(
+                                    kata_id,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
+                                eprintln!("Failed to update manifest: {}", e);
+                                return Ok(());
+                            }
 
                             // Success! Return to library
                             let library = Library::load(&self.repo)?;
@@ -772,7 +816,7 @@ impl App {
                         }
                         Err(e) => {
                             eprintln!("Failed to update kata: {}", e);
-                            // Stay on edit screen
+                            // Stay on edit screen (nothing to rollback - first operation failed)
                         }
                     }
                 }
