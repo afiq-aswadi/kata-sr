@@ -1,0 +1,11 @@
+[kata]
+name = "plotly_basic_grid"
+category = "plotly"
+base_difficulty = 2
+description = """
+Create a 2x2 subplot grid with different trace types.
+
+Use make_subplots to create a grid layout and add scatter, bar, line, and heatmap traces to different cells.
+"""
+dependencies = []
+tags = ["plotly", "subplots", "visualization"]
