@@ -1,0 +1,15 @@
+[kata]
+name = "retry_decorator"
+category = "python"
+base_difficulty = 2
+description = """
+Implement a retry decorator with exponential backoff for fault tolerance.
+
+Learn to create a parameterized decorator that retries failed functions with
+increasing delays. This pattern is essential for handling transient failures
+in network calls, database operations, and external APIs.
+
+Key concepts: parameterized decorators (3 levels of nesting), exception handling,
+exponential backoff, time.sleep
+"""
+dependencies = []
