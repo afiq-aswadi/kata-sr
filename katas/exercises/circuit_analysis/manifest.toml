@@ -1,0 +1,13 @@
+[kata]
+name = "circuit_analysis"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Analyze patching heatmap to identify important circuit components.
+
+Implement a function that extracts the most causally important heads
+from a patching heatmap, identifying which components form the circuit
+responsible for the task.
+"""
+dependencies = ["systematic_head_scan"]
+tags = ["interpretability", "circuits", "analysis"]

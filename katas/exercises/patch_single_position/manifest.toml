@@ -1,0 +1,13 @@
+[kata]
+name = "patch_single_position"
+tags = ["interpretability", "activation-patching", "micro"]
+base_difficulty = 2
+description = """
+Patch a single token position between clean and corrupted runs.
+
+Foundation of activation patching: replace one position's activation
+from corrupted with clean, measuring the effect on model output.
+
+Key concepts: position-level patching, clean/corrupted paradigm, causal intervention
+"""
+dependencies = ["hook_patch_activation"]

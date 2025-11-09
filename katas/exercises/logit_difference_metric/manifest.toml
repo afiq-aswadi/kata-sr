@@ -1,0 +1,13 @@
+[kata]
+name = "logit_difference_metric"
+category = "interpretability"
+base_difficulty = 2
+description = """
+Compute the logit difference metric for measuring model behavior.
+
+Implement a function that calculates the difference between logits for
+correct and incorrect answer tokens. This metric is fundamental to
+mechanistic interpretability experiments like Indirect Object Identification (IOI).
+"""
+dependencies = []
+tags = ["interpretability", "metrics", "ioi"]
