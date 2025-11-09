@@ -1,0 +1,14 @@
+[kata]
+name = "metaclass"
+category = "python"
+base_difficulty = 3
+description = """
+Explore Python's metaclass system for customizing class creation.
+
+Implement metaclasses that modify class behavior, enforce constraints, and register
+subclasses automatically. This kata covers one of Python's most advanced features
+used in frameworks like Django ORM and SQLAlchemy.
+
+Key concepts: type() as metaclass, __new__ vs __init__, __init_subclass__, MRO
+"""
+dependencies = []
