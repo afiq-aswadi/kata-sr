@@ -11,7 +11,9 @@ dependencies = [
     "toml>=0.10.2",
     "transformer-lens>=2.0.0",
     "wandb>=0.16.0",
-    "matplotlib>=3.7.0",
+    "plotly>=5.18.0",
+    "dash>=2.14.0",
+    "matplotlib>=3.8.0",
 ]
 
 [tool.uv]

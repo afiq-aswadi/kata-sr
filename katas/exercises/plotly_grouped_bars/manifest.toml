@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_grouped_bars"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 3
+description = """
+Create a grouped bar chart with multiple bar traces.
+
+Learn to create side-by-side bar comparisons across categories.
+Essential for comparing multiple data series in categorical contexts.
+
+Key concepts: multiple Bar traces, grouped bars, comparative visualization
+"""
+dependencies = ["plotly_bar"]

@@ -1,0 +1,11 @@
+[kata]
+name = "plotly_subplot_annotation"
+category = "plotly"
+base_difficulty = 3
+description = """
+Add annotation to a specific subplot using correct axis references.
+
+Learn to calculate xref/yref based on subplot position (row, col).
+"""
+dependencies = ["plotly_basic_grid"]
+tags = ["plotly", "subplots", "annotations"]

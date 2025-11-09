@@ -1,0 +1,12 @@
+[kata]
+name = "ablate_attention_head"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Ablate an attention head by replacing its pattern with uniform distribution.
+
+This technique zeros out a head's contribution, allowing you to measure
+its impact on model output.
+"""
+dependencies = ["hook_patch_activation"]
+tags = ["attention", "interpretability", "ablation"]

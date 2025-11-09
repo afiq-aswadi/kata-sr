@@ -1,0 +1,13 @@
+[kata]
+name = "dash_single_callback"
+category = "plotly"
+base_difficulty = 3
+description = """
+Implement a callback function that updates a graph based on dropdown selection.
+
+Learn to use the @app.callback decorator with Input and Output to create reactive visualizations.
+The callback receives the dropdown value and returns a Plotly figure.
+
+Key concepts: @app.callback decorator, Input, Output, component properties, return values
+"""
+dependencies = ["dash_basic_layout"]

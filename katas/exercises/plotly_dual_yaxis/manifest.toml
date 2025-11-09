@@ -1,0 +1,11 @@
+[kata]
+name = "plotly_dual_yaxis"
+category = "plotly"
+base_difficulty = 3
+description = """
+Create a subplot with dual y-axes (primary and secondary).
+
+Use secondary_y parameter to plot different data series on left and right y-axes.
+"""
+dependencies = ["plotly_basic_grid"]
+tags = ["plotly", "subplots", "dual-axis"]

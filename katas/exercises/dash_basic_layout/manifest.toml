@@ -1,0 +1,13 @@
+[kata]
+name = "dash_basic_layout"
+category = "plotly"
+base_difficulty = 2
+description = """
+Create a basic Dash app layout with HTML and component elements.
+
+Learn to structure a Dash application with html.Div, html.H1, dcc.Dropdown, and dcc.Graph components.
+This is the foundation for building interactive dashboards.
+
+Key concepts: app.layout, html components, dcc components, component IDs
+"""
+dependencies = []

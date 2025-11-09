@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_custom_artist"
+category = "matplotlib"
+base_difficulty = 3
+description = """
+Implement a custom matplotlib Artist class with a draw() method.
+
+Create a CustomCircleArtist that draws a circle with decorative lines radiating from the center. This teaches the Artist API and coordinate transformations.
+"""
+dependencies = []

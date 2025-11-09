@@ -1,0 +1,13 @@
+[kata]
+name = "hook_capture_activation"
+tags = ["interpretability", "transformerlens", "micro"]
+base_difficulty = 1
+description = """
+Capture activations from TransformerLens models using run_with_cache.
+
+First step in mechanistic interpretability: learn to extract intermediate activations
+from any hook point in a transformer model.
+
+Key concepts: hook points, activation caching, model inspection
+"""
+dependencies = []

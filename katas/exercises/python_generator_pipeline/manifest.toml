@@ -1,0 +1,17 @@
+[kata]
+name = "python_generator_pipeline"
+category = "python"
+base_difficulty = 2
+description = """
+Learn how to chain generators together to create processing pipelines. This demonstrates
+the power of generators for memory-efficient data transformation: each stage processes
+one item at a time without materializing intermediate results.
+
+Key concepts:
+- Composing generators by passing one to another
+- Pipeline architecture for data processing
+- Lazy evaluation through the entire chain
+- Memory efficiency of chained generators
+"""
+dependencies = ["python_batch_generator"]
+tags = ["python", "generators", "pipelines", "composition"]
