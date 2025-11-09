@@ -39,11 +39,13 @@
 //! // Get katas due for review
 //! let due_katas = repo.get_katas_due(Utc::now())?;
 //!
-//! // Update SM-2 state after review
-//! let mut state = SM2State::new();
-//! let interval = state.update(QualityRating::Good);
-//! let next_review = Utc::now() + chrono::Duration::days(interval);
-//! repo.update_kata_after_review(kata_id, &state, next_review, Utc::now())?;
+//! // Update FSRS state after review
+//! use kata_sr::core::fsrs::{FsrsCard, FsrsParams, Rating};
+//! let mut card = FsrsCard::new();
+//! let params = FsrsParams::default();
+//! card.schedule(Rating::Good, &params, Utc::now());
+//! let next_review = Utc::now() + chrono::Duration::days(card.scheduled_days as i64);
+//! repo.update_kata_after_fsrs_review(kata_id, &card, next_review, Utc::now())?;
 //!
 //! # Ok::<(), rusqlite::Error>(())
 //! ```

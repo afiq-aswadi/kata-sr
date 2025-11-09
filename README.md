@@ -12,7 +12,6 @@ A terminal-based spaced repetition system for mastering coding patterns and algo
 - More accurate than traditional SM-2, optimized from millions of reviews
 - 4-point rating scale: Again / Hard / Good / Easy
 - Personalized parameter optimization based on your review history
-- Backward compatible with legacy SM-2 scheduling
 
 ### 📚 Intelligent Kata Management
 
@@ -293,21 +292,6 @@ kata-sr fsrs-stats
 ```
 
 The system starts with default parameters (optimized from millions of reviews) and can be refined as you accumulate more practice data.
-
-### SM-2 Compatibility
-
-Legacy SM-2 scheduling is still supported for backward compatibility. Each kata tracks which algorithm it uses, and you can migrate between them:
-
-```rust
-// Migrate specific kata to FSRS-5
-repo.set_kata_to_fsrs(kata_id)?;
-
-// Migrate all katas
-repo.migrate_all_to_fsrs()?;
-
-// Revert to SM-2 if needed
-repo.set_kata_to_sm2(kata_id)?;
-```
 
 ## Database
 

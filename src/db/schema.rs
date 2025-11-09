@@ -207,13 +207,18 @@ pub fn migrate_categories_to_tags(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-/// Migrates all katas to use FSRS-5 as the scheduler.
+/// Migrates all legacy SM-2 katas to FSRS-5.
 ///
-/// This is a one-time migration that updates all katas with 'SM2' scheduler
-/// to use 'FSRS' instead. Safe to run multiple times.
+/// This is an upgrade migration for existing databases. Since SM-2 compatibility
+/// has been removed, all katas must use FSRS-5. This updates any remaining
+/// SM-2 katas or katas with NULL scheduler_type to use FSRS.
+///
+/// Safe to run multiple times - only affects katas not already using FSRS.
 pub fn migrate_to_fsrs(conn: &Connection) -> Result<()> {
+    // Only update katas that aren't already using FSRS
     conn.execute(
-        "UPDATE katas SET scheduler_type = 'FSRS' WHERE scheduler_type = 'SM2' OR scheduler_type IS NULL",
+        "UPDATE katas SET scheduler_type = 'FSRS'
+         WHERE scheduler_type != 'FSRS' OR scheduler_type IS NULL",
         [],
     )?;
     Ok(())
