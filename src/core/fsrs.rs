@@ -600,4 +600,45 @@ mod tests {
         card.schedule(Rating::Good, &params, later);
         assert_eq!(card.elapsed_days, 5);
     }
+
+    #[test]
+    fn test_hard_rating_gives_shorter_interval_than_good() {
+        // Verify that Hard ratings result in shorter review intervals than Good
+        let params = FsrsParams::default();
+        let now = Utc::now();
+
+        // Test with new cards
+        let mut card_hard = FsrsCard::new();
+        let mut card_good = FsrsCard::new();
+
+        card_hard.schedule(Rating::Hard, &params, now);
+        card_good.schedule(Rating::Good, &params, now);
+
+        // Hard should give shorter interval for new cards (1 day vs several days)
+        assert!(card_hard.scheduled_days < card_good.scheduled_days);
+
+        // Test with cards in Review state
+        let later = now + chrono::Duration::days(card_good.scheduled_days as i64);
+
+        card_hard.schedule(Rating::Good, &params, later); // Get to Review state
+        card_good.schedule(Rating::Good, &params, later);
+
+        // Simulate another review
+        let much_later = later + chrono::Duration::days(card_good.scheduled_days as i64);
+
+        let mut card_hard_review = card_hard.clone();
+        let mut card_good_review = card_good.clone();
+
+        card_hard_review.schedule(Rating::Hard, &params, much_later);
+        card_good_review.schedule(Rating::Good, &params, much_later);
+
+        // Hard should give shorter interval than Good for cards in Review state
+        // due to hard_penalty (w[15] = 0.2407) reducing stability growth
+        assert!(
+            card_hard_review.scheduled_days < card_good_review.scheduled_days,
+            "Hard rating ({}d) should give shorter interval than Good ({}d)",
+            card_hard_review.scheduled_days,
+            card_good_review.scheduled_days
+        );
+    }
 }

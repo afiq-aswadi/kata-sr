@@ -717,7 +717,7 @@ fn test_analytics_daily_stats_persistence() {
         )
         .unwrap();
 
-    // create a session
+    // create a session with Good rating (3) to count as success
     repo.create_session(&NewSession {
         kata_id,
         started_at: Utc::now(),
@@ -727,7 +727,7 @@ fn test_analytics_daily_stats_persistence() {
         num_failed: Some(0),
         num_skipped: Some(0),
         duration_ms: Some(100),
-        quality_rating: Some(2),
+        quality_rating: Some(3), // Good (FSRS)
     })
     .unwrap();
 
