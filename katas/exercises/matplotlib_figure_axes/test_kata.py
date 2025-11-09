@@ -6,7 +6,7 @@ import numpy as np
 matplotlib.use("Agg")  # Non-GUI backend for testing
 
 try:
-    from user_kata import create_multi_panel_plot
+    from user_kata import create_line_plot
 except ModuleNotFoundError:  # pragma: no cover - fallback for standalone test runs
     import importlib.util
     from pathlib import Path
@@ -17,163 +17,150 @@ except ModuleNotFoundError:  # pragma: no cover - fallback for standalone test r
     assert spec.loader is not None
     spec.loader.exec_module(reference)
 
-    create_multi_panel_plot = reference.create_multi_panel_plot  # type: ignore[attr-defined]
+    create_line_plot = reference.create_line_plot  # type: ignore[attr-defined]
 
 
 def test_returns_figure_and_axes():
     """Test that function returns a figure and axes."""
-    result = create_multi_panel_plot()
+    result = create_line_plot()
     assert isinstance(result, tuple), "Function should return a tuple"
-    assert len(result) == 2, "Should return (fig, axes) tuple"
-    fig, axes = result
+    assert len(result) == 2, "Should return (fig, ax) tuple"
+    fig, ax = result
     assert hasattr(fig, "get_size_inches"), "First element should be a Figure"
-    assert hasattr(axes, "shape"), "Second element should be axes array"
+    assert hasattr(ax, "set_title"), "Second element should be an Axes"
 
 
-def test_figure_has_correct_size():
-    """Test that figure has the correct size (12x10)."""
-    fig, _ = create_multi_panel_plot()
+def test_figure_size():
+    """Test that figure has correct size (10x6)."""
+    fig, _ = create_line_plot()
     width, height = fig.get_size_inches()
-    assert abs(width - 12) < 0.1, f"Figure width should be 12, got {width}"
-    assert abs(height - 10) < 0.1, f"Figure height should be 10, got {height}"
+    assert abs(width - 10) < 0.1, f"Figure width should be 10, got {width}"
+    assert abs(height - 6) < 0.1, f"Figure height should be 6, got {height}"
 
 
-def test_has_four_subplots():
-    """Test that there are exactly 4 subplots in 2x2 grid."""
-    fig, axes = create_multi_panel_plot()
-    assert axes.shape == (2, 2), f"Axes should be 2x2 array, got {axes.shape}"
-    assert len(fig.axes) == 4, f"Figure should have 4 subplots, got {len(fig.axes)}"
+def test_has_title():
+    """Test that axes has a title."""
+    _, ax = create_line_plot()
+    title = ax.get_title()
+    assert title and len(title) > 0, "Plot should have a title"
+    assert "Trigonometric" in title or "trig" in title.lower(), (
+        "Title should mention trigonometric functions"
+    )
 
 
-def test_all_subplots_have_titles():
-    """Test that all subplots have titles."""
-    _, axes = create_multi_panel_plot()
-    for i in range(2):
-        for j in range(2):
-            title = axes[i, j].get_title()
-            assert title and len(title) > 0, f"Subplot [{i}, {j}] should have a title"
+def test_has_labels():
+    """Test that axes has x and y labels."""
+    _, ax = create_line_plot()
+    xlabel = ax.get_xlabel()
+    ylabel = ax.get_ylabel()
+    assert xlabel and len(xlabel) > 0, "Plot should have x label"
+    assert ylabel and len(ylabel) > 0, "Plot should have y label"
+    assert "radian" in xlabel.lower() or "x" in xlabel.lower(), (
+        "X label should mention x or radians"
+    )
 
 
-def test_all_subplots_have_labels():
-    """Test that all subplots have x and y labels."""
-    _, axes = create_multi_panel_plot()
-    for i in range(2):
-        for j in range(2):
-            xlabel = axes[i, j].get_xlabel()
-            ylabel = axes[i, j].get_ylabel()
-            assert xlabel and len(xlabel) > 0, f"Subplot [{i}, {j}] should have x label"
-            assert ylabel and len(ylabel) > 0, f"Subplot [{i}, {j}] should have y label"
+def test_has_grid():
+    """Test that grid is enabled."""
+    _, ax = create_line_plot()
+    gridlines_x = ax.xaxis.get_gridlines()
+    gridlines_y = ax.yaxis.get_gridlines()
+    has_grid = (len(gridlines_x) > 0 and gridlines_x[0].get_visible()) or (
+        len(gridlines_y) > 0 and gridlines_y[0].get_visible()
+    )
+    assert has_grid, "Plot should have grid enabled"
 
 
-def test_all_subplots_have_grid():
-    """Test that all subplots have grid enabled."""
-    _, axes = create_multi_panel_plot()
-    for i in range(2):
-        for j in range(2):
-            # Check if grid lines exist
-            gridlines_x = axes[i, j].xaxis.get_gridlines()
-            gridlines_y = axes[i, j].yaxis.get_gridlines()
-            has_grid = (
-                len(gridlines_x) > 0 and gridlines_x[0].get_visible()
-            ) or (len(gridlines_y) > 0 and gridlines_y[0].get_visible())
-            assert has_grid, f"Subplot [{i}, {j}] should have grid enabled"
+def test_has_two_lines():
+    """Test that plot contains exactly 2 lines (sin and cos)."""
+    _, ax = create_line_plot()
+    lines = ax.get_lines()
+    assert len(lines) >= 2, f"Plot should have at least 2 lines, got {len(lines)}"
 
 
-def test_top_left_is_line_plot():
-    """Test that top-left subplot (0,0) is a line plot with 2 lines."""
-    _, axes = create_multi_panel_plot()
-    lines = axes[0, 0].get_lines()
-    assert len(lines) >= 2, f"Top-left should have at least 2 lines, got {len(lines)}"
-
-    # Check line colors (should have red and blue)
+def test_line_colors():
+    """Test that lines have red and blue colors."""
+    _, ax = create_line_plot()
+    lines = ax.get_lines()
     colors = [line.get_color() for line in lines]
+
+    # Check for red
     has_red = any(c in ["r", "red", (1.0, 0.0, 0.0, 1.0), (1.0, 0.0, 0.0)] for c in colors)
+    # Check for blue
     has_blue = any(c in ["b", "blue", (0.0, 0.0, 1.0, 1.0), (0.0, 0.0, 1.0)] for c in colors)
-    assert has_red, "Line plot should have a red line"
-    assert has_blue, "Line plot should have a blue line"
+
+    assert has_red, "Plot should have a red line for sin(x)"
+    assert has_blue, "Plot should have a blue line for cos(x)"
 
 
-def test_top_left_has_legend():
-    """Test that top-left subplot has a legend."""
-    _, axes = create_multi_panel_plot()
-    legend = axes[0, 0].get_legend()
-    assert legend is not None, "Top-left subplot should have a legend"
+def test_line_styles():
+    """Test that lines have different styles (solid and dashed)."""
+    _, ax = create_line_plot()
+    lines = ax.get_lines()
+    linestyles = [line.get_linestyle() for line in lines]
+
+    # Should have both solid and dashed
+    has_solid = any(ls in ["-", "solid"] for ls in linestyles)
+    has_dashed = any(ls in ["--", "dashed"] for ls in linestyles)
+
+    assert has_solid, "Plot should have a solid line"
+    assert has_dashed, "Plot should have a dashed line"
+
+
+def test_has_legend():
+    """Test that axes has a legend."""
+    _, ax = create_line_plot()
+    legend = ax.get_legend()
+    assert legend is not None, "Plot should have a legend"
     legend_texts = [t.get_text() for t in legend.get_texts()]
     assert len(legend_texts) >= 2, "Legend should have at least 2 entries"
 
 
-def test_top_right_is_scatter_plot():
-    """Test that top-right subplot (0,1) is a scatter plot."""
-    _, axes = create_multi_panel_plot()
-    collections = axes[0, 1].collections
-    assert len(collections) > 0, "Top-right should have scatter plot data"
+def test_legend_labels():
+    """Test that legend contains sin and cos labels."""
+    _, ax = create_line_plot()
+    legend = ax.get_legend()
+    legend_texts = [t.get_text().lower() for t in legend.get_texts()]
 
-    # Check that scatter points exist
-    scatter = collections[0]
-    offsets = scatter.get_offsets()
-    assert len(offsets) > 0, "Scatter plot should have data points"
+    has_sin = any("sin" in text for text in legend_texts)
+    has_cos = any("cos" in text for text in legend_texts)
 
-
-def test_bottom_left_is_bar_chart():
-    """Test that bottom-left subplot (1,0) is a bar chart."""
-    _, axes = create_multi_panel_plot()
-    patches = axes[1, 0].patches
-    assert len(patches) > 0, "Bottom-left should have bar chart patches"
-
-    # Should have 5 bars (categories A-E)
-    assert len(patches) >= 5, f"Bar chart should have at least 5 bars, got {len(patches)}"
+    assert has_sin, "Legend should mention sin(x)"
+    assert has_cos, "Legend should mention cos(x)"
 
 
-def test_bottom_right_is_histogram():
-    """Test that bottom-right subplot (1,1) is a histogram."""
-    _, axes = create_multi_panel_plot()
-    patches = axes[1, 1].patches
-    assert len(patches) > 0, "Bottom-right should have histogram patches"
+def test_data_range():
+    """Test that plot data covers appropriate range for trig functions."""
+    _, ax = create_line_plot()
+    lines = ax.get_lines()
 
-    # Should have 30 bins
-    assert len(patches) >= 20, f"Histogram should have many bins, got {len(patches)}"
-
-
-def test_figure_has_suptitle():
-    """Test that figure has a super title."""
-    fig, _ = create_multi_panel_plot()
-    suptitle = fig._suptitle
-    assert suptitle is not None, "Figure should have a suptitle"
-    title_text = suptitle.get_text()
-    assert len(title_text) > 0, "Suptitle should not be empty"
-    assert "Multi-Panel" in title_text or "multi-panel" in title_text.lower(), (
-        "Suptitle should mention 'Multi-Panel'"
-    )
+    for line in lines[:2]:  # Check first two lines
+        ydata = line.get_ydata()
+        assert np.min(ydata) >= -1.1, "Trig function should have min >= -1"
+        assert np.max(ydata) <= 1.1, "Trig function should have max <= 1"
 
 
-def test_line_plot_data_correctness():
-    """Test that line plot contains sin and cos data."""
-    _, axes = create_multi_panel_plot()
-    lines = axes[0, 0].get_lines()
-
-    # Get data from first two lines
-    if len(lines) >= 2:
-        line1_data = lines[0].get_ydata()
-        line2_data = lines[1].get_ydata()
-
-        # One should be approximately sin, other cos
-        # Check that data ranges are reasonable for trig functions
-        assert np.min(line1_data) >= -1.1, "Trig function should have min >= -1"
-        assert np.max(line1_data) <= 1.1, "Trig function should have max <= 1"
-        assert np.min(line2_data) >= -1.1, "Trig function should have min >= -1"
-        assert np.max(line2_data) <= 1.1, "Trig function should have max <= 1"
+def test_uses_oo_api():
+    """Test that implementation uses OO API (returns ax, not None)."""
+    fig, ax = create_line_plot()
+    assert ax is not None, "Should return axes (using OO API)"
+    assert hasattr(ax, "plot"), "Axes should have plot method"
 
 
-def test_uses_object_oriented_api():
-    """Test that the implementation uses the OO API (returns axes, not None)."""
-    fig, axes = create_multi_panel_plot()
-    assert axes is not None, "Should return axes (using OO API)"
-    assert hasattr(axes, "__getitem__"), "Axes should be indexable (2D array)"
+def test_x_data_range():
+    """Test that x data spans approximately 0 to 2π."""
+    _, ax = create_line_plot()
+    lines = ax.get_lines()
+    if len(lines) > 0:
+        xdata = lines[0].get_xdata()
+        assert np.min(xdata) < 0.5, "X data should start near 0"
+        assert np.max(xdata) > 6.0, "X data should go to approximately 2π (6.28)"
 
 
-def test_no_overlapping_elements():
-    """Test that tight_layout was called (prevents overlap)."""
-    fig, _ = create_multi_panel_plot()
-    # tight_layout sets the subplotpars, so we can check if they're reasonable
-    # This is a heuristic - just verify the function doesn't crash with tight_layout
-    assert fig is not None, "Figure should exist after tight_layout"
+def test_sufficient_data_points():
+    """Test that lines have enough data points for smooth curves."""
+    _, ax = create_line_plot()
+    lines = ax.get_lines()
+    if len(lines) > 0:
+        xdata = lines[0].get_xdata()
+        assert len(xdata) >= 50, f"Should have at least 50 data points, got {len(xdata)}"
