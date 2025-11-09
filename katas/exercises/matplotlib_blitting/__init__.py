@@ -1,0 +1,1 @@
+"""Matplotlib blitting optimization kata."""
