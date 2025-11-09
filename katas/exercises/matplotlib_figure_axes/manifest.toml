@@ -1,0 +1,26 @@
+[kata]
+name = "matplotlib_figure_axes"
+category = "matplotlib"
+base_difficulty = 1
+description = """
+Master the fundamental matplotlib figure/axes pattern and create customized multi-panel plots.
+
+Learn to properly structure plots using the object-oriented interface (fig, ax) rather than
+pyplot state machine. This is essential for creating publication-quality figures.
+
+Key Concepts:
+- fig, ax = plt.subplots() pattern
+- Axes vs Figure hierarchy
+- Object-oriented vs state machine interface
+- tight_layout() for spacing
+- Color specifications (named, hex, RGB)
+- Line styles and markers
+
+Implementation Requirements:
+- Create a figure with 2x2 subplots showing different plot types
+- Customize each subplot with titles, axis labels, legends, and grid
+- Implement custom colors, line styles, and markers
+- Add a figure-level title (suptitle)
+- Adjust subplot spacing using tight_layout
+"""
+dependencies = []
