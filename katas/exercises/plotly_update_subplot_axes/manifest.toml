@@ -1,0 +1,11 @@
+[kata]
+name = "plotly_update_subplot_axes"
+category = "plotly"
+base_difficulty = 2
+description = """
+Update individual subplot axes with custom titles and ranges.
+
+Use update_xaxes() and update_yaxes() with row/col parameters to target specific subplots.
+"""
+dependencies = ["plotly_basic_grid"]
+tags = ["plotly", "subplots", "customization"]
