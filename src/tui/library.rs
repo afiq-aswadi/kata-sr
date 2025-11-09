@@ -307,8 +307,10 @@ impl Library {
                     Style::default()
                 };
 
-                // Display category as tag
-                let tags_str = if !kata.category.is_empty() {
+                // Display tags, fallback to category if no tags
+                let tags_str = if !kata.tags.is_empty() {
+                    kata.tags.join(", ")
+                } else if !kata.category.is_empty() {
                     kata.category.clone()
                 } else {
                     "—".to_string()
@@ -908,8 +910,8 @@ mod tests {
                     id: 1,
                     name: "kata1".to_string(),
                     category: "test".to_string(),
-                    tags: vec![],
                     description: "Test".to_string(),
+                    tags: vec![],
                     base_difficulty: 1,
                     current_difficulty: 1.0,
                     parent_kata_id: None,
@@ -933,8 +935,8 @@ mod tests {
                     id: 2,
                     name: "kata2".to_string(),
                     category: "test".to_string(),
-                    tags: vec![],
                     description: "Test".to_string(),
+                    tags: vec![],
                     base_difficulty: 2,
                     current_difficulty: 2.0,
                     parent_kata_id: None,
@@ -982,18 +984,18 @@ mod tests {
             AvailableKata {
                 name: "kata1".to_string(),
                 category: "test".to_string(),
+                tags: vec![],
                 base_difficulty: 1,
                 description: "Test".to_string(),
                 dependencies: vec![],
-                tags: vec![],
             },
             AvailableKata {
                 name: "kata2".to_string(),
                 category: "test".to_string(),
+                tags: vec![],
                 base_difficulty: 2,
                 description: "Test".to_string(),
                 dependencies: vec![],
-                tags: vec![],
             },
         ];
 
@@ -1026,10 +1028,10 @@ mod tests {
         let katas = vec![AvailableKata {
             name: "test_kata".to_string(),
             category: "test".to_string(),
+            tags: vec![],
             base_difficulty: 3,
             description: "Test".to_string(),
             dependencies: vec![],
-            tags: vec![],
         }];
 
         let mut library = Library {

@@ -1,0 +1,18 @@
+[kata]
+name = "python_generator_cleanup"
+category = "python"
+base_difficulty = 2
+description = """
+Learn how to ensure cleanup code runs in generators using try/finally. This is crucial
+for managing resources (files, connections, locks) in generators. The finally block
+guarantees cleanup even if the generator is closed early or an exception occurs.
+
+Key concepts:
+- try/finally in generators for resource management
+- Generator cleanup on close() or exception
+- finally block always executes
+- Generator context managers
+- Resource management best practices
+"""
+dependencies = ["python_batch_generator"]
+tags = ["python", "generators", "cleanup", "resources", "try-finally"]

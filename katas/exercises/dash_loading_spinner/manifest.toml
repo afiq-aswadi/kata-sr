@@ -1,0 +1,13 @@
+[kata]
+name = "dash_loading_spinner"
+category = "plotly"
+base_difficulty = 2
+description = """
+Add a loading spinner to provide visual feedback during callback execution.
+
+Learn to use dcc.Loading component to wrap graphs or other components.
+This improves user experience by showing a spinner while data is being computed.
+
+Key concepts: dcc.Loading component, wrapping children, UX improvements
+"""
+dependencies = ["dash_basic_layout"]
