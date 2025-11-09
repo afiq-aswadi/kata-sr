@@ -17,8 +17,9 @@ def timing(func: Callable[P, T]) -> Callable[P, T]:
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         start = time.perf_counter()
-        result = func(*args, **kwargs)
-        elapsed = time.perf_counter() - start
-        print(f"Function '{func.__name__}' took {elapsed:.4f}s")
-        return result
+        try:
+            return func(*args, **kwargs)
+        finally:
+            elapsed = time.perf_counter() - start
+            print(f"Function '{func.__name__}' took {elapsed:.4f}s")
     return wrapper
