@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_blitting"
+category = "matplotlib"
+base_difficulty = 3
+description = """
+Create an optimized animation using blitting with multiple elements.
+
+Implement an animation that updates multiple artists (sin, cos, moving point) efficiently by only redrawing changed elements. Learn how blitting improves performance.
+"""
+dependencies = ["matplotlib_animation_init"]

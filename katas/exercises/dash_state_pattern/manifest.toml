@@ -1,0 +1,13 @@
+[kata]
+name = "dash_state_pattern"
+category = "plotly"
+base_difficulty = 3
+description = """
+Use State instead of Input for button-triggered updates.
+
+Learn the difference between Input (triggers callback on change) and State (provides value without triggering).
+This pattern is essential for forms where you want the user to confirm changes with a button.
+
+Key concepts: State vs Input, button triggers, dash.dependencies, prevent_initial_call
+"""
+dependencies = ["dash_single_callback"]

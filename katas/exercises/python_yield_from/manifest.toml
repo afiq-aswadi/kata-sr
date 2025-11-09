@@ -1,0 +1,18 @@
+[kata]
+name = "python_yield_from"
+category = "python"
+base_difficulty = 2
+description = """
+Learn the yield from syntax for delegating to sub-generators. This powerful feature
+allows you to delegate iteration to another generator completely, which is especially
+useful for recursive generators and composing generator functions.
+
+Key concepts:
+- yield from delegates to sub-generators
+- Passes all values from sub-generator to caller
+- More efficient than manual iteration
+- Essential for recursive generators
+- Transparent delegation of send() and throw()
+"""
+dependencies = ["python_batch_generator"]
+tags = ["python", "generators", "yield-from", "delegation", "recursion"]

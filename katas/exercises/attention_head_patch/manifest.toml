@@ -1,0 +1,13 @@
+[kata]
+name = "attention_head_patch"
+category = "interpretability"
+base_difficulty = 4
+description = """
+Patch a specific attention head's output from clean to corrupted run.
+
+Implement head-specific patching by swapping the output of a single
+attention head while leaving other heads unchanged. This is key to
+identifying which attention heads are causally important.
+"""
+dependencies = ["basic_activation_patch"]
+tags = ["interpretability", "activation-patching", "attention"]

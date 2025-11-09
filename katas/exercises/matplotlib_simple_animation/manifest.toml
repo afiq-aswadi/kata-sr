@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_simple_animation"
+category = "matplotlib"
+base_difficulty = 2
+description = """
+Create a basic matplotlib animation using FuncAnimation.
+
+Implement an update function that creates a moving sine wave animation. This teaches the fundamentals of FuncAnimation with a simple update-only pattern.
+"""
+dependencies = []

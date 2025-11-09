@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_hover_formatting"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 2
+description = """
+Create scatter plot with formatted hover text using custom labels.
+
+Learn to use the text parameter and formatted hovertemplate.
+Advanced hover customization for rich interactive experiences.
+
+Key concepts: text parameter, %{text}, number formatting, HTML-like syntax
+"""
+dependencies = ["plotly_hover_template"]

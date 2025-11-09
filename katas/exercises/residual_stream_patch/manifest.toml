@@ -1,0 +1,12 @@
+[kata]
+name = "residual_stream_patch"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Patch the residual stream at a specific layer.
+
+Implement patching of the full residual stream (hook_resid_pre or hook_resid_post)
+to measure the causal effect of all computations up to that point.
+"""
+dependencies = ["basic_activation_patch"]
+tags = ["interpretability", "activation-patching", "residual"]

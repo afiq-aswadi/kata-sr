@@ -1,0 +1,1 @@
+"""Matplotlib simple animation kata."""

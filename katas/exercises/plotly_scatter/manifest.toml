@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_scatter"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 1
+description = """
+Create a basic scatter plot with custom markers using Plotly.
+
+Learn to use go.Figure() and go.Scatter() to create interactive scatter plots.
+First step in mastering Plotly's graph_objects API.
+
+Key concepts: go.Figure, go.Scatter, marker styling
+"""
+dependencies = []
