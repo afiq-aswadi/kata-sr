@@ -50,7 +50,7 @@ impl ResultsScreen {
         Self {
             kata,
             results,
-            selected_rating: 2,
+            selected_rating: 3, // Good (FSRS 1-4 scale)
             selected_test: 0,
             test_state,
             focus: ResultsFocus::Rating,
@@ -201,14 +201,15 @@ impl ResultsScreen {
 
         let mut lines: Vec<Line> = Vec::new();
         for (idx, label) in RATING_LABELS.iter().enumerate() {
+            let rating_value = idx + 1; // Convert 0-3 array index to 1-4 FSRS rating
             let mut spans = vec![
-                Span::styled(format!("[{}] ", idx), Style::default().fg(Color::Gray)),
+                Span::styled(format!("[{}] ", rating_value), Style::default().fg(Color::Gray)),
                 Span::raw(label.to_string()),
             ];
 
-            if idx == self.selected_rating {
+            if rating_value == self.selected_rating {
                 spans = vec![Span::styled(
-                    format!("[{}] {}", idx, label),
+                    format!("[{}] {}", rating_value, label),
                     Style::default()
                         .fg(Color::Black)
                         .bg(Color::Yellow)
@@ -220,7 +221,7 @@ impl ResultsScreen {
         }
 
         let instructions = Line::from(vec![
-            Span::raw("Use ←/→ or h/l to move, ↑/↓ or j/k to change selection, numbers 0-3 to jump. Tab focuses tests."),
+            Span::raw("Use ←/→ or h/l to move, ↑/↓ or j/k to change selection, numbers 1-4 to jump. Tab focuses tests."),
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
@@ -352,23 +353,23 @@ impl ResultsScreen {
                 self.bump_rating(1);
                 ResultsAction::None
             }
-            KeyCode::Char('0') => {
-                self.selected_rating = 0;
-                ResultsAction::None
-            }
             KeyCode::Char('1') => {
-                self.selected_rating = 1;
+                self.selected_rating = 1; // Again
                 ResultsAction::None
             }
             KeyCode::Char('2') => {
-                self.selected_rating = 2;
+                self.selected_rating = 2; // Hard
                 ResultsAction::None
             }
             KeyCode::Char('3') => {
-                self.selected_rating = 3;
+                self.selected_rating = 3; // Good
                 ResultsAction::None
             }
-            KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8 + 1), // Convert 0-3 to 1-4 for FSRS
+            KeyCode::Char('4') => {
+                self.selected_rating = 4; // Easy
+                ResultsAction::None
+            }
+            KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8), // Direct FSRS 1-4 rating
             _ => ResultsAction::None,
         }
     }
@@ -378,7 +379,7 @@ impl ResultsScreen {
     }
 
     fn bump_rating(&mut self, delta: isize) {
-        let new_rating = (self.selected_rating as isize + delta).clamp(0, 3);
+        let new_rating = (self.selected_rating as isize + delta).clamp(1, 4);
         self.selected_rating = new_rating as usize;
     }
 
