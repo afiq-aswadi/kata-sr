@@ -909,6 +909,7 @@ mod tests {
                     name: "kata1".to_string(),
                     category: "test".to_string(),
                     description: "Test".to_string(),
+                    tags: vec![],
                     base_difficulty: 1,
                     current_difficulty: 1.0,
                     parent_kata_id: None,
@@ -933,6 +934,7 @@ mod tests {
                     name: "kata2".to_string(),
                     category: "test".to_string(),
                     description: "Test".to_string(),
+                    tags: vec![],
                     base_difficulty: 2,
                     current_difficulty: 2.0,
                     parent_kata_id: None,
@@ -984,7 +986,6 @@ mod tests {
                 base_difficulty: 1,
                 description: "Test".to_string(),
                 dependencies: vec![],
-                tags: vec![],
             },
             AvailableKata {
                 name: "kata2".to_string(),
@@ -993,7 +994,6 @@ mod tests {
                 base_difficulty: 2,
                 description: "Test".to_string(),
                 dependencies: vec![],
-                tags: vec![],
             },
         ];
 
@@ -1030,7 +1030,6 @@ mod tests {
             base_difficulty: 3,
             description: "Test".to_string(),
             dependencies: vec![],
-            tags: vec![],
         }];
 
         let mut library = Library {
