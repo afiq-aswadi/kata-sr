@@ -78,14 +78,14 @@ impl PracticeScreen {
     /// #     current_ease_factor: 2.5,
     /// #     current_interval_days: 1,
     /// #     current_repetition_count: 0,
-    /// #     fsrs_stability: 1.0,
-    /// #     fsrs_difficulty: 1.0,
+    /// #     fsrs_stability: 0.0,
+    /// #     fsrs_difficulty: 0.0,
     /// #     fsrs_elapsed_days: 0,
     /// #     fsrs_scheduled_days: 0,
     /// #     fsrs_reps: 0,
     /// #     fsrs_lapses: 0,
     /// #     fsrs_state: "New".to_string(),
-    /// #     scheduler_type: "SM2".to_string(),
+    /// #     scheduler_type: "FSRS".to_string(),
     /// #     created_at: chrono::Utc::now(),
     /// # };
     /// let practice_screen = PracticeScreen::new_retry(kata)?;

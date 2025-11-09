@@ -254,59 +254,6 @@ impl KataRepository {
         Ok(self.conn.last_insert_rowid())
     }
 
-    /// Updates a kata's scheduling state after a review.
-    ///
-    /// Updates the SM-2 state (ease factor, interval, repetition count),
-    /// next review timestamp, and last reviewed timestamp.
-    ///
-    /// # Arguments
-    ///
-    /// * `kata_id` - ID of the kata to update
-    /// * `state` - New SM-2 state
-    /// * `next_review` - When the kata should be reviewed next
-    /// * `reviewed_at` - When the review was completed
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # use kata_sr::db::repo::KataRepository;
-    /// # use kata_sr::core::scheduler::{SM2State, QualityRating};
-    /// # use chrono::{Utc, Duration};
-    /// # let repo = KataRepository::new("kata.db")?;
-    /// let mut state = SM2State::new();
-    /// let interval = state.update(QualityRating::Good);
-    /// let next_review = Utc::now() + Duration::days(interval);
-    ///
-    /// repo.update_kata_after_review(1, &state, next_review, Utc::now())?;
-    /// # Ok::<(), rusqlite::Error>(())
-    /// ```
-    pub fn update_kata_after_review(
-        &self,
-        kata_id: i64,
-        state: &SM2State,
-        next_review: DateTime<Utc>,
-        reviewed_at: DateTime<Utc>,
-    ) -> Result<()> {
-        self.conn.execute(
-            "UPDATE katas
-             SET next_review_at = ?1,
-                 last_reviewed_at = ?2,
-                 current_ease_factor = ?3,
-                 current_interval_days = ?4,
-                 current_repetition_count = ?5
-             WHERE id = ?6",
-            params![
-                next_review.timestamp(),
-                reviewed_at.timestamp(),
-                state.ease_factor,
-                state.interval_days,
-                state.repetition_count,
-                kata_id,
-            ],
-        )?;
-
-        Ok(())
-    }
 
     /// Updates a kata's current difficulty.
     ///
@@ -439,7 +386,7 @@ impl KataRepository {
         let mut stmt = self.conn.prepare(
             "SELECT kata_id, COUNT(*) as count
              FROM sessions
-             WHERE quality_rating >= 1
+             WHERE quality_rating >= 2
              GROUP BY kata_id",
         )?;
 
@@ -635,7 +582,7 @@ impl KataRepository {
 
     /// Calculates success rate over the last n days.
     ///
-    /// Success is defined as quality_rating >= 2 (Good or Easy).
+    /// Success is defined as quality_rating >= 2 (Hard, Good, or Easy in FSRS).
     /// Returns 0.0 if there are no completed sessions in the time period.
     ///
     /// # Arguments
@@ -1298,40 +1245,6 @@ impl KataRepository {
         Ok(())
     }
 
-    /// Sets a kata to use FSRS scheduling instead of SM-2.
-    ///
-    /// # Arguments
-    ///
-    /// * `kata_id` - ID of the kata to switch to FSRS
-    pub fn set_kata_to_fsrs(&self, kata_id: i64) -> Result<()> {
-        self.conn.execute(
-            "UPDATE katas SET scheduler_type = 'FSRS' WHERE id = ?1",
-            [kata_id],
-        )?;
-        Ok(())
-    }
-
-    /// Sets a kata to use SM-2 scheduling instead of FSRS.
-    ///
-    /// # Arguments
-    ///
-    /// * `kata_id` - ID of the kata to switch to SM-2
-    pub fn set_kata_to_sm2(&self, kata_id: i64) -> Result<()> {
-        self.conn.execute(
-            "UPDATE katas SET scheduler_type = 'SM2' WHERE id = ?1",
-            [kata_id],
-        )?;
-        Ok(())
-    }
-
-    /// Switches all katas to use FSRS scheduling.
-    pub fn migrate_all_to_fsrs(&self) -> Result<()> {
-        self.conn.execute(
-            "UPDATE katas SET scheduler_type = 'FSRS'",
-            [],
-        )?;
-        Ok(())
-    }
 
     /// Stores optimized FSRS parameters in the database.
     ///
@@ -1492,15 +1405,6 @@ pub struct Kata {
 }
 
 impl Kata {
-    /// Returns the current SM-2 state for this kata.
-    pub fn sm2_state(&self) -> SM2State {
-        SM2State {
-            ease_factor: self.current_ease_factor,
-            interval_days: self.current_interval_days,
-            repetition_count: self.current_repetition_count,
-        }
-    }
-
     /// Returns the current FSRS card state for this kata.
     pub fn fsrs_card(&self) -> crate::core::fsrs::FsrsCard {
         use crate::core::fsrs::{CardState, FsrsCard};
@@ -1515,11 +1419,6 @@ impl Kata {
             state: CardState::from_str(&self.fsrs_state).unwrap_or(CardState::New),
             last_review: self.last_reviewed_at,
         }
-    }
-
-    /// Checks if this kata uses FSRS scheduling.
-    pub fn uses_fsrs(&self) -> bool {
-        self.scheduler_type == "FSRS"
     }
 }
 
@@ -1730,7 +1629,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_kata_after_review() {
+    fn test_update_kata_after_fsrs_review() {
         let repo = setup_test_repo();
         let new_kata = NewKata {
             name: "review_kata".to_string(),
@@ -1743,16 +1642,18 @@ mod tests {
 
         let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
-        let mut state = SM2State::new();
-        state.update(crate::core::scheduler::QualityRating::Good);
-        let next_review = Utc::now() + chrono::Duration::days(1);
+        let mut card = crate::core::fsrs::FsrsCard::new();
+        let params = crate::core::fsrs::FsrsParams::default();
+        card.schedule(crate::core::fsrs::Rating::Good, &params, Utc::now());
+        let next_review = Utc::now() + chrono::Duration::days(card.scheduled_days as i64);
 
-        repo.update_kata_after_review(kata_id, &state, next_review, Utc::now())
+        repo.update_kata_after_fsrs_review(kata_id, &card, next_review, Utc::now())
             .unwrap();
 
         let kata = repo.get_kata_by_id(kata_id).unwrap().unwrap();
         assert!(kata.last_reviewed_at.is_some());
         assert!(kata.next_review_at.is_some());
+        assert!(kata.fsrs_stability > 0.0);
     }
 
     #[test]
@@ -1778,7 +1679,7 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
 
         let session_id = repo.create_session(&session).unwrap();
@@ -1803,7 +1704,7 @@ mod tests {
 
         let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
-        for rating in [2, 1, 0, 2] {
+        for rating in [3, 2, 1, 3] { // FSRS: Good, Hard, Again, Good
             let session = NewSession {
                 kata_id,
                 started_at: Utc::now(),
@@ -1819,7 +1720,7 @@ mod tests {
         }
 
         let counts = repo.get_success_counts().unwrap();
-        assert_eq!(counts.get(&kata_id), Some(&3));
+        assert_eq!(counts.get(&kata_id), Some(&3)); // 3 successful recalls: 2 Good + 1 Hard (>= 2)
     }
 
     #[test]
@@ -1960,7 +1861,7 @@ mod tests {
                 num_failed: None,
                 num_skipped: None,
                 duration_ms: None,
-                quality_rating: Some(2),
+                quality_rating: Some(3), // Good (FSRS)
             };
             repo.create_session(&session).unwrap();
         }
@@ -1998,7 +1899,7 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
 
@@ -2041,7 +1942,7 @@ mod tests {
                 num_failed: None,
                 num_skipped: None,
                 duration_ms: None,
-                quality_rating: Some(2),
+                quality_rating: Some(3), // Good (FSRS)
             };
             repo.create_session(&session).unwrap();
         }
@@ -2057,7 +1958,7 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
 
@@ -2149,8 +2050,8 @@ mod tests {
             .unwrap();
 
         // create sessions with different quality ratings
-        // 2 successful (rating >= 2), 2 failed (rating < 2)
-        for rating in [2, 3, 0, 1] {
+        // 3 successful (rating >= 2: Hard/Good/Easy), 1 failed (rating < 2: Again) in FSRS
+        for rating in [3, 4, 1, 2] { // FSRS: Good, Easy, Again, Hard
             let session = NewSession {
                 kata_id,
                 started_at: Utc::now(),
@@ -2166,7 +2067,7 @@ mod tests {
         }
 
         let rate = repo.get_success_rate_last_n_days(7).unwrap();
-        assert_eq!(rate, 0.5);
+        assert_eq!(rate, 0.75); // 3 out of 4 are successful
     }
 
     #[test]
@@ -2196,7 +2097,7 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
 
@@ -2211,7 +2112,7 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(0),
+            quality_rating: Some(1), // Again (FSRS)
         };
         repo.create_session(&session).unwrap();
 
@@ -2265,7 +2166,7 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(2),
+            quality_rating: Some(3), // Good (FSRS)
         };
         repo.create_session(&session).unwrap();
 

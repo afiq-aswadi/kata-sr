@@ -20,7 +20,7 @@ use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
 use super::results::{ResultsAction, ResultsScreen};
 use crate::core::analytics::Analytics;
-use crate::core::scheduler::QualityRating;
+use crate::core::fsrs::{FsrsParams, Rating};
 use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
 use crate::runner::python_runner::TestResults;
 
@@ -554,31 +554,37 @@ impl App {
         Ok(())
     }
 
-    /// Handles rating submission by updating SM-2 state and creating a session record.
+    /// Handles rating submission by updating FSRS-5 state and creating a session record.
     ///
     /// # Arguments
     ///
     /// * `kata` - The kata that was reviewed
-    /// * `rating` - User's quality rating (0-3)
+    /// * `rating` - User's quality rating (1-4 for FSRS: Again/Hard/Good/Easy)
     fn handle_rating_submission(&mut self, kata: Kata, rating: u8) -> anyhow::Result<()> {
-        // convert rating to QualityRating
-        let quality_rating = QualityRating::from_int(rating as i32)
+        // Convert rating to FSRS Rating enum (1-4 scale)
+        let fsrs_rating = Rating::from_int(rating as i32)
             .ok_or_else(|| anyhow::anyhow!("Invalid rating: {}", rating))?;
 
-        // get current SM-2 state and update it
-        let mut state = kata.sm2_state();
-        let interval_days = state.update(quality_rating);
+        // Get FSRS parameters (use default if none saved)
+        let params = self.repo
+            .get_latest_fsrs_params()
+            .context("Failed to get FSRS params")?
+            .unwrap_or_else(|| FsrsParams::default());
 
-        // calculate next review date
+        // Get current FSRS card state and schedule next review
+        let mut card = kata.fsrs_card();
         let now = Utc::now();
-        let next_review = now + Duration::days(interval_days);
+        card.schedule(fsrs_rating, &params, now);
 
-        // update kata in database
+        // Calculate next review date
+        let next_review = now + Duration::days(card.scheduled_days as i64);
+
+        // Update kata in database
         self.repo
-            .update_kata_after_review(kata.id, &state, next_review, now)
-            .context("Failed to update kata after review")?;
+            .update_kata_after_fsrs_review(kata.id, &card, next_review, now)
+            .context("Failed to update kata after FSRS review")?;
 
-        // create session record
+        // Create session record
         let session = NewSession {
             kata_id: kata.id,
             started_at: now,
@@ -595,7 +601,7 @@ impl App {
             .create_session(&session)
             .context("Failed to create session record")?;
 
-        // update daily statistics
+        // Update daily statistics
         let analytics = Analytics::new(&self.repo);
         analytics
             .update_daily_stats()

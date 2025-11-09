@@ -4,7 +4,7 @@
 //! - My Deck: Shows katas in the user's deck with due dates and last reviewed
 //! - All Katas: Shows all available katas from exercises directory with search/filter/sort
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 use chrono::Utc;
@@ -84,6 +84,8 @@ pub struct Library {
 
     /// Katas in the user's deck (for My Deck tab)
     pub deck_katas: Vec<Kata>,
+    /// Tags for each kata in deck (kata_id -> tags)
+    pub deck_kata_tags: HashMap<i64, Vec<String>>,
     /// Selected index in My Deck tab
     pub deck_selected: usize,
     /// Scroll offset for My Deck tab (first visible row)
@@ -137,12 +139,21 @@ impl Library {
         let available_katas = load_available_katas()?;
         let deck_katas = repo.get_all_katas()?;
 
+        // Load tags for all katas in deck
+        let mut deck_kata_tags = HashMap::new();
+        for kata in &deck_katas {
+            if let Ok(tags) = repo.get_kata_tags(kata.id) {
+                deck_kata_tags.insert(kata.id, tags);
+            }
+        }
+
         let kata_ids_in_deck = deck_katas.iter().map(|k| k.name.clone()).collect();
         let available_categories = get_unique_categories(&available_katas);
 
         let mut library = Self {
             active_tab: LibraryTab::MyDeck,
             deck_katas,
+            deck_kata_tags,
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: available_katas.clone(),
@@ -366,9 +377,15 @@ impl Library {
                     Style::default()
                 };
 
-                // Display tags, fallback to category if no tags
-                let tags_str = if !kata.tags.is_empty() {
-                    kata.tags.join(", ")
+                // Display tags as comma-separated list, fallback to category if no tags
+                let tags_str = if let Some(tags) = self.deck_kata_tags.get(&kata.id) {
+                    if !tags.is_empty() {
+                        tags.join(", ")
+                    } else if !kata.category.is_empty() {
+                        kata.category.clone()
+                    } else {
+                        "—".to_string()
+                    }
                 } else if !kata.category.is_empty() {
                     kata.category.clone()
                 } else {
@@ -889,6 +906,14 @@ impl Library {
     pub fn refresh_deck(&mut self, repo: &KataRepository) -> Result<()> {
         self.deck_katas = repo.get_all_katas()?;
 
+        // Reload tags for all katas in deck
+        self.deck_kata_tags.clear();
+        for kata in &self.deck_katas {
+            if let Ok(tags) = repo.get_kata_tags(kata.id) {
+                self.deck_kata_tags.insert(kata.id, tags);
+            }
+        }
+
         // Adjust selected index if it's out of bounds
         if self.deck_selected >= self.deck_katas.len() && !self.deck_katas.is_empty() {
             self.deck_selected = self.deck_katas.len() - 1;
@@ -977,6 +1002,7 @@ mod tests {
         let mut library = Library {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
+            deck_kata_tags: HashMap::new(),
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: vec![],
@@ -1059,6 +1085,7 @@ mod tests {
                     created_at: Utc::now(),
                 },
             ],
+            deck_kata_tags: HashMap::new(),
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: vec![],
@@ -1107,6 +1134,7 @@ mod tests {
         let mut library = Library {
             active_tab: LibraryTab::AllKatas,
             deck_katas: vec![],
+            deck_kata_tags: HashMap::new(),
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: katas.clone(),
@@ -1145,6 +1173,7 @@ mod tests {
         let mut library = Library {
             active_tab: LibraryTab::AllKatas,
             deck_katas: vec![],
+            deck_kata_tags: HashMap::new(),
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: katas.clone(),
@@ -1173,6 +1202,7 @@ mod tests {
         let mut library = Library {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
+            deck_kata_tags: HashMap::new(),
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: vec![],
@@ -1201,6 +1231,7 @@ mod tests {
         let mut library = Library {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
+            deck_kata_tags: HashMap::new(),
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: vec![],
@@ -1227,6 +1258,7 @@ mod tests {
         let mut library = Library {
             active_tab: LibraryTab::MyDeck,
             deck_katas: vec![],
+            deck_kata_tags: HashMap::new(),
             deck_selected: 0,
             deck_scroll_offset: 0,
             all_available_katas: vec![],
