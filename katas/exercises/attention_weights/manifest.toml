@@ -1,0 +1,13 @@
+[kata]
+name = "attention_weights"
+tags = ["attention", "transformers", "micro"]
+base_difficulty = 2
+description = """
+Apply softmax to attention scores with optional masking.
+
+Second building block of attention: convert scores to probabilities.
+Learn how masking works (e.g., causal masks for autoregressive models).
+
+Key concepts: softmax, masking, attention probabilities
+"""
+dependencies = ["attention_qk_similarity"]
