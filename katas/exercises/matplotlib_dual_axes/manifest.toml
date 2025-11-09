@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_dual_axes"
+category = "matplotlib"
+base_difficulty = 2
+description = """
+Create a plot with dual y-axes using twinx() to display data with different scales.
+
+Essential for visualizing two metrics with different ranges on the same x-axis.
+"""
+dependencies = []
