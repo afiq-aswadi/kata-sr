@@ -7,6 +7,7 @@ use anyhow::Context;
 use chrono::{Duration, Utc};
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::backend::CrosstermBackend;
+use ratatui::layout::Rect;
 use ratatui::{Frame, Terminal};
 use std::io;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -19,12 +20,31 @@ use super::keybindings;
 use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
 use super::results::{ResultsAction, ResultsScreen};
+use super::session_detail::{SessionDetailAction, SessionDetailScreen};
+use super::session_history::{SessionHistoryAction, SessionHistoryScreen};
 use super::settings::{SettingsAction, SettingsScreen};
 use crate::config::AppConfig;
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
 use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
 use crate::runner::python_runner::TestResults;
+
+/// Style for popup messages.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PopupStyle {
+    /// Success message (green)
+    Success,
+    /// Error message (red)
+    Error,
+}
+
+/// A popup message to display to the user.
+#[derive(Debug, Clone)]
+pub struct PopupMessage {
+    pub title: String,
+    pub message: String,
+    pub style: PopupStyle,
+}
 
 /// Events that can be sent to the main application loop.
 ///
@@ -62,6 +82,10 @@ pub enum Screen {
     Details(DetailsScreen),
     /// Create kata screen for generating new kata files
     CreateKata(CreateKataScreen),
+    /// Session history screen showing past sessions for a kata
+    SessionHistory(SessionHistoryScreen),
+    /// Session detail screen showing full test results for a session
+    SessionDetail(SessionDetailScreen),
 }
 
 /// Internal enum for handling screen transitions without borrow conflicts.
@@ -85,6 +109,10 @@ enum ScreenAction {
     CancelCreateKata,
     OpenSettings,
     CloseSettings,
+    ViewSessionHistory(Kata),
+    ViewSessionDetail(i64), // session_id
+    BackFromSessionHistory,
+    BackFromSessionDetail,
 }
 
 /// Main application state and event loop coordinator.
@@ -108,6 +136,8 @@ pub struct App {
     showing_help: bool,
     /// Whether terminal needs to be cleared (after external editor)
     needs_terminal_clear: bool,
+    /// Popup message to display to the user
+    popup_message: Option<PopupMessage>,
 }
 
 impl App {
@@ -144,6 +174,7 @@ impl App {
             event_rx: rx,
             showing_help: false,
             needs_terminal_clear: false,
+            popup_message: None,
         };
 
         app.refresh_dashboard_screen()?;
@@ -279,6 +310,17 @@ impl App {
             Screen::CreateKata(create_kata) => {
                 create_kata.render(frame);
             }
+            Screen::SessionHistory(session_history) => {
+                session_history.render(frame);
+            }
+            Screen::SessionDetail(session_detail) => {
+                session_detail.render(frame);
+            }
+        }
+
+        // Render popup overlay if present
+        if self.popup_message.is_some() {
+            self.render_popup_overlay(frame);
         }
     }
 
@@ -287,6 +329,12 @@ impl App {
         if self.showing_help {
             // any key exits help screen
             self.showing_help = false;
+            return Ok(());
+        }
+
+        // If popup is showing, any key dismisses it
+        if self.popup_message.is_some() {
+            self.popup_message = None;
             return Ok(());
         }
 
@@ -300,6 +348,12 @@ impl App {
                 // handle settings key 's' in dashboard
                 if code == KeyCode::Char('s') {
                     return self.execute_action(ScreenAction::OpenSettings);
+                }
+                // handle history key 'h' in dashboard (only if kata is selected)
+                if code == KeyCode::Char('h') && !self.dashboard.katas_due.is_empty() {
+                    if let Some(kata) = self.dashboard.katas_due.get(self.dashboard.selected_index) {
+                        return self.execute_action(ScreenAction::ViewSessionHistory(kata.clone()));
+                    }
                 }
                 let action = self.dashboard.handle_input(code);
                 match action {
@@ -351,17 +405,28 @@ impl App {
                 }
             }
             Screen::Library(library) => {
-                let action = library.handle_input(code);
-                match action {
-                    LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
-                    LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
-                    LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
-                    LibraryAction::ViewDetails(kata) => {
-                        let in_deck = library.kata_ids_in_deck.contains(&kata.name);
-                        Some(ScreenAction::ViewDetails(kata, in_deck))
+                // handle history key 'h' in My Deck tab
+                if code == KeyCode::Char('h') {
+                    use super::library::LibraryTab;
+                    if library.active_tab == LibraryTab::MyDeck && library.deck_selected < library.deck_katas.len() {
+                        let kata = library.deck_katas[library.deck_selected].clone();
+                        Some(ScreenAction::ViewSessionHistory(kata))
+                    } else {
+                        None
                     }
-                    LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
-                    LibraryAction::None => None,
+                } else {
+                    let action = library.handle_input(code);
+                    match action {
+                        LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
+                        LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
+                        LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
+                        LibraryAction::ViewDetails(kata) => {
+                            let in_deck = library.kata_ids_in_deck.contains(&kata.name);
+                            Some(ScreenAction::ViewDetails(kata, in_deck))
+                        }
+                        LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
+                        LibraryAction::None => None,
+                    }
                 }
             }
             Screen::Details(details) => {
@@ -381,6 +446,23 @@ impl App {
                     }
                     CreateKataAction::Cancel => Some(ScreenAction::CancelCreateKata),
                     CreateKataAction::None => None,
+                }
+            }
+            Screen::SessionHistory(session_history) => {
+                let action = session_history.handle_input(code);
+                match action {
+                    SessionHistoryAction::ViewDetails(session_id) => {
+                        Some(ScreenAction::ViewSessionDetail(session_id))
+                    }
+                    SessionHistoryAction::Back => Some(ScreenAction::BackFromSessionHistory),
+                    SessionHistoryAction::None => None,
+                }
+            }
+            Screen::SessionDetail(session_detail) => {
+                let action = session_detail.handle_input(code);
+                match action {
+                    SessionDetailAction::Back => Some(ScreenAction::BackFromSessionDetail),
+                    SessionDetailAction::None => None,
                 }
             }
         };
@@ -514,24 +596,29 @@ impl App {
                 // Generate the kata files
                 match generate_kata_files(&form_data, exercises_dir) {
                     Ok(created_slug) => {
-                        // Success! Return to library
+                        // Success! Return to library and show success popup
                         let library = Library::load(&self.repo)?;
                         self.current_screen = Screen::Library(library);
 
-                        // TODO: Show success message to user
-                        eprintln!(
-                            "Created kata '{}'! Press 'a' in Library to add to deck.",
-                            created_slug
-                        );
+                        self.popup_message = Some(PopupMessage {
+                            title: "Success!".to_string(),
+                            message: format!(
+                                "Created kata '{}'!\n\nPress 'a' in the All Katas tab to add it to your deck.",
+                                created_slug
+                            ),
+                            style: PopupStyle::Success,
+                        });
                     }
                     Err(e) => {
-                        // Error! Stay on CreateKata screen
-                        // TODO: Show error message to user
-                        eprintln!("Failed to create kata: {}", e);
-
-                        // For now, return to library on error
+                        // Error! Return to library and show error popup
                         let library = Library::load(&self.repo)?;
                         self.current_screen = Screen::Library(library);
+
+                        self.popup_message = Some(PopupMessage {
+                            title: "Error Creating Kata".to_string(),
+                            message: format!("Failed to create kata:\n\n{}", e),
+                            style: PopupStyle::Error,
+                        });
                     }
                 }
             }
@@ -546,6 +633,27 @@ impl App {
             }
             ScreenAction::CloseSettings => {
                 self.refresh_dashboard_screen()?;
+            }
+            ScreenAction::ViewSessionHistory(kata) => {
+                let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                self.current_screen = Screen::SessionHistory(session_history);
+            }
+            ScreenAction::ViewSessionDetail(session_id) => {
+                let session_detail = SessionDetailScreen::new(session_id, &self.repo)?;
+                self.current_screen = Screen::SessionDetail(session_detail);
+            }
+            ScreenAction::BackFromSessionHistory => {
+                self.refresh_dashboard_screen()?;
+            }
+            ScreenAction::BackFromSessionDetail => {
+                // Navigate back to session history
+                // We need to get the kata from the session detail screen
+                if let Screen::SessionDetail(ref session_detail) = &self.current_screen {
+                    let kata = self.repo.get_kata_by_id(session_detail.session.kata_id)?
+                        .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
+                    let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                    self.current_screen = Screen::SessionHistory(session_history);
+                }
             }
         }
         Ok(())
@@ -646,4 +754,85 @@ impl App {
 
         Ok(())
     }
+
+    /// Renders a popup overlay with a message to the user.
+    fn render_popup_overlay(&self, frame: &mut Frame) {
+        use ratatui::{
+            style::{Color, Style},
+            widgets::{Block, Borders, Clear, Paragraph, Wrap},
+        };
+
+        let popup_msg = match &self.popup_message {
+            Some(msg) => msg,
+            None => return,
+        };
+
+        // Create centered rectangle for popup (60% width, 40% height)
+        let area = centered_rect(60, 40, frame.size());
+
+        // Clear the area behind the popup
+        frame.render_widget(Clear, area);
+
+        // Determine colors based on popup style
+        let (title_color, border_color) = match popup_msg.style {
+            PopupStyle::Success => (Color::Green, Color::Green),
+            PopupStyle::Error => (Color::Red, Color::Red),
+        };
+
+        // Render the popup
+        let popup = Paragraph::new(popup_msg.message.clone())
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(border_color))
+                    .title(format!(" {} ", popup_msg.title))
+                    .title_style(Style::default().fg(title_color)),
+            );
+
+        frame.render_widget(popup, area);
+
+        // Render instructions at the bottom of popup
+        let instructions_area = Rect {
+            x: area.x,
+            y: area.y + area.height - 2,
+            width: area.width,
+            height: 1,
+        };
+
+        let instructions = Paragraph::new("Press any key to dismiss")
+            .style(Style::default().fg(Color::Gray));
+        frame.render_widget(instructions, instructions_area);
+    }
+}
+
+/// Creates a centered rectangle for popup overlays.
+///
+/// # Arguments
+///
+/// * `percent_x` - Width as percentage of parent area
+/// * `percent_y` - Height as percentage of parent area
+/// * `r` - Parent rectangle
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    use ratatui::layout::{Constraint, Direction, Layout};
+
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    let vertical = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1]);
+
+    vertical[1]
 }
