@@ -1,0 +1,14 @@
+[kata]
+name = "create_simple_class"
+category = "python"
+base_difficulty = 2
+description = """
+Create a class dynamically at runtime using type().
+
+Learn the three-argument form of type(name, bases, dict) to create a new class
+without using the class keyword. This is the foundation for understanding how
+Python's class creation machinery works.
+
+Key concepts: type() as class factory, class creation at runtime
+"""
+dependencies = []

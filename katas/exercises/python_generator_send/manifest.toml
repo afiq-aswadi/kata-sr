@@ -1,0 +1,18 @@
+[kata]
+name = "python_generator_send"
+category = "python"
+base_difficulty = 3
+description = """
+Learn bidirectional communication with generators using the send() method. This advanced
+generator feature allows you to pass values INTO a running generator, enabling stateful
+processing and coroutine-like behavior.
+
+Key concepts:
+- send() method for passing values to generators
+- Bidirectional communication (yield both sends and receives)
+- Stateful generators that maintain local variables
+- Priming generators with next() before sending
+- Using generators for stream processing
+"""
+dependencies = ["python_batch_generator"]
+tags = ["python", "generators", "send", "coroutines", "stateful"]

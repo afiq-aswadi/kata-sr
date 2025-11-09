@@ -1,0 +1,13 @@
+[kata]
+name = "dp_fibonacci"
+tags = ["dynamic-programming", "algorithms", "micro"]
+base_difficulty = 1
+description = """
+Compute Fibonacci numbers using memoization.
+
+Introduction to dynamic programming: use memoization to avoid
+recomputing subproblems. Classic top-down DP example.
+
+Key concepts: memoization, recursion, overlapping subproblems
+"""
+dependencies = []

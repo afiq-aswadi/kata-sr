@@ -1,0 +1,13 @@
+[kata]
+name = "plotly_styled_markers"
+tags = ["plotly", "visualization", "micro"]
+base_difficulty = 2
+description = """
+Create scatter plot with per-point styling (colors and sizes).
+
+Learn to use variable marker properties for advanced scatter plots.
+Essential for encoding additional data dimensions visually.
+
+Key concepts: marker arrays, per-point styling, visual encoding
+"""
+dependencies = ["plotly_scatter"]

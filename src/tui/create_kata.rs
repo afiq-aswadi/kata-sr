@@ -6,7 +6,7 @@
 use crossterm::event::KeyCode;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
     Frame,
@@ -101,6 +101,10 @@ pub struct CreateKataScreen {
     pub showing_confirmation: bool,
     pub confirmation_slug: String,
     pub confirmation_error: Option<String>,
+
+    // Guidelines and help state
+    pub show_guidelines: bool,
+    pub show_template_example: bool,
 }
 
 impl CreateKataScreen {
@@ -125,6 +129,8 @@ impl CreateKataScreen {
             showing_confirmation: false,
             confirmation_slug: String::new(),
             confirmation_error: None,
+            show_guidelines: false,
+            show_template_example: false,
         }
     }
 
@@ -148,7 +154,28 @@ impl CreateKataScreen {
             .split(frame.size());
 
         self.render_header(frame, chunks[0]);
-        self.render_form_fields(frame, chunks[1]);
+
+        // Split horizontally if showing guidelines or template example
+        if self.show_guidelines || self.show_template_example {
+            let horizontal_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage(50), // Form
+                    Constraint::Percentage(50), // Guidelines or Example
+                ])
+                .split(chunks[1]);
+
+            self.render_form_fields(frame, horizontal_chunks[0]);
+
+            if self.show_template_example {
+                self.render_template_example(frame, horizontal_chunks[1]);
+            } else if self.show_guidelines {
+                self.render_guidelines(frame, horizontal_chunks[1]);
+            }
+        } else {
+            self.render_form_fields(frame, chunks[1]);
+        }
+
         self.render_footer(frame, chunks[2]);
     }
 
@@ -353,6 +380,8 @@ impl CreateKataScreen {
                 Span::raw("[Tab] Next Field  "),
                 Span::raw("[Space] Toggle  "),
                 Span::raw("[j/k] Navigate  "),
+                Span::raw("[?] Guidelines  "),
+                Span::raw("[F1] Example  "),
                 Span::raw("[Enter] Submit  "),
                 Span::raw("[Esc] Cancel"),
             ])
@@ -360,6 +389,8 @@ impl CreateKataScreen {
             Line::from(vec![
                 Span::raw("[Tab] Next Field  "),
                 Span::raw("[↑/↓] Adjust  "),
+                Span::raw("[?] Guidelines  "),
+                Span::raw("[F1] Example  "),
                 Span::raw("[Enter] Submit  "),
                 Span::raw("[Esc] Cancel"),
             ])
@@ -367,6 +398,8 @@ impl CreateKataScreen {
             Line::from(vec![
                 Span::raw("[Tab] Next Field  "),
                 Span::raw("[Type] Edit  "),
+                Span::raw("[?] Guidelines  "),
+                Span::raw("[F1] Example  "),
                 Span::raw("[Enter] Submit  "),
                 Span::raw("[Esc] Cancel"),
             ])
@@ -441,6 +474,24 @@ impl CreateKataScreen {
         }
 
         match code {
+            KeyCode::Char('?') => {
+                // Toggle guidelines panel
+                self.show_guidelines = !self.show_guidelines;
+                // Close template example if it's open
+                if self.show_guidelines {
+                    self.show_template_example = false;
+                }
+                CreateKataAction::None
+            }
+            KeyCode::F(1) => {
+                // Toggle template example panel
+                self.show_template_example = !self.show_template_example;
+                // Close guidelines if it's open
+                if self.show_template_example {
+                    self.show_guidelines = false;
+                }
+                CreateKataAction::None
+            }
             KeyCode::Tab => {
                 self.current_field = self.current_field.next();
                 self.cursor_position = match self.current_field {
@@ -637,6 +688,95 @@ impl CreateKataScreen {
             }
             _ => {}
         }
+    }
+
+    fn render_guidelines(&self, frame: &mut Frame, area: Rect) {
+        let guidelines = vec![
+            Line::from(Span::styled(
+                "Micro-Exercise Guidelines",
+                Style::default().add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+            )),
+            Line::from(""),
+            Line::from(Span::styled("Size:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from("  • <20 lines of implementation code"),
+            Line::from("  • Single function or concept"),
+            Line::from("  • No multi-step workflows"),
+            Line::from(""),
+            Line::from(Span::styled("Tests:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from("  • 3-7 focused tests"),
+            Line::from("  • Cover: shape, correctness, edge cases"),
+            Line::from("  • Fast execution (<100ms total)"),
+            Line::from(""),
+            Line::from(Span::styled("Examples:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled("  Good:", Style::default().fg(Color::Green))),
+            Line::from("    - attention_qk_similarity (15 lines)"),
+            Line::from("    - softmax (8 lines)"),
+            Line::from("    - layer_norm (12 lines)"),
+            Line::from(Span::styled("  Too large:", Style::default().fg(Color::Red))),
+            Line::from("    - multihead_attention (112 lines)"),
+            Line::from("    - transformerlens_hooks (87 lines)"),
+            Line::from(""),
+            Line::from(Span::styled("Structure:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from("  • Type annotations (jaxtyping)"),
+            Line::from("  • Clear TODO comments"),
+            Line::from("  • Minimal imports"),
+            Line::from("  • Descriptive function name"),
+            Line::from(""),
+            Line::from(Span::styled("Dependencies:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from("  • Build learning paths"),
+            Line::from("  • Simple → Complex"),
+            Line::from("  • Each kata teaches ONE thing"),
+        ];
+
+        let paragraph = Paragraph::new(guidelines)
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title(" Guidelines (?) ")
+                .border_style(Style::default().fg(Color::Yellow)))
+            .wrap(Wrap { trim: false });
+
+        frame.render_widget(paragraph, area);
+    }
+
+    fn render_template_example(&self, frame: &mut Frame, area: Rect) {
+        let example = vec![
+            Line::from(Span::styled(
+                "Good Micro-Kata Example: softmax",
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from("# template.py (8 lines)"),
+            Line::from(""),
+            Line::from("def softmax("),
+            Line::from("    x: Float[Tensor, \"batch seq\"],"),
+            Line::from(") -> Float[Tensor, \"batch seq\"]:"),
+            Line::from("    # TODO: Subtract max for stability"),
+            Line::from("    # TODO: Compute exp"),
+            Line::from("    # TODO: Normalize"),
+            Line::from("    pass"),
+            Line::from(""),
+            Line::from("# test_kata.py (5 tests, ~30 lines)"),
+            Line::from(""),
+            Line::from("def test_shape():"),
+            Line::from("    result = softmax(torch.randn(2, 10))"),
+            Line::from("    assert result.shape == (2, 10)"),
+            Line::from(""),
+            Line::from("def test_sums_to_one():"),
+            Line::from("    result = softmax(torch.randn(2, 10))"),
+            Line::from("    torch.allclose("),
+            Line::from("        result.sum(dim=1),"),
+            Line::from("        torch.ones(2)"),
+            Line::from("    )"),
+        ];
+
+        let paragraph = Paragraph::new(example)
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title(" Example (F1) ")
+                .border_style(Style::default().fg(Color::Green)))
+            .wrap(Wrap { trim: false });
+
+        frame.render_widget(paragraph, area);
     }
 
     fn validate_form(&mut self, exercises_dir: &Path) {

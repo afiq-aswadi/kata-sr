@@ -4,11 +4,47 @@ use crate::tui::heatmap::render_category_breakdown;
 use crate::tui::heatmap_calendar::HeatmapCalendar;
 use chrono::Utc;
 use crossterm::event::KeyCode;
+use rand::seq::SliceRandom;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
+
+/// Sort mode for review dashboard
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ReviewSortMode {
+    DueDate,         // Default: prioritize most overdue
+    EasiestFirst,    // Sort by difficulty ascending
+    HardestFirst,    // Sort by difficulty descending
+    Category,        // Group by category
+    LeastReviewed,   // Sort by last_reviewed_at (oldest first)
+    Shuffle,         // Random order
+}
+
+impl ReviewSortMode {
+    fn next(&self) -> Self {
+        match self {
+            Self::DueDate => Self::EasiestFirst,
+            Self::EasiestFirst => Self::HardestFirst,
+            Self::HardestFirst => Self::Category,
+            Self::Category => Self::LeastReviewed,
+            Self::LeastReviewed => Self::Shuffle,
+            Self::Shuffle => Self::DueDate,
+        }
+    }
+
+    fn as_str(&self) -> &str {
+        match self {
+            Self::DueDate => "Due Date",
+            Self::EasiestFirst => "Easiest First",
+            Self::HardestFirst => "Hardest First",
+            Self::Category => "Category",
+            Self::LeastReviewed => "Least Recently Reviewed",
+            Self::Shuffle => "Shuffle",
+        }
+    }
+}
 
 pub struct Dashboard {
     pub katas_due: Vec<Kata>,
@@ -16,6 +52,7 @@ pub struct Dashboard {
     pub selected_index: usize,
     pub stats: DashboardStats,
     pub heatmap_calendar: HeatmapCalendar,
+    pub sort_mode: ReviewSortMode,
 }
 
 pub struct DashboardStats {
@@ -79,7 +116,77 @@ impl Dashboard {
             selected_index: 0,
             stats,
             heatmap_calendar,
+            sort_mode: ReviewSortMode::DueDate, // Default sort mode
         })
+    }
+
+    /// Apply current sort mode to the katas_due list
+    pub fn apply_sort(&mut self) {
+        use rand::thread_rng;
+
+        match self.sort_mode {
+            ReviewSortMode::DueDate => {
+                // Sort by next_review_at (most overdue first)
+                // NULL values (never reviewed) should come first
+                self.katas_due.sort_by(|a, b| {
+                    match (a.next_review_at, b.next_review_at) {
+                        (None, None) => std::cmp::Ordering::Equal,
+                        (None, Some(_)) => std::cmp::Ordering::Less,
+                        (Some(_), None) => std::cmp::Ordering::Greater,
+                        (Some(a_time), Some(b_time)) => a_time.cmp(&b_time),
+                    }
+                });
+            }
+            ReviewSortMode::EasiestFirst => {
+                // Sort by current_difficulty ascending
+                self.katas_due.sort_by(|a, b| {
+                    a.current_difficulty
+                        .partial_cmp(&b.current_difficulty)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
+            }
+            ReviewSortMode::HardestFirst => {
+                // Sort by current_difficulty descending
+                self.katas_due.sort_by(|a, b| {
+                    b.current_difficulty
+                        .partial_cmp(&a.current_difficulty)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
+            }
+            ReviewSortMode::Category => {
+                // Sort by category, then by name within each category
+                self.katas_due.sort_by(|a, b| {
+                    a.category
+                        .cmp(&b.category)
+                        .then_with(|| a.name.cmp(&b.name))
+                });
+            }
+            ReviewSortMode::LeastReviewed => {
+                // Sort by last_reviewed_at (oldest first, never reviewed last)
+                self.katas_due.sort_by(|a, b| {
+                    match (a.last_reviewed_at, b.last_reviewed_at) {
+                        (None, None) => std::cmp::Ordering::Equal,
+                        (None, Some(_)) => std::cmp::Ordering::Greater,
+                        (Some(_), None) => std::cmp::Ordering::Less,
+                        (Some(a_time), Some(b_time)) => a_time.cmp(&b_time),
+                    }
+                });
+            }
+            ReviewSortMode::Shuffle => {
+                // Randomly shuffle the list
+                let mut rng = thread_rng();
+                self.katas_due.shuffle(&mut rng);
+            }
+        }
+
+        // Reset selection to first item after sorting
+        self.selected_index = 0;
+    }
+
+    /// Cycle to the next sort mode and apply it
+    pub fn cycle_sort_mode(&mut self) {
+        self.sort_mode = self.sort_mode.next();
+        self.apply_sort();
     }
 
     pub fn render(&self, frame: &mut Frame) {
@@ -98,8 +205,9 @@ impl Dashboard {
             .split(frame.size());
 
         let header = Paragraph::new(format!(
-            "Kata Spaced Repetition - {} katas due today",
-            self.katas_due.len()
+            "Kata Spaced Repetition - {} katas due today | Sort: {} (press 's' to change)",
+            self.katas_due.len(),
+            self.sort_mode.as_str()
         ))
         .block(Block::default().borders(Borders::ALL));
         frame.render_widget(header, chunks[0]);
@@ -137,7 +245,7 @@ impl Dashboard {
 
         // stats summary
         let stats_text = format!(
-            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'd' to remove selected kata from deck",
+            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'd' to remove selected kata | Press 's' to change sort order",
             self.stats.streak_days,
             self.stats.total_reviews_today,
             self.stats.success_rate_7d * 100.0
@@ -172,6 +280,10 @@ impl Dashboard {
                 } else {
                     DashboardAction::None
                 }
+            }
+            KeyCode::Char('s') => {
+                self.cycle_sort_mode();
+                DashboardAction::None
             }
             _ => DashboardAction::None,
         }

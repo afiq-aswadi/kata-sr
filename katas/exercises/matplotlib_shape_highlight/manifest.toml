@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_shape_highlight"
+category = "matplotlib"
+base_difficulty = 2
+description = """
+Add geometric shapes (circles and rectangles) to highlight regions in plots.
+
+Learn to use matplotlib.patches to add visual highlights with transparency.
+"""
+dependencies = []

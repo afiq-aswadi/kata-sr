@@ -1,0 +1,13 @@
+[kata]
+name = "activation_cache_pair"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Run clean and corrupted inputs through a model and cache activations.
+
+Implement a function that runs both a clean prompt and corrupted prompt
+through a transformer model, storing all intermediate activations for
+later patching experiments.
+"""
+dependencies = ["model_cache_and_activations"]
+tags = ["interpretability", "caching", "activation-patching"]

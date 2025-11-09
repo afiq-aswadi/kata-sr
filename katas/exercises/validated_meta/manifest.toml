@@ -1,0 +1,14 @@
+[kata]
+name = "validated_meta"
+category = "python"
+base_difficulty = 3
+description = """
+Implement a metaclass that validates required class attributes.
+
+Create a metaclass that enforces constraints at class definition time. Classes
+must define a 'required_attributes' list, and the metaclass checks that all
+required attributes are present, raising TypeError if any are missing.
+
+Key concepts: metaclass __new__, class validation, raising errors at class creation
+"""
+dependencies = ["registry_metaclass"]

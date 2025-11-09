@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_arrow_annotation"
+category = "matplotlib"
+base_difficulty = 3
+description = """
+Add arrow annotations pointing to specific data points using annotate().
+
+Builds on text annotations by adding arrows with arrowprops styling.
+"""
+dependencies = ["matplotlib_text_annotation"]

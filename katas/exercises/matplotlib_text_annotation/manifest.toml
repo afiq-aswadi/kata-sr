@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_text_annotation"
+category = "matplotlib"
+base_difficulty = 2
+description = """
+Add text annotations to plots with custom styling using bbox and alignment.
+
+Learn to position text precisely and style it with background boxes.
+"""
+dependencies = []

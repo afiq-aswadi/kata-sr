@@ -14,7 +14,7 @@ def patch_residual_stream(
     """Patch residual stream from clean run into corrupted run."""
     # Get clean activation
     clean_tokens = model.to_tokens(clean_prompt)
-    clean_logits, clean_cache = model.run_with_cache(clean_tokens)
+    clean_logits, clean_cache = model.run_with_cache(clean_tokens, remove_batch_dim=False)
     clean_activation = clean_cache[f"blocks.{layer}.hook_resid_post"][0, position, :]
 
     # Define patching hook

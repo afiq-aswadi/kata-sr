@@ -1,0 +1,13 @@
+[kata]
+name = "attention_multihead"
+tags = ["attention", "transformers", "micro"]
+base_difficulty = 3
+description = """
+Combine all attention building blocks into multi-head attention.
+
+Split Q, K, V into multiple heads, compute attention for each head independently,
+then concatenate the results. This is the complete attention mechanism used in transformers.
+
+Key concepts: multi-head attention, parallel heads, head splitting, concatenation
+"""
+dependencies = ["attention_qk_similarity", "attention_weights", "attention_values"]

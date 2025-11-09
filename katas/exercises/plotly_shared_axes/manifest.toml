@@ -1,0 +1,11 @@
+[kata]
+name = "plotly_shared_axes"
+category = "plotly"
+base_difficulty = 2
+description = """
+Create vertically stacked subplots with shared x-axes.
+
+Configure subplots so zooming on one x-axis affects all subplots simultaneously.
+"""
+dependencies = ["plotly_basic_grid"]
+tags = ["plotly", "subplots", "shared-axes"]

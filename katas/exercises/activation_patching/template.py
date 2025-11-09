@@ -29,8 +29,8 @@ def patch_residual_stream(
     """
     # BLANK_START
     raise NotImplementedError(
-        "1. Run clean prompt and cache activations\n"
-        "2. Extract clean residual at (layer, position)\n"
+        "1. Run clean prompt and cache activations (use remove_batch_dim=False)\n"
+        "2. Extract clean residual at (layer, position): cache[...][0, position, :]\n"
         "3. Create hook that replaces corrupted residual with clean value\n"
         "4. Run corrupted prompt with hook and return logits\n"
         "Hint: use model.run_with_hooks() with fwd_hooks parameter"

@@ -1,0 +1,10 @@
+[kata]
+name = "matplotlib_span_highlight"
+category = "matplotlib"
+base_difficulty = 2
+description = """
+Add vertical and horizontal spans to highlight regions along axes.
+
+Learn to use axvspan() and axhspan() to emphasize time periods or value ranges.
+"""
+dependencies = []

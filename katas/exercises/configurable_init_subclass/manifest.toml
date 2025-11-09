@@ -1,0 +1,14 @@
+[kata]
+name = "configurable_init_subclass"
+category = "python"
+base_difficulty = 2
+description = """
+Store configuration using __init_subclass__.
+
+Use __init_subclass__ to capture keyword arguments passed during class
+definition and store them as class configuration. This pattern is useful
+for frameworks that need to configure behavior via class declaration.
+
+Key concepts: __init_subclass__, **kwargs, configuration storage
+"""
+dependencies = ["plugin_registration"]

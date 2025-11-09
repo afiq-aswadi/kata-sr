@@ -1,0 +1,13 @@
+[kata]
+name = "patching_effect_metric"
+category = "interpretability"
+base_difficulty = 3
+description = """
+Compute normalized patching effect to measure causal importance.
+
+Implement a metric that quantifies how much patching restores clean
+behavior, normalized to a 0-1 scale. This metric is essential for
+comparing the causal importance of different model components.
+"""
+dependencies = ["logit_difference_metric", "basic_activation_patch"]
+tags = ["interpretability", "metrics", "activation-patching"]

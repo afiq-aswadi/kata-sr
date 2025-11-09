@@ -1,0 +1,13 @@
+[kata]
+name = "basic_activation_patch"
+category = "interpretability"
+base_difficulty = 4
+description = """
+Patch a single activation from clean run into corrupted run using hooks.
+
+Implement activation patching by creating a hook function that swaps
+an activation from the clean cache into the corrupted forward pass.
+This is the core technique for measuring causal effects in transformers.
+"""
+dependencies = ["activation_cache_pair"]
+tags = ["interpretability", "activation-patching", "hooks"]

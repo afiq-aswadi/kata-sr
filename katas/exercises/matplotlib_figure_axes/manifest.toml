@@ -1,0 +1,21 @@
+[kata]
+name = "matplotlib_figure_axes"
+category = "matplotlib"
+base_difficulty = 1
+description = """
+Master matplotlib's object-oriented interface with the fundamental fig, ax pattern.
+
+Learn to create plots using fig, ax = plt.subplots() instead of the pyplot
+state machine. This is the foundation for all professional matplotlib usage.
+
+Key Skills:
+- Creating figures and axes explicitly
+- Using the OO interface (ax.plot, ax.set_xlabel, etc.)
+- Styling plots with colors, line styles, labels
+- Adding legends and grids
+- Proper layout management
+
+This single-function kata focuses on the core pattern you'll use in every
+matplotlib visualization. Master this before moving to subplots and advanced plots.
+"""
+dependencies = []

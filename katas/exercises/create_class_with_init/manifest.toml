@@ -1,0 +1,14 @@
+[kata]
+name = "create_class_with_init"
+category = "python"
+base_difficulty = 3
+description = """
+Create a class with __init__ constructor using type().
+
+Learn to add a constructor method to dynamically created classes. This is more
+complex because you need to define an __init__ function that stores parameters
+as instance attributes.
+
+Key concepts: __init__ method, instance attributes, setattr
+"""
+dependencies = ["create_class_with_methods"]
