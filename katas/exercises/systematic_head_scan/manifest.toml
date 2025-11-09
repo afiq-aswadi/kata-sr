@@ -1,0 +1,13 @@
+[kata]
+name = "systematic_head_scan"
+category = "interpretability"
+base_difficulty = 4
+description = """
+Systematically patch all attention heads to create a patching heatmap.
+
+Implement a function that patches every attention head in the model,
+computing the patching effect for each. This produces a heatmap showing
+which heads are causally important for the task.
+"""
+dependencies = ["attention_head_patch", "patching_effect_metric"]
+tags = ["interpretability", "activation-patching", "circuits"]

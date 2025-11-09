@@ -1,7 +1,0 @@
-[kata]
-name = "path_patching"
-category = "interpretability"
-base_difficulty = 4
-description = "Implement path patching (activation patching) to identify causal circuits in transformer models by swapping activations between clean and corrupted runs"
-dependencies = ["model_cache_and_activations", "attention_pattern_analysis"]
-tags = ["interpretability", "mechanistic-interpretability", "circuits", "activation-patching", "causal-analysis"]
