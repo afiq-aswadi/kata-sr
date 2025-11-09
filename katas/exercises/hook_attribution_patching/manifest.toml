@@ -1,0 +1,13 @@
+[kata]
+name = "hook_attribution_patching"
+tags = ["interpretability", "transformerlens", "micro"]
+base_difficulty = 4
+description = """
+Measure the causal impact of each position using attribution patching.
+
+Systematically patch clean activations into corrupted run for each position,
+measuring how much each position matters. Core technique for circuit discovery.
+
+Key concepts: attribution, causal analysis, systematic intervention, impact measurement
+"""
+dependencies = ["hook_patch_activation"]

@@ -1,13 +1,17 @@
 [kata]
 name = "activation_patching"
-category = "interpretability"
-base_difficulty = 4
+tags = ["interpretability", "deprecated", "composite"]
+base_difficulty = 5
 description = """
-Implement activation patching for causal intervention in language models.
+[DEPRECATED - Use micro-katas instead]
 
-Patch activations from one input into another to identify causal components.
-Core technique for circuit discovery and mechanistic interpretability.
+This kata has been split into focused micro-exercises:
+1. patch_single_position - patch one token position
+2. patch_residual_stream - measure direct effects
+3. compute_attribution_scores - systematic attribution across layers
+
+This composite kata combines all patching techniques for advanced practice.
 
 Key concepts: causal intervention, activation patching, circuit analysis, counterfactuals
 """
-dependencies = ["transformerlens_hooks"]
+dependencies = ["compute_attribution_scores"]
