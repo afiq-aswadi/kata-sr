@@ -1,16 +1,21 @@
 [kata]
 name = "multihead_attention"
-category = "transformers"
-base_difficulty = 4
+tags = ["transformers", "deprecated", "composite"]
+base_difficulty = 5
 description = """
-Implement scaled dot-product multi-head attention.
+[DEPRECATED - Use micro-katas instead]
 
-Project queries, keys, and values into multiple heads, compute attention scores,
-apply softmax, and aggregate the weighted values.
+This kata has been split into focused micro-exercises:
+1. attention_qk_similarity - compute Q @ K^T / sqrt(d_k)
+2. attention_weights - apply softmax to scores
+3. attention_values - weight and sum values
+4. attention_multihead - combine into multi-head attention
 
-Key concepts: attention mechanism, multi-head parallelism, scaling factor, einops
+This composite kata combines all building blocks for advanced practice.
+
+Key concepts: attention mechanism, multi-head parallelism, scaling factor
 """
-dependencies = []
+dependencies = ["attention_multihead"]
 
 [[variations]]
 name = "attention_causal"
