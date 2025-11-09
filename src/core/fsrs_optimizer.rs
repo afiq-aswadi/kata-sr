@@ -201,8 +201,8 @@ impl FsrsOptimizer {
                     0
                 };
 
-                // Actual retention: did they pass?
-                let actual_retention = if rating >= 2 { 1.0 } else { 0.0 };
+                // Actual retention: did they pass? (Good/Easy = successful recall)
+                let actual_retention = if rating >= 3 { 1.0 } else { 0.0 };
 
                 // Only add to training data if we have valid state
                 if i > 0 {
@@ -232,8 +232,8 @@ impl FsrsOptimizer {
                         crate::core::fsrs::CardState::Learning
                     };
                 } else {
-                    // Simple stability update
-                    if rating >= 2 {
+                    // Simple stability update (successful recall = Good/Easy)
+                    if rating >= 3 {
                         stability *= 1.5;
                     } else {
                         stability *= 0.8;
@@ -341,8 +341,8 @@ mod tests {
                 started_at: session_time,
                 completed_at: Some(session_time),
                 test_results_json: None,
-                num_passed: if *rating >= 2 { Some(5) } else { Some(0) },
-                num_failed: if *rating >= 2 { Some(0) } else { Some(5) },
+                num_passed: if *rating >= 3 { Some(5) } else { Some(0) },
+                num_failed: if *rating >= 3 { Some(0) } else { Some(5) },
                 num_skipped: None,
                 duration_ms: Some(1000),
                 quality_rating: Some(*rating),
