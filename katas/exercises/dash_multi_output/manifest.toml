@@ -1,0 +1,13 @@
+[kata]
+name = "dash_multi_output"
+category = "plotly"
+base_difficulty = 3
+description = """
+Create a callback that updates multiple outputs (graph and text) from a single input.
+
+Learn to return multiple values from a callback function as a tuple.
+The order of return values must match the order of Output declarations.
+
+Key concepts: multiple Outputs, tuple return values, synchronized updates, output ordering
+"""
+dependencies = ["dash_single_callback"]

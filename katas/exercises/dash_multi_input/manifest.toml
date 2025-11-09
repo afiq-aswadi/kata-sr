@@ -1,0 +1,13 @@
+[kata]
+name = "dash_multi_input"
+category = "plotly"
+base_difficulty = 3
+description = """
+Create a callback with multiple inputs (dropdown and slider) that updates a graph.
+
+Learn to handle multiple Input components in a single callback.
+The callback function signature must match the number of inputs in order.
+
+Key concepts: multiple Inputs in callback, function arguments matching inputs, combining user selections
+"""
+dependencies = ["dash_single_callback"]
