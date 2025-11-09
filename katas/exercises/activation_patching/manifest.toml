@@ -5,9 +5,10 @@ base_difficulty = 4
 description = """
 Implement activation patching for causal intervention in language models.
 
-Patch activations from one input into another to identify causal components.
-Core technique for circuit discovery and mechanistic interpretability.
+Patch activations from one input (clean) into another (corrupted) to identify
+which components causally matter. Core technique for circuit discovery and
+mechanistic interpretability.
 
 Key concepts: causal intervention, activation patching, circuit analysis, counterfactuals
 """
-dependencies = ["transformerlens_hooks"]
+dependencies = ["transformerlens_extract_residual", "transformerlens_run_with_cache"]
