@@ -300,10 +300,10 @@ mod tests {
     fn test_results_rating_keybindings() {
         let kb = get_keybindings();
         // verify all 4 rating keys are present
-        assert!(kb.results.iter().any(|k| k.key == "0"));
         assert!(kb.results.iter().any(|k| k.key == "1"));
         assert!(kb.results.iter().any(|k| k.key == "2"));
         assert!(kb.results.iter().any(|k| k.key == "3"));
+        assert!(kb.results.iter().any(|k| k.key == "4"));
     }
 
     #[test]
