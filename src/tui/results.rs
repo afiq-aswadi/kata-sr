@@ -180,7 +180,7 @@ impl ResultsScreen {
         if self.rating_submitted {
             let rating_name = self
                 .submitted_rating
-                .and_then(|r| RATING_LABELS.get(r as usize).copied())
+                .and_then(|r| RATING_LABELS.get((r - 1) as usize).copied()) // Convert 1-4 to 0-3 index
                 .unwrap_or("Unknown");
             let remaining_msg = match self.remaining_due_after_submit {
                 Some(0) => "No more katas due today.".to_string(),
@@ -368,7 +368,7 @@ impl ResultsScreen {
                 self.selected_rating = 3;
                 ResultsAction::None
             }
-            KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8),
+            KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8 + 1), // Convert 0-3 to 1-4 for FSRS
             _ => ResultsAction::None,
         }
     }

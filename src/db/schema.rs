@@ -136,7 +136,7 @@ ALTER TABLE katas ADD COLUMN fsrs_scheduled_days INTEGER DEFAULT 0;
 ALTER TABLE katas ADD COLUMN fsrs_reps INTEGER DEFAULT 0;
 ALTER TABLE katas ADD COLUMN fsrs_lapses INTEGER DEFAULT 0;
 ALTER TABLE katas ADD COLUMN fsrs_state TEXT DEFAULT 'New';
-ALTER TABLE katas ADD COLUMN scheduler_type TEXT DEFAULT 'SM2';
+ALTER TABLE katas ADD COLUMN scheduler_type TEXT DEFAULT 'FSRS';
 "#;
 
 /// Runs all database migrations.
@@ -174,6 +174,9 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     // Migrate existing categories to tags
     migrate_categories_to_tags(conn)?;
 
+    // Migrate all katas to use FSRS-5 as the default scheduler
+    migrate_to_fsrs(conn)?;
+
     Ok(())
 }
 
@@ -201,6 +204,18 @@ pub fn migrate_categories_to_tags(conn: &Connection) -> Result<()> {
         )?;
     }
 
+    Ok(())
+}
+
+/// Migrates all katas to use FSRS-5 as the scheduler.
+///
+/// This is a one-time migration that updates all katas with 'SM2' scheduler
+/// to use 'FSRS' instead. Safe to run multiple times.
+pub fn migrate_to_fsrs(conn: &Connection) -> Result<()> {
+    conn.execute(
+        "UPDATE katas SET scheduler_type = 'FSRS' WHERE scheduler_type = 'SM2' OR scheduler_type IS NULL",
+        [],
+    )?;
     Ok(())
 }
 
