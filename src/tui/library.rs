@@ -38,6 +38,10 @@ pub enum LibraryAction {
     None,
     /// Add a kata to the deck
     AddKata(String),
+    /// Attempt a kata without adding to deck (preview mode)
+    AttemptKata(AvailableKata),
+    /// Practice a kata from deck (normal scheduled review)
+    PracticeKata(Kata),
     /// Remove a kata from the deck
     RemoveKata(Kata),
     /// Toggle flag on a kata as problematic
@@ -686,6 +690,7 @@ impl Library {
                     Line::from(vec![
                         Span::raw("[Tab] Switch tab  "),
                         Span::raw("[j/k] Navigate  "),
+                        Span::raw("[Enter/p] Practice  "),
                         Span::raw("[d] Remove  "),
                         Span::raw("[e] Edit  "),
                         Span::raw("[f] Flag  "),
@@ -727,11 +732,11 @@ impl Library {
                             Span::raw("[Tab] Switch  "),
                             Span::raw("[j/k] Navigate  "),
                             Span::raw("[a] Add  "),
+                            Span::raw("[p] Attempt  "),
                             Span::raw("[/] Search  "),
                             Span::raw("[t] Filter  "),
                             Span::raw("[s] Sort  "),
                             Span::raw("[r] Reverse  "),
-                            Span::raw("[c] Clear  "),
                             Span::raw("[Enter] Details  "),
                             Span::raw("[Esc] Back"),
                         ])
@@ -739,6 +744,7 @@ impl Library {
                         Line::from(vec![
                             Span::raw("[Tab] Switch  "),
                             Span::raw("[j/k] Navigate  "),
+                            Span::raw("[p] Attempt  "),
                             Span::styled("Already in deck  ", Style::default().fg(Color::Gray)),
                             Span::raw("[/] Search  "),
                             Span::raw("[t] Filter  "),
@@ -927,6 +933,10 @@ impl Library {
                 }
                 LibraryAction::None
             }
+            KeyCode::Enter | KeyCode::Char('p') => {
+                let kata = self.deck_katas[self.deck_selected].clone();
+                LibraryAction::PracticeKata(kata)
+            }
             KeyCode::Char('d') => {
                 let kata = self.deck_katas[self.deck_selected].clone();
                 LibraryAction::RemoveKata(kata)
@@ -1032,6 +1042,10 @@ impl Library {
                 } else {
                     LibraryAction::AddKata(selected_kata.name.clone())
                 }
+            }
+            KeyCode::Char('p') => {
+                let selected_kata = self.filtered_available_katas[self.all_selected].clone();
+                LibraryAction::AttemptKata(selected_kata)
             }
             KeyCode::Char('e') => {
                 let selected_kata = &self.filtered_available_katas[self.all_selected];

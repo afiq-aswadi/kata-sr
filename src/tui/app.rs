@@ -97,6 +97,7 @@ pub enum Screen {
 /// Internal enum for handling screen transitions without borrow conflicts.
 enum ScreenAction {
     StartPractice(Kata),
+    AttemptKataWithoutDeck(crate::core::kata_loader::AvailableKata),
     ReturnToDashboard,
     SubmitRating(Kata, u8, TestResults),
     BuryKata(Kata),
@@ -480,13 +481,20 @@ impl App {
                     ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
                     ResultsAction::GiveUp => {
-                        // Open solution in editor. When user closes editor, auto-submit Rating::Again
+                        // Open solution in editor
                         match results_screen.open_solution_in_editor(true) {
                             Ok(()) => {
                                 // Successfully viewed solution, signal terminal clear needed
                                 self.needs_terminal_clear = true;
-                                // Auto-submit Rating::Again (1)
-                                Some(ScreenAction::SubmitRating(kata.clone(), 1, results_screen.get_results().clone()))
+
+                                // Check if this is preview mode (kata not in deck)
+                                if kata.id == -1 {
+                                    // Preview mode: don't save rating, just return to library
+                                    Some(ScreenAction::OpenLibrary)
+                                } else {
+                                    // Normal mode: auto-submit Rating::Again (1)
+                                    Some(ScreenAction::SubmitRating(kata.clone(), 1, results_screen.get_results().clone()))
+                                }
                             }
                             Err(e) => {
                                 // Failed to open editor - stay on results screen
@@ -503,6 +511,7 @@ impl App {
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    ResultsAction::BackToLibrary => Some(ScreenAction::OpenLibrary),
                     ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
                     ResultsAction::ToggleFlagWithReason(reason) => {
                         let kata_id = kata.id;
@@ -580,6 +589,10 @@ impl App {
                     let action = library.handle_input(code);
                     match action {
                         LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
+                        LibraryAction::AttemptKata(available_kata) => {
+                            Some(ScreenAction::AttemptKataWithoutDeck(available_kata))
+                        }
+                        LibraryAction::PracticeKata(kata) => Some(ScreenAction::StartPractice(kata)),
                         LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
                         LibraryAction::ToggleFlagKata(kata) => {
                             // Toggle the problematic flag in database (deprecated - kept for backward compatibility)
@@ -736,6 +749,39 @@ impl App {
             ScreenAction::StartPractice(kata) => {
                 let practice_screen = PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
+            }
+            ScreenAction::AttemptKataWithoutDeck(available_kata) => {
+                // Create a temporary Kata object for preview mode (id = -1)
+                let preview_kata = Kata {
+                    id: -1, // Special ID to indicate preview mode
+                    name: available_kata.name.clone(),
+                    category: available_kata.category.clone(),
+                    description: available_kata.description.clone(),
+                    tags: available_kata.tags.clone(),
+                    base_difficulty: available_kata.base_difficulty,
+                    current_difficulty: available_kata.base_difficulty as f64,
+                    parent_kata_id: None,
+                    variation_params: None,
+                    next_review_at: None,
+                    last_reviewed_at: None,
+                    current_ease_factor: 2.5,
+                    current_interval_days: 0,
+                    current_repetition_count: 0,
+                    fsrs_stability: 0.0,
+                    fsrs_difficulty: 0.0,
+                    fsrs_elapsed_days: 0,
+                    fsrs_scheduled_days: 0,
+                    fsrs_reps: 0,
+                    fsrs_lapses: 0,
+                    fsrs_state: "New".to_string(),
+                    scheduler_type: "FSRS".to_string(),
+                    is_problematic: false,
+                    problematic_notes: None,
+                    flagged_at: None,
+                    created_at: Utc::now(),
+                };
+                let practice_screen = PracticeScreen::new(preview_kata.clone(), self.config.editor.clone())?;
+                self.current_screen = Screen::Practice(preview_kata, practice_screen);
             }
             ScreenAction::ReturnToDashboard => {
                 self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
