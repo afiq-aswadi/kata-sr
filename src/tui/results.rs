@@ -79,6 +79,11 @@ impl ResultsScreen {
         self.remaining_due_after_submit = Some(remaining_due);
     }
 
+    /// Returns a reference to the test results.
+    pub fn get_results(&self) -> &TestResults {
+        &self.results
+    }
+
     /// Update the kata after it's been modified in the database.
     /// This ensures the flag popup shows the current flag status.
     pub fn update_kata(&mut self, kata: Kata) {

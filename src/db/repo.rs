@@ -297,8 +297,8 @@ impl KataRepository {
     pub fn create_session(&self, session: &NewSession) -> Result<i64> {
         self.conn.execute(
             "INSERT INTO sessions (kata_id, started_at, completed_at, test_results_json,
-                                  num_passed, num_failed, num_skipped, duration_ms, quality_rating)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                                  num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             params![
                 session.kata_id,
                 session.started_at.timestamp(),
@@ -309,6 +309,7 @@ impl KataRepository {
                 session.num_skipped,
                 session.duration_ms,
                 session.quality_rating,
+                session.code_attempt,
             ],
         )?;
 
@@ -333,7 +334,7 @@ impl KataRepository {
     pub fn get_recent_sessions(&self, kata_id: i64, limit: usize) -> Result<Vec<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE kata_id = ?1
              ORDER BY started_at DESC
@@ -364,7 +365,7 @@ impl KataRepository {
     pub fn get_all_sessions_for_kata(&self, kata_id: i64) -> Result<Vec<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE kata_id = ?1
              ORDER BY started_at DESC",
@@ -398,7 +399,7 @@ impl KataRepository {
     pub fn get_session_by_id(&self, session_id: i64) -> Result<Option<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE id = ?1",
         )?;
@@ -419,7 +420,7 @@ impl KataRepository {
     pub fn get_sessions_for_date(&self, date: &str) -> Result<Vec<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE date(completed_at, 'unixepoch') = ?1
              ORDER BY started_at DESC",
@@ -1757,6 +1758,7 @@ pub struct Session {
     pub num_skipped: Option<i32>,
     pub duration_ms: Option<i64>,
     pub quality_rating: Option<i32>,
+    pub code_attempt: Option<String>,
 }
 
 /// New session to be inserted into the database.
@@ -1771,6 +1773,7 @@ pub struct NewSession {
     pub num_skipped: Option<i32>,
     pub duration_ms: Option<i64>,
     pub quality_rating: Option<i32>,
+    pub code_attempt: Option<String>,
 }
 
 /// Daily statistics record.
@@ -1850,6 +1853,7 @@ fn row_to_session(row: &Row) -> Result<Session> {
         num_skipped: row.get(7)?,
         duration_ms: row.get(8)?,
         quality_rating: row.get(9)?,
+        code_attempt: row.get(10)?,
     })
 }
 

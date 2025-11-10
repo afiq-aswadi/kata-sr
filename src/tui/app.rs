@@ -98,7 +98,7 @@ pub enum Screen {
 enum ScreenAction {
     StartPractice(Kata),
     ReturnToDashboard,
-    SubmitRating(Kata, u8),
+    SubmitRating(Kata, u8, TestResults),
     BuryKata(Kata),
     StartNextDue,
     OpenLibrary,
@@ -475,7 +475,7 @@ impl App {
                 let action = results_screen.handle_input(code);
                 match action {
                     ResultsAction::SubmitRating(rating) => {
-                        Some(ScreenAction::SubmitRating(kata.clone(), rating))
+                        Some(ScreenAction::SubmitRating(kata.clone(), rating, results_screen.get_results().clone()))
                     }
                     ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
@@ -484,7 +484,7 @@ impl App {
                         match results_screen.open_solution_in_editor(true) {
                             Ok(()) => {
                                 // Successfully viewed solution, auto-submit Rating::Again (1)
-                                Some(ScreenAction::SubmitRating(kata.clone(), 1))
+                                Some(ScreenAction::SubmitRating(kata.clone(), 1, results_screen.get_results().clone()))
                             }
                             Err(e) => {
                                 // Failed to open editor - stay on results screen
@@ -734,8 +734,8 @@ impl App {
                 self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                 self.refresh_dashboard_screen()?;
             }
-            ScreenAction::SubmitRating(kata, rating) => {
-                self.handle_rating_submission(kata, rating)?;
+            ScreenAction::SubmitRating(kata, rating, results) => {
+                self.handle_rating_submission(kata, rating, results)?;
                 self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                 if let Screen::Results(_, results_screen) = &mut self.current_screen {
                     results_screen.mark_rating_submitted(rating, self.dashboard.katas_due.len());
@@ -1314,7 +1314,8 @@ impl App {
     ///
     /// * `kata` - The kata that was reviewed
     /// * `rating` - User's quality rating (1-4 for FSRS: Again/Hard/Good/Easy)
-    fn handle_rating_submission(&mut self, kata: Kata, rating: u8) -> anyhow::Result<()> {
+    /// * `results` - Test results from the practice session
+    fn handle_rating_submission(&mut self, kata: Kata, rating: u8, results: TestResults) -> anyhow::Result<()> {
         // Convert rating to FSRS Rating enum (1-4 scale)
         let fsrs_rating = Rating::from_int(rating as i32)
             .ok_or_else(|| anyhow::anyhow!("Invalid rating: {}", rating))?;
@@ -1338,17 +1339,25 @@ impl App {
             .update_kata_after_fsrs_review(kata.id, &card, next_review, now)
             .context("Failed to update kata after FSRS review")?;
 
+        // Read the user's code attempt from the temp file
+        let template_path = std::path::PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+        let code_attempt = std::fs::read_to_string(&template_path).ok();
+
+        // Serialize test results to JSON
+        let test_results_json = serde_json::to_string(&results.results).ok();
+
         // Create session record
         let session = NewSession {
             kata_id: kata.id,
             started_at: now,
             completed_at: Some(now),
-            test_results_json: None, // could serialize TestResults if needed
-            num_passed: None,
-            num_failed: None,
-            num_skipped: None,
-            duration_ms: None,
+            test_results_json,
+            num_passed: Some(results.num_passed as i32),
+            num_failed: Some(results.num_failed as i32),
+            num_skipped: Some(results.num_skipped as i32),
+            duration_ms: Some(results.duration_ms as i64),
             quality_rating: Some(rating as i32),
+            code_attempt,
         };
 
         self.repo
