@@ -822,26 +822,59 @@ impl App {
                 }
             }
             ScreenAction::OpenEditorFile(file_path) => {
-                // Spawn external editor (nvim by default)
+                // Spawn external editor with proper terminal handling
+                use std::io::Write;
                 use std::process::Command;
 
-                // Save terminal state
-                self.needs_terminal_clear = true;
-
-                // Get editor from environment or use nvim
                 let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
 
-                // Spawn editor
-                let status = Command::new(&editor)
-                    .arg(&file_path)
-                    .status()
-                    .context("Failed to spawn external editor")?;
+                // Exit alternate screen and disable raw mode to hand control to editor
+                let mut stdout = std::io::stdout();
+                crossterm::execute!(
+                    stdout,
+                    crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+                    crossterm::cursor::Show,
+                    crossterm::terminal::LeaveAlternateScreen,
+                )
+                .context("Failed to leave alternate screen before launching editor")?;
 
-                if !status.success() {
-                    eprintln!("Editor exited with non-zero status");
+                crossterm::terminal::disable_raw_mode()
+                    .context("Failed to disable raw mode before launching editor")?;
+
+                // Launch editor and wait for it to complete
+                let status_result = Command::new(&editor).arg(&file_path).status();
+
+                // Re-enable raw mode and re-enter alternate screen to restore TUI
+                crossterm::terminal::enable_raw_mode()
+                    .context("Failed to re-enable raw mode after exiting editor")?;
+
+                crossterm::execute!(
+                    stdout,
+                    crossterm::terminal::EnterAlternateScreen,
+                    crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+                    crossterm::cursor::Hide,
+                    crossterm::cursor::MoveTo(0, 0),
+                )
+                .context("Failed to re-enter alternate screen after exiting editor")?;
+
+                // Flush to ensure all commands are executed
+                stdout
+                    .flush()
+                    .context("Failed to flush stdout after terminal reset")?;
+
+                // Check editor exit status
+                let editor_status = status_result
+                    .with_context(|| format!("Failed to launch {}", editor))?;
+
+                if !editor_status.success() {
+                    eprintln!(
+                        "{} exited with non-zero status (code {:?})",
+                        editor,
+                        editor_status.code()
+                    );
                 }
 
-                // Return to edit screen (don't change screen)
+                // Stay on edit screen
             }
             ScreenAction::CancelEditKata => {
                 // Return to library
