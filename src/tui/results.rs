@@ -191,7 +191,7 @@ impl ResultsScreen {
             let lines = vec![
                 format!("Saved rating: {}", rating_name),
                 remaining_msg,
-                "[Enter/d] Dashboard   [n] Next due   [r] Review picker   [o] Inspect output"
+                "[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [o] Inspect output"
                     .to_string(),
             ];
             let block = Paragraph::new(lines.join("\n"))
@@ -344,7 +344,7 @@ impl ResultsScreen {
         if self.rating_submitted {
             return match code {
                 KeyCode::Char('n') => ResultsAction::StartNextDue,
-                KeyCode::Char('r') => ResultsAction::ReviewAnother,
+                KeyCode::Char('c') | KeyCode::Char('r') => ResultsAction::ReviewAnother,
                 KeyCode::Enter | KeyCode::Char('d') => ResultsAction::BackToDashboard,
                 _ => ResultsAction::None,
             };
