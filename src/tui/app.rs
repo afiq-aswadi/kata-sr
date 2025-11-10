@@ -127,6 +127,7 @@ enum ScreenAction {
     CloseSettings,
     ViewSessionHistory(Kata),
     ViewSessionDetail(i64), // session_id
+    DeleteSession(i64),     // session_id
     BackFromSessionHistory,
     BackFromSessionDetail,
 }
@@ -658,6 +659,9 @@ impl App {
                 match action {
                     SessionHistoryAction::ViewDetails(session_id) => {
                         Some(ScreenAction::ViewSessionDetail(session_id))
+                    }
+                    SessionHistoryAction::Delete(session_id) => {
+                        Some(ScreenAction::DeleteSession(session_id))
                     }
                     SessionHistoryAction::Back => Some(ScreenAction::BackFromSessionHistory),
                     SessionHistoryAction::None => None,
@@ -1210,6 +1214,19 @@ impl App {
             ScreenAction::ViewSessionDetail(session_id) => {
                 let session_detail = SessionDetailScreen::new(session_id, &self.repo)?;
                 self.current_screen = Screen::SessionDetail(session_detail);
+            }
+            ScreenAction::DeleteSession(session_id) => {
+                // Delete the session from the database
+                self.repo.delete_session(session_id)?;
+
+                // Refresh the session history screen to show updated list
+                if let Screen::SessionHistory(ref session_history) = &self.current_screen {
+                    let kata = session_history.kata.clone();
+                    let mut new_session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                    // Preserve selection, adjusting if we deleted the last item
+                    new_session_history.selected = session_history.selected.min(new_session_history.sessions.len().saturating_sub(1));
+                    self.current_screen = Screen::SessionHistory(new_session_history);
+                }
             }
             ScreenAction::BackFromSessionHistory => {
                 self.refresh_dashboard_screen()?;

@@ -21,6 +21,8 @@ pub enum SessionHistoryAction {
     None,
     /// View detailed information about a session
     ViewDetails(i64), // session_id
+    /// Delete a specific session
+    Delete(i64), // session_id
     /// Return to previous screen
     Back,
 }
@@ -35,6 +37,8 @@ pub struct SessionHistoryScreen {
     pub selected: usize,
     /// Scroll offset (first visible row)
     pub scroll_offset: usize,
+    /// Whether we're in delete confirmation mode
+    pub confirm_delete: bool,
 }
 
 impl SessionHistoryScreen {
@@ -52,35 +56,63 @@ impl SessionHistoryScreen {
             sessions,
             selected: 0,
             scroll_offset: 0,
+            confirm_delete: false,
         })
     }
 
     /// Handles keyboard input.
     pub fn handle_input(&mut self, code: KeyCode) -> SessionHistoryAction {
-        match code {
-            KeyCode::Up | KeyCode::Char('k') => {
-                if self.selected > 0 {
-                    self.selected -= 1;
-                    self.adjust_scroll_offset();
-                }
-                SessionHistoryAction::None
-            }
-            KeyCode::Down | KeyCode::Char('j') => {
-                if self.selected + 1 < self.sessions.len() {
-                    self.selected += 1;
-                    self.adjust_scroll_offset();
-                }
-                SessionHistoryAction::None
-            }
-            KeyCode::Enter => {
-                if let Some(session) = self.sessions.get(self.selected) {
-                    SessionHistoryAction::ViewDetails(session.id)
-                } else {
+        if self.confirm_delete {
+            // In delete confirmation mode
+            match code {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    if let Some(session) = self.sessions.get(self.selected) {
+                        let session_id = session.id;
+                        self.confirm_delete = false;
+                        return SessionHistoryAction::Delete(session_id);
+                    }
+                    self.confirm_delete = false;
                     SessionHistoryAction::None
                 }
+                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                    self.confirm_delete = false;
+                    SessionHistoryAction::None
+                }
+                _ => SessionHistoryAction::None,
             }
-            KeyCode::Char('q') | KeyCode::Esc => SessionHistoryAction::Back,
-            _ => SessionHistoryAction::None,
+        } else {
+            // Normal navigation mode
+            match code {
+                KeyCode::Up | KeyCode::Char('k') => {
+                    if self.selected > 0 {
+                        self.selected -= 1;
+                        self.adjust_scroll_offset();
+                    }
+                    SessionHistoryAction::None
+                }
+                KeyCode::Down | KeyCode::Char('j') => {
+                    if self.selected + 1 < self.sessions.len() {
+                        self.selected += 1;
+                        self.adjust_scroll_offset();
+                    }
+                    SessionHistoryAction::None
+                }
+                KeyCode::Enter => {
+                    if let Some(session) = self.sessions.get(self.selected) {
+                        SessionHistoryAction::ViewDetails(session.id)
+                    } else {
+                        SessionHistoryAction::None
+                    }
+                }
+                KeyCode::Char('d') => {
+                    if !self.sessions.is_empty() {
+                        self.confirm_delete = true;
+                    }
+                    SessionHistoryAction::None
+                }
+                KeyCode::Char('q') | KeyCode::Esc => SessionHistoryAction::Back,
+                _ => SessionHistoryAction::None,
+            }
         }
     }
 
@@ -132,10 +164,17 @@ impl SessionHistoryScreen {
         }
 
         // Instructions
-        let instructions = Paragraph::new("↑/↓: Navigate  Enter: View Details  q/Esc: Back")
-            .style(Style::default().fg(Color::Gray))
-            .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL));
+        let instructions = if self.confirm_delete {
+            Paragraph::new("Delete this session? [Y]es / [N]o")
+                .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
+                .alignment(Alignment::Center)
+                .block(Block::default().borders(Borders::ALL))
+        } else {
+            Paragraph::new("↑/↓: Navigate  Enter: View Details  d: Delete  q/Esc: Back")
+                .style(Style::default().fg(Color::Gray))
+                .alignment(Alignment::Center)
+                .block(Block::default().borders(Borders::ALL))
+        };
         frame.render_widget(instructions, chunks[2]);
     }
 
