@@ -12,6 +12,7 @@
 //! Run with `cargo test -- --test-threads=1` if you encounter failures.
 
 use chrono::{Duration, Utc};
+use kata_sr::config::EditorConfig;
 use kata_sr::db::repo::{KataRepository, NewKata};
 use kata_sr::runner::python_runner::run_python_tests;
 use kata_sr::tui::dashboard::Dashboard;
@@ -166,7 +167,8 @@ fn test_practice_screen_copies_template() {
     let mlp_kata = katas.iter().find(|k| k.name == "mlp").unwrap();
 
     // create practice screen
-    let _practice = PracticeScreen::new(mlp_kata.clone()).unwrap();
+    let editor_config = EditorConfig::default();
+    let _practice = PracticeScreen::new(mlp_kata.clone(), editor_config).unwrap();
 
     // verify template was copied to /tmp
     let template_path = PathBuf::from(format!("/tmp/kata_{}.py", mlp_kata.id));
@@ -196,7 +198,8 @@ fn test_practice_screen_copies_correct_template_for_each_kata() {
         .collect();
 
     for kata in test_katas {
-        let _practice = PracticeScreen::new(kata.clone()).unwrap();
+        let editor_config = EditorConfig::default();
+        let _practice = PracticeScreen::new(kata.clone(), editor_config).unwrap();
 
         let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
         assert!(
@@ -416,7 +419,8 @@ fn test_end_to_end_kata_workflow() {
     let kata = &dashboard.katas_due[0];
 
     // create practice screen
-    let _practice = PracticeScreen::new(kata.clone()).unwrap();
+    let editor_config = EditorConfig::default();
+    let _practice = PracticeScreen::new(kata.clone(), editor_config).unwrap();
     let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
     assert!(template_path.exists());
 
