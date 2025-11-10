@@ -64,6 +64,7 @@ impl PracticeScreen {
     /// # Examples
     ///
     /// ```no_run
+    /// # use kata_sr::config::EditorConfig;
     /// # use kata_sr::db::repo::Kata;
     /// # use kata_sr::tui::practice::PracticeScreen;
     /// # let kata = Kata {
@@ -94,7 +95,8 @@ impl PracticeScreen {
     /// #     flagged_at: None,
     /// #     created_at: chrono::Utc::now(),
     /// # };
-    /// let practice_screen = PracticeScreen::new_retry(kata)?;
+    /// let editor_config = EditorConfig::default();
+    /// let practice_screen = PracticeScreen::new_retry(kata, editor_config)?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
     pub fn new_retry(kata: Kata, editor_config: EditorConfig) -> anyhow::Result<Self> {

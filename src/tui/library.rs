@@ -146,7 +146,7 @@ impl Library {
     /// # use kata_sr::db::repo::KataRepository;
     /// # use kata_sr::tui::library::Library;
     /// let repo = KataRepository::new("kata.db")?;
-    /// let library = Library::load(&repo)?;
+    /// let library = Library::load(&repo, "Name", true)?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
     pub fn load(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool) -> Result<Self> {
