@@ -157,6 +157,8 @@ pub struct App {
     popup_message: Option<PopupMessage>,
     /// Screen to restore when closing settings
     previous_screen_before_settings: Option<Box<Screen>>,
+    /// Library hide_flagged state (preserved across library reloads)
+    library_hide_flagged: bool,
 }
 
 impl App {
@@ -196,6 +198,7 @@ impl App {
             needs_terminal_clear: false,
             popup_message: None,
             previous_screen_before_settings: None,
+            library_hide_flagged: false,
         };
 
         Ok(app)
@@ -594,8 +597,8 @@ impl App {
                         }
                         LibraryAction::ToggleHideFlagged => {
                             // Toggle the hide_flagged filter and reload library
-                            let new_hide_flagged = !library.hide_flagged;
-                            let new_library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, new_hide_flagged)?;
+                            self.library_hide_flagged = !library.hide_flagged;
+                            let new_library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                             self.current_screen = Screen::Library(new_library);
                             None
                         }
@@ -759,7 +762,7 @@ impl App {
                 }
             }
             ScreenAction::OpenLibrary => {
-                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::AddKataFromLibrary(kata_name) => {
@@ -788,7 +791,7 @@ impl App {
                         }
                         Screen::Details(_) => {
                             // navigate back to library with updated state
-                            let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                            let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                             self.current_screen = Screen::Library(library);
                             // Force terminal clear to prevent display corruption
                             self.needs_terminal_clear = true;
@@ -808,7 +811,7 @@ impl App {
                 self.current_screen = Screen::Details(details);
             }
             ScreenAction::BackFromDetails => {
-                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::RetryKata(kata) => {
@@ -851,7 +854,7 @@ impl App {
                 match generate_kata_files(&form_data, exercises_dir) {
                     Ok(created_slug) => {
                         // Success! Return to library and show success popup
-                        let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                        let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                         self.current_screen = Screen::Library(library);
 
                         self.popup_message = Some(PopupMessage {
@@ -865,7 +868,7 @@ impl App {
                     }
                     Err(e) => {
                         // Error! Return to library and show error popup
-                        let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                        let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                         self.current_screen = Screen::Library(library);
 
                         self.popup_message = Some(PopupMessage {
@@ -878,7 +881,7 @@ impl App {
             }
             ScreenAction::CancelCreateKata => {
                 // Return to library
-                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenEditKata(kata_id) => {
@@ -1051,7 +1054,7 @@ impl App {
                                     }
 
                                     // Success! Return to library
-                                    let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                                    let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                                     self.current_screen = Screen::Library(library);
                                     eprintln!("Kata '{}' updated successfully!", new_slug);
                                 }
@@ -1130,7 +1133,7 @@ impl App {
                             }
 
                             // Success! Return to library
-                            let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                            let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                             self.current_screen = Screen::Library(library);
                             eprintln!("Kata '{}' updated successfully!", original_slug);
                         }
@@ -1198,7 +1201,7 @@ impl App {
             }
             ScreenAction::CancelEditKata => {
                 // Return to library
-                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
+                let library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenSettings => {
