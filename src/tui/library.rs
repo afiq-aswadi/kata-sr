@@ -40,6 +40,8 @@ pub enum LibraryAction {
     AddKata(String),
     /// Remove a kata from the deck
     RemoveKata(Kata),
+    /// Toggle flag on a kata as problematic
+    ToggleFlagKata(Kata),
     /// View detailed information about a kata
     ViewDetails(AvailableKata),
     /// Return to dashboard
@@ -412,9 +414,13 @@ impl Library {
                     "—".to_string()
                 };
 
+                // Add warning indicator for problematic katas
+                let flag_indicator = if kata.is_problematic { "⚠️ " } else { "" };
+                let kata_name = format!("{}{}", flag_indicator, kata.name);
+
                 Row::new(vec![
                     Cell::from(prefix),
-                    Cell::from(kata.name.clone()),
+                    Cell::from(kata_name),
                     Cell::from(tags_str),
                     Cell::from(due_str).style(due_style),
                     Cell::from(format!("{:.1}", kata.current_difficulty)),
@@ -614,8 +620,10 @@ impl Library {
                     Line::from(vec![
                         Span::raw("[Tab] Switch tab  "),
                         Span::raw("[j/k] Navigate  "),
-                        Span::raw("[d] Remove from deck  "),
-                        Span::raw("[n] Create New  "),
+                        Span::raw("[d] Remove  "),
+                        Span::raw("[e] Edit  "),
+                        Span::raw("[f] Flag  "),
+                        Span::raw("[n] Create  "),
                         Span::raw("[Esc] Back"),
                     ])
                 }
@@ -762,6 +770,10 @@ impl Library {
             KeyCode::Char('e') => {
                 let kata = self.deck_katas[self.deck_selected].clone();
                 LibraryAction::EditKataById(kata.id)
+            }
+            KeyCode::Char('f') => {
+                let kata = self.deck_katas[self.deck_selected].clone();
+                LibraryAction::ToggleFlagKata(kata)
             }
             _ => LibraryAction::None,
         }
@@ -1161,6 +1173,9 @@ mod tests {
                     fsrs_lapses: 0,
                     fsrs_state: "New".to_string(),
                     scheduler_type: "SM2".to_string(),
+                    is_problematic: false,
+                    problematic_notes: None,
+                    flagged_at: None,
                     created_at: Utc::now(),
                 },
                 Kata {
@@ -1186,6 +1201,9 @@ mod tests {
                     fsrs_lapses: 0,
                     fsrs_state: "New".to_string(),
                     scheduler_type: "SM2".to_string(),
+                    is_problematic: false,
+                    problematic_notes: None,
+                    flagged_at: None,
                     created_at: Utc::now(),
                 },
             ],

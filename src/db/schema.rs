@@ -139,6 +139,17 @@ ALTER TABLE katas ADD COLUMN fsrs_state TEXT DEFAULT 'New';
 ALTER TABLE katas ADD COLUMN scheduler_type TEXT DEFAULT 'FSRS';
 "#;
 
+/// SQL migration for adding problematic kata flags.
+///
+/// Adds columns to mark katas as problematic (buggy tests, broken templates, etc.)
+/// allowing users to flag issues during practice and batch-fix them later.
+const MIGRATION_ADD_PROBLEMATIC_FLAGS: &str = r#"
+-- Add problematic kata tracking columns
+ALTER TABLE katas ADD COLUMN is_problematic BOOLEAN DEFAULT FALSE;
+ALTER TABLE katas ADD COLUMN problematic_notes TEXT;
+ALTER TABLE katas ADD COLUMN flagged_at INTEGER;
+"#;
+
 /// Runs all database migrations.
 ///
 /// Creates all tables and indexes if they don't exist. Safe to call
@@ -179,6 +190,9 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
 
     // Update sessions table constraint for FSRS 1-4 rating scale
     update_sessions_rating_constraint(conn)?;
+
+    // Add problematic kata tracking columns if they don't exist
+    add_problematic_columns_if_needed(conn)?;
 
     Ok(())
 }
@@ -243,6 +257,27 @@ fn add_fsrs_columns_if_needed(conn: &Connection) -> Result<()> {
     if !column_exists {
         // Add all FSRS columns at once
         conn.execute_batch(MIGRATION_ADD_FSRS_COLUMNS)?;
+    }
+
+    Ok(())
+}
+
+/// Adds problematic kata tracking columns to katas table if they don't already exist.
+///
+/// This function checks if the is_problematic column exists before attempting to add it,
+/// making it safe to call on both new and existing databases.
+fn add_problematic_columns_if_needed(conn: &Connection) -> Result<()> {
+    // Check if is_problematic column exists
+    let column_exists: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('katas') WHERE name='is_problematic'")?
+        .query_row([], |row| {
+            let count: i64 = row.get(0)?;
+            Ok(count > 0)
+        })?;
+
+    if !column_exists {
+        // Add all problematic tracking columns at once
+        conn.execute_batch(MIGRATION_ADD_PROBLEMATIC_FLAGS)?;
     }
 
     Ok(())

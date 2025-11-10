@@ -2,7 +2,7 @@
 
 ## Vision
 
-A personal TUI tool for practicing coding patterns (multi-head attention, DFS/BFS, MLP, etc.) using spaced repetition. Think LeetCode meets Anki - you implement algorithms from templates, tests verify correctness, and an SM-2 scheduler ensures you retain knowledge long-term.
+A personal TUI tool for practicing coding patterns (multi-head attention, DFS/BFS, MLP, etc.) using spaced repetition. Think LeetCode meets Anki - you implement algorithms from templates, tests verify correctness, and the FSRS-5 scheduler ensures you retain knowledge long-term.
 
 ## Architecture
 
@@ -28,22 +28,23 @@ A personal TUI tool for practicing coding patterns (multi-head attention, DFS/BF
 6. User fills in TODOs/blanks, saves, exits
 7. Rust spawns pytest in background thread
 8. TUI shows test results (pass/fail)
-9. User rates difficulty (0-3: Again/Hard/Good/Easy)
-10. SM-2 algorithm schedules next review
+9. User rates difficulty (1-4: Again/Hard/Good/Easy)
+10. FSRS-5 algorithm schedules next review
 11. Back to dashboard
 ```
 
 ## Key Features
 
-### 1. SM-2 Spaced Repetition
+### 1. FSRS-5 Spaced Repetition
 
-- Standard Anki algorithm with 4-point rating scale (Again/Hard/Good/Easy)
-- State stored per-kata: next_review_at, ease_factor, interval_days, repetition_count
+- Modern algorithm with 4-point rating scale (Again/Hard/Good/Easy)
+- State stored per-kata: stability, difficulty, state, next_review_at
 - Dashboard queries `WHERE next_review_at <= now()` for fast "due today" view
+- Optimizable parameters based on your review history
 
 ### 2. Adaptive Difficulty Tracking
 
-- Independent from SM-2 (doesn't affect scheduling)
+- Independent from FSRS-5 (doesn't affect scheduling)
 - Tracks success rate over recent reviews
 - current_difficulty increases if too easy (>90% success), decreases if struggling (<50%)
 - Used for UI recommendations: "Try katas at your level"
@@ -83,7 +84,8 @@ kata-sr/
 │   │   ├── practice.rs          # Kata description, editor spawn
 │   │   └── results.rs           # Test output, rating input
 │   ├── core/
-│   │   ├── scheduler.rs         # SM-2 implementation
+│   │   ├── fsrs.rs              # FSRS-5 implementation
+│   │   ├── fsrs_optimizer.rs    # Parameter optimization
 │   │   ├── difficulty.rs        # Adaptive difficulty tracker
 │   │   └── kata_loader.rs       # Import manifests into DB
 │   ├── db/
@@ -110,12 +112,13 @@ kata-sr/
 
 ## Database Schema
 
-**katas:** kata metadata + current SM-2 state
+**katas:** kata metadata + current FSRS-5 state
 
 - id, name, category, description
 - base_difficulty, current_difficulty
 - next_review_at (indexed!), last_reviewed_at
-- current_ease_factor, current_interval_days, current_repetition_count
+- fsrs_stability, fsrs_difficulty, fsrs_state, fsrs_scheduled_days
+- Legacy columns (for backward compatibility): current_ease_factor, current_interval_days
 
 **kata_dependencies:** prerequisite graph
 
@@ -136,7 +139,7 @@ kata-sr/
 
 ### Phase 1: Foundation (Parallel)
 
-- **Agent 1:** Rust core & database (schema, SM-2, difficulty, deps)
+- **Agent 1:** Rust core & database (schema, FSRS-5, difficulty, deps)
 - **Agent 2:** Python kata framework (runner, manifest parser)
 
 **Agents 1 and 2 can work completely in parallel.**
@@ -154,14 +157,14 @@ kata-sr/
 
 ## Key Design Decisions
 
-### Rating Scale: 0-3 (unified across stack)
+### Rating Scale: 1-4 (unified across stack)
 
 ```rust
-enum QualityRating {
-    Again = 0,  // Reset to day 1, ease -= 0.2
-    Hard = 1,   // interval *= 1.2, ease -= 0.15
-    Good = 2,   // interval *= ease_factor
-    Easy = 3,   // interval *= ease_factor * 1.3, ease += 0.15
+enum Rating {
+    Again = 1,  // Complete failure - reset to relearning
+    Hard = 2,   // Struggled but passed - minimal stability growth
+    Good = 3,   // Normal difficulty - standard progression
+    Easy = 4,   // Too easy - accelerated progression
 }
 ```
 
@@ -232,7 +235,7 @@ The project is complete when:
 1. `cargo install --path .` creates working `kata-sr` binary
 2. Running `kata-sr` launches TUI with dashboard
 3. User can select kata, edit in nvim, run tests, rate difficulty
-4. SM-2 scheduling works correctly (katas appear when due)
+4. FSRS-5 scheduling works correctly (katas appear when due)
 5. Dependencies work (locked katas can't be practiced)
 6. Analytics dashboard shows streak, success rate, heatmap
 7. At least 3 example katas exist with full tests

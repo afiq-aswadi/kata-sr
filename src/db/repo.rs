@@ -118,7 +118,8 @@ impl KataRepository {
                     COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
                     COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
                     COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at
+                    created_at,
+                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
              FROM katas
              WHERE next_review_at IS NULL OR next_review_at <= ?1
              ORDER BY next_review_at ASC NULLS FIRST",
@@ -155,7 +156,8 @@ impl KataRepository {
                     COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
                     COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
                     COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at
+                    created_at,
+                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
              FROM katas
              ORDER BY created_at DESC",
         )?;
@@ -195,7 +197,8 @@ impl KataRepository {
                     COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
                     COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
                     COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at
+                    created_at,
+                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
              FROM katas
              WHERE id = ?1",
         )?;
@@ -838,6 +841,109 @@ impl KataRepository {
         Ok(())
     }
 
+    /// Flags a kata as problematic with optional notes.
+    ///
+    /// Marks a kata as having bugs, broken tests, or other issues that need fixing.
+    /// Records the timestamp when the kata was flagged.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to flag
+    /// * `notes` - Optional description of the problem
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// repo.flag_kata(1, Some("test expects wrong shape".to_string()))?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn flag_kata(&self, kata_id: i64, notes: Option<String>) -> Result<()> {
+        let now = Utc::now().timestamp();
+        self.conn.execute(
+            "UPDATE katas
+             SET is_problematic = TRUE,
+                 problematic_notes = ?1,
+                 flagged_at = ?2
+             WHERE id = ?3",
+            params![notes, now, kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Unflags a kata, marking it as no longer problematic.
+    ///
+    /// Clears the problematic flag and associated notes.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to unflag
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// repo.unflag_kata(1)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn unflag_kata(&self, kata_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas
+             SET is_problematic = FALSE,
+                 problematic_notes = NULL,
+                 flagged_at = NULL
+             WHERE id = ?1",
+            params![kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Retrieves all katas marked as problematic.
+    ///
+    /// Returns katas with the is_problematic flag set to TRUE,
+    /// ordered by when they were flagged (most recent first).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let problematic = repo.get_problematic_katas()?;
+    /// for kata in problematic {
+    ///     println!("Kata {} is flagged: {:?}", kata.name, kata.problematic_notes);
+    /// }
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_problematic_katas(&self) -> Result<Vec<Kata>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, category, description, base_difficulty, current_difficulty,
+                    parent_kata_id, variation_params, next_review_at, last_reviewed_at,
+                    current_ease_factor, current_interval_days, current_repetition_count,
+                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
+                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
+                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
+                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
+                    created_at,
+                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
+             FROM katas
+             WHERE is_problematic = TRUE
+             ORDER BY flagged_at DESC",
+        )?;
+
+        let mut katas = stmt
+            .query_map([], row_to_kata)?
+            .collect::<Result<Vec<_>>>()?;
+
+        // load tags for each kata
+        for kata in &mut katas {
+            kata.tags = self.get_kata_tags(kata.id)?;
+        }
+
+        Ok(katas)
+    }
+
     /// Deletes all session records.
     ///
     /// Use for testing or when you want to reset practice history
@@ -1007,7 +1113,8 @@ impl KataRepository {
                     COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
                     COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
                     COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at
+                    created_at,
+                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
              FROM katas
              WHERE name = ?1",
         )?;
@@ -1103,7 +1210,8 @@ impl KataRepository {
                     COALESCE(k.fsrs_elapsed_days, 0), COALESCE(k.fsrs_scheduled_days, 0),
                     COALESCE(k.fsrs_reps, 0), COALESCE(k.fsrs_lapses, 0),
                     COALESCE(k.fsrs_state, 'New'), COALESCE(k.scheduler_type, 'SM2'),
-                    k.created_at
+                    k.created_at,
+                    COALESCE(k.is_problematic, FALSE), k.problematic_notes, k.flagged_at
              FROM katas k
              JOIN kata_tags kt ON k.id = kt.kata_id
              WHERE kt.tag = ?
@@ -1153,7 +1261,8 @@ impl KataRepository {
                     COALESCE(k.fsrs_elapsed_days, 0), COALESCE(k.fsrs_scheduled_days, 0),
                     COALESCE(k.fsrs_reps, 0), COALESCE(k.fsrs_lapses, 0),
                     COALESCE(k.fsrs_state, 'New'), COALESCE(k.scheduler_type, 'SM2'),
-                    k.created_at
+                    k.created_at,
+                    COALESCE(k.is_problematic, FALSE), k.problematic_notes, k.flagged_at
              FROM katas k
              JOIN kata_tags kt ON k.id = kt.kata_id
              WHERE kt.tag IN ({})
@@ -1536,6 +1645,10 @@ pub struct Kata {
     pub fsrs_state: String,
     pub scheduler_type: String,
     pub created_at: DateTime<Utc>,
+    // Problematic kata tracking
+    pub is_problematic: bool,
+    pub problematic_notes: Option<String>,
+    pub flagged_at: Option<DateTime<Utc>>,
 }
 
 impl Kata {
@@ -1618,10 +1731,12 @@ fn row_to_kata(row: &Row) -> Result<Kata> {
     let next_review_ts: Option<i64> = row.get(8)?;
     let last_reviewed_ts: Option<i64> = row.get(9)?;
     let created_ts: i64 = row.get(21)?;
+    let flagged_ts: Option<i64> = row.get(24)?;
 
     let next_review_at = convert_optional_timestamp(next_review_ts, 8, "next_review_at")?;
     let last_reviewed_at = convert_optional_timestamp(last_reviewed_ts, 9, "last_reviewed_at")?;
     let created_at = convert_timestamp(created_ts, 21, "created_at")?;
+    let flagged_at = convert_optional_timestamp(flagged_ts, 24, "flagged_at")?;
 
     Ok(Kata {
         id: row.get(0)?,
@@ -1647,6 +1762,9 @@ fn row_to_kata(row: &Row) -> Result<Kata> {
         fsrs_state: row.get(19)?,
         scheduler_type: row.get(20)?,
         created_at,
+        is_problematic: row.get(22)?,
+        problematic_notes: row.get(23)?,
+        flagged_at,
     })
 }
 

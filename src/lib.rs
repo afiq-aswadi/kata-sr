@@ -3,7 +3,7 @@
 //! This library provides the core infrastructure for a spaced repetition system
 //! for coding exercises (katas). It includes:
 //!
-//! - **SM-2 Scheduling**: Anki-style spaced repetition algorithm for determining
+//! - **FSRS-5 Scheduling**: Modern spaced repetition algorithm for determining
 //!   when katas should be reviewed next
 //! - **Adaptive Difficulty**: Track user performance and adjust kata difficulty
 //!   independent of scheduling
@@ -18,7 +18,7 @@
 //!
 //! ```no_run
 //! use kata_sr::db::repo::{KataRepository, NewKata};
-//! use kata_sr::core::scheduler::{SM2State, QualityRating};
+//! use kata_sr::core::fsrs::{FsrsCard, FsrsParams, Rating};
 //! use chrono::Utc;
 //!
 //! // Setup database
@@ -40,7 +40,6 @@
 //! let due_katas = repo.get_katas_due(Utc::now())?;
 //!
 //! // Update FSRS state after review
-//! use kata_sr::core::fsrs::{FsrsCard, FsrsParams, Rating};
 //! let mut card = FsrsCard::new();
 //! let params = FsrsParams::default();
 //! card.schedule(Rating::Good, &params, Utc::now());
@@ -51,6 +50,7 @@
 //! ```
 
 pub mod cli;
+pub mod config;
 pub mod core;
 pub mod db;
 pub mod python_env;
