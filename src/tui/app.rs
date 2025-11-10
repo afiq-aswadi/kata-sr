@@ -154,6 +154,8 @@ pub struct App {
     needs_terminal_clear: bool,
     /// Popup message to display to the user
     popup_message: Option<PopupMessage>,
+    /// Screen to restore when closing settings
+    previous_screen_before_settings: Option<Box<Screen>>,
 }
 
 impl App {
@@ -192,6 +194,7 @@ impl App {
             showing_help: false,
             needs_terminal_clear: false,
             popup_message: None,
+            previous_screen_before_settings: None,
         };
 
         Ok(app)
@@ -492,6 +495,7 @@ impl App {
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
                     ResultsAction::ToggleFlagWithReason(reason) => {
                         let kata_id = kata.id;
                         let was_problematic = kata.is_problematic;
@@ -1181,11 +1185,23 @@ impl App {
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenSettings => {
+                // Save current screen before opening settings so we can restore it later
+                let previous = std::mem::replace(
+                    &mut self.current_screen,
+                    Screen::Dashboard, // temporary placeholder
+                );
+                self.previous_screen_before_settings = Some(Box::new(previous));
+
                 let settings_screen = SettingsScreen::new(self.config.clone());
                 self.current_screen = Screen::Settings(settings_screen);
             }
             ScreenAction::CloseSettings => {
-                self.refresh_dashboard_screen()?;
+                // Restore previous screen if we have one, otherwise go to dashboard
+                if let Some(previous) = self.previous_screen_before_settings.take() {
+                    self.current_screen = *previous;
+                } else {
+                    self.refresh_dashboard_screen()?;
+                }
             }
             ScreenAction::ViewSessionHistory(kata) => {
                 let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
