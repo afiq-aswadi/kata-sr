@@ -24,6 +24,7 @@ use super::results::{ResultsAction, ResultsScreen};
 use super::session_detail::{SessionDetailAction, SessionDetailScreen};
 use super::session_history::{SessionHistoryAction, SessionHistoryScreen};
 use super::settings::{SettingsAction, SettingsScreen};
+use super::startup::{StartupAction, StartupScreen};
 use crate::config::AppConfig;
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
@@ -65,6 +66,8 @@ pub enum AppEvent {
 ///
 /// Each screen maintains its own state and handles its own rendering.
 pub enum Screen {
+    /// Startup screen with ASCII art
+    Startup(StartupScreen),
     /// Dashboard showing katas due today and stats
     Dashboard,
     /// Celebration screen when no reviews are due
@@ -177,8 +180,8 @@ impl App {
         let (tx, rx) = channel();
         let dashboard = Dashboard::load(&repo)?;
 
-        let mut app = Self {
-            current_screen: Screen::Dashboard,
+        let app = Self {
+            current_screen: Screen::Startup(StartupScreen::new()),
             dashboard,
             repo,
             config,
@@ -189,7 +192,6 @@ impl App {
             popup_message: None,
         };
 
-        app.refresh_dashboard_screen()?;
         Ok(app)
     }
 
@@ -297,6 +299,9 @@ impl App {
         }
 
         match &mut self.current_screen {
+            Screen::Startup(startup_screen) => {
+                startup_screen.render(frame);
+            }
             Screen::Dashboard => {
                 self.dashboard.render(frame);
             }
@@ -357,6 +362,13 @@ impl App {
 
         // extract action from current screen to avoid borrow checker issues
         let action_result = match &mut self.current_screen {
+            Screen::Startup(startup_screen) => {
+                let action = startup_screen.handle_input(code);
+                match action {
+                    StartupAction::Continue => Some(ScreenAction::ReturnToDashboard),
+                    StartupAction::None => None,
+                }
+            }
             Screen::Dashboard => {
                 // handle library key 'l' in dashboard
                 if code == KeyCode::Char('l') {
