@@ -126,6 +126,7 @@ pub struct Library {
     pub available_categories: Vec<String>,
     pub selected_categories: Vec<String>,
     pub category_selected_index: usize,
+    pub category_scroll_offset: usize,
 
     // Sorting (for All Katas tab)
     pub sort_mode: SortMode,
@@ -181,6 +182,7 @@ impl Library {
             available_categories,
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::from_str(default_sort),
             sort_ascending: default_sort_ascending,
         };
@@ -564,12 +566,44 @@ impl Library {
         frame.render_widget(table, area);
     }
 
-    fn render_category_selector(&self, frame: &mut Frame, area: Rect) {
-        let items: Vec<ListItem> = self
-            .available_categories
+    fn render_category_selector(&mut self, frame: &mut Frame, area: Rect) {
+        // Calculate visible height: area height - top border - bottom border
+        let visible_height = area.height.saturating_sub(2) as usize;
+
+        // Update scroll offset to keep selection visible
+        Self::update_scroll_offset(
+            self.category_selected_index,
+            &mut self.category_scroll_offset,
+            visible_height,
+            self.available_categories.len(),
+        );
+
+        // Calculate scroll indicators
+        let has_content_above = self.category_scroll_offset > 0;
+        let has_content_below = (self.category_scroll_offset + visible_height) < self.available_categories.len();
+        let scroll_indicator = match (has_content_above, has_content_below) {
+            (true, true) => " ↑↓",
+            (true, false) => " ↑",
+            (false, true) => " ↓",
+            (false, false) => "",
+        };
+
+        // Position indicator: showing item X of Y total
+        let position_info = if self.available_categories.len() > 0 {
+            format!(" [{}/{}]{} ", self.category_selected_index + 1, self.available_categories.len(), scroll_indicator)
+        } else {
+            String::new()
+        };
+
+        // Only render visible items
+        let end_index = (self.category_scroll_offset + visible_height).min(self.available_categories.len());
+        let visible_categories = &self.available_categories[self.category_scroll_offset..end_index];
+
+        let items: Vec<ListItem> = visible_categories
             .iter()
             .enumerate()
-            .map(|(i, category)| {
+            .map(|(offset_i, category)| {
+                let i = self.category_scroll_offset + offset_i;
                 let is_selected = self.selected_categories.contains(category);
                 let is_cursor = i == self.category_selected_index;
 
@@ -616,10 +650,11 @@ impl Library {
             })
             .collect();
 
+        let title = format!("Filter by Category{} · [j/k] Navigate · [Space] Toggle · [Enter/Esc] Done", position_info);
         let list = List::new(items).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Filter by Category · [j/k] Navigate · [Space] Toggle · [Enter/Esc] Done"),
+                .title(title),
         );
 
         frame.render_widget(list, area);
@@ -1162,6 +1197,7 @@ mod tests {
             available_categories: vec![],
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
         };
@@ -1251,6 +1287,7 @@ mod tests {
             available_categories: vec![],
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
         };
@@ -1300,6 +1337,7 @@ mod tests {
             available_categories: vec!["test".to_string()],
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
         };
@@ -1339,6 +1377,7 @@ mod tests {
             available_categories: vec!["test".to_string()],
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
         };
@@ -1368,6 +1407,7 @@ mod tests {
             available_categories: vec![],
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
         };
@@ -1397,6 +1437,7 @@ mod tests {
             available_categories: vec![],
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
         };
@@ -1424,6 +1465,7 @@ mod tests {
             available_categories: vec![],
             selected_categories: Vec::new(),
             category_selected_index: 0,
+            category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
         };
