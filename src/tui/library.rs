@@ -160,9 +160,14 @@ impl Library {
 
     pub fn load_with_filter(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool, hide_flagged: bool) -> Result<Self> {
         let available_katas = load_available_katas()?;
-        let mut deck_katas = repo.get_all_katas()?;
+        let all_deck_katas = repo.get_all_katas()?;
 
-        // Apply flagged filter if enabled
+        // Build kata_ids_in_deck from ALL katas (before filtering)
+        // This ensures the "In Deck" indicator is accurate regardless of filter
+        let kata_ids_in_deck: HashSet<String> = all_deck_katas.iter().map(|k| k.name.clone()).collect();
+
+        // Apply flagged filter for display only
+        let mut deck_katas = all_deck_katas;
         if hide_flagged {
             deck_katas.retain(|kata| !kata.is_problematic);
         }
@@ -175,7 +180,6 @@ impl Library {
             }
         }
 
-        let kata_ids_in_deck = deck_katas.iter().map(|k| k.name.clone()).collect();
         let available_categories = get_unique_categories(&available_katas);
 
         let mut library = Self {

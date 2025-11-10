@@ -159,6 +159,8 @@ pub struct App {
     previous_screen_before_settings: Option<Box<Screen>>,
     /// Library hide_flagged state (preserved across library reloads)
     library_hide_flagged: bool,
+    /// Dashboard hide_flagged state (preserved across dashboard reloads)
+    dashboard_hide_flagged: bool,
 }
 
 impl App {
@@ -199,6 +201,7 @@ impl App {
             popup_message: None,
             previous_screen_before_settings: None,
             library_hide_flagged: false,
+            dashboard_hide_flagged: false,
         };
 
         Ok(app)
@@ -426,14 +429,14 @@ impl App {
                         } else {
                             self.repo.flag_kata(kata.id, None)?;
                         }
-                        // Reload dashboard to get fresh kata state
-                        self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                        // Reload dashboard to get fresh kata state (preserve hide_flagged state)
+                        self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                         None
                     }
                     DashboardAction::ToggleHideFlagged => {
                         // Toggle the hide_flagged filter and reload dashboard
-                        let new_hide_flagged = !self.dashboard.hide_flagged;
-                        self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, new_hide_flagged)?;
+                        self.dashboard_hide_flagged = !self.dashboard.hide_flagged;
+                        self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                         None
                     }
                     DashboardAction::None => None,
@@ -461,8 +464,8 @@ impl App {
                         }
                     }
 
-                    // Also reload dashboard for consistency
-                    self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                    // Also reload dashboard for consistency (preserve hide_flagged state)
+                    self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                     return Ok(());
                 }
 
@@ -528,8 +531,8 @@ impl App {
                             }
                         }
 
-                        // Also reload dashboard for consistency
-                        self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                        // Also reload dashboard for consistency (preserve hide_flagged state)
+                        self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                         None
                     }
                     ResultsAction::None => None,
@@ -590,8 +593,8 @@ impl App {
                             } else {
                                 self.repo.flag_kata(kata.id, None)?;
                             }
-                            // Reload dashboard for consistency
-                            self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                            // Reload dashboard for consistency (preserve hide_flagged state)
+                            self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                             // Reload library with fresh kata states
                             return self.execute_action(ScreenAction::OpenLibrary);
                         }
@@ -735,24 +738,24 @@ impl App {
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::ReturnToDashboard => {
-                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                 self.refresh_dashboard_screen()?;
             }
             ScreenAction::SubmitRating(kata, rating) => {
                 self.handle_rating_submission(kata, rating)?;
-                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                 if let Screen::Results(_, results_screen) = &mut self.current_screen {
                     results_screen.mark_rating_submitted(rating, self.dashboard.katas_due.len());
                 }
             }
             ScreenAction::BuryKata(kata) => {
                 self.handle_bury_kata(&kata)?;
-                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                 self.refresh_dashboard_screen()?;
             }
             ScreenAction::StartNextDue => {
                 if self.dashboard.katas_due.is_empty() {
-                    self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                    self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                 }
                 if let Some(next_kata) = self.dashboard.katas_due.first().cloned() {
                     let practice_screen = PracticeScreen::new(next_kata.clone(), self.config.editor.clone())?;
@@ -799,8 +802,8 @@ impl App {
                         _ => {}
                     }
 
-                    // reload dashboard so counts are updated
-                    self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                    // reload dashboard so counts are updated (preserve hide_flagged state)
+                    self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                 }
             }
             ScreenAction::BackFromLibrary => {
@@ -822,8 +825,8 @@ impl App {
                 // Delete the kata from the database
                 self.repo.delete_kata(kata.id)?;
 
-                // Reload dashboard to reflect the change
-                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                // Reload dashboard to reflect the change (preserve hide_flagged state)
+                self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
 
                 // If on library screen, update library state
                 match &mut self.current_screen {
