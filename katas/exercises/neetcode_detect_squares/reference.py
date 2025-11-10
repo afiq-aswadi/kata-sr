@@ -24,9 +24,9 @@ class DetectSquares:
             side = abs(y2 - y1)
 
             # Check right side
-            result += self.points[(x1 + side, y1)] * self.points[(x1 + side, y2)]
+            result += self.points[(x1 + side, y1)] * self.points[(x1 + side, y2)] * self.points[(x2, y2)]
 
             # Check left side
-            result += self.points[(x1 - side, y1)] * self.points[(x1 - side, y2)]
+            result += self.points[(x1 - side, y1)] * self.points[(x1 - side, y2)] * self.points[(x2, y2)]
 
         return result
