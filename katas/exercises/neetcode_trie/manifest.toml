@@ -1,0 +1,23 @@
+[kata]
+name = "neetcode_trie"
+category = "exercises"
+base_difficulty = 2
+description = """Implement Trie (Prefix Tree) (LeetCode 208)
+
+Implement a trie (prefix tree) with insert, search, and startsWith methods.
+
+Example:
+Trie trie = new Trie()
+trie.insert("apple")
+trie.search("apple")   // returns True
+trie.search("app")     // returns False
+trie.startsWith("app") // returns True
+trie.insert("app")
+trie.search("app")     // returns True
+
+Constraints:
+- 1 <= word.length, prefix.length <= 2000
+- word and prefix consist only of lowercase English letters
+- At most 3 * 10^4 calls in total will be made to insert, search, and startsWith
+"""
+dependencies = []

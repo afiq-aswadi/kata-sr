@@ -1,0 +1,26 @@
+[kata]
+name = "neetcode_word_dictionary"
+category = "exercises"
+base_difficulty = 2
+description = """Design Add and Search Words Data Structure (LeetCode 211)
+
+Design a data structure that supports adding new words and finding if a string matches
+any previously added string. The search can include '.' which matches any letter.
+
+Example:
+WordDictionary wordDictionary = new WordDictionary()
+wordDictionary.addWord("bad")
+wordDictionary.addWord("dad")
+wordDictionary.addWord("mad")
+wordDictionary.search("pad") // return False
+wordDictionary.search("bad") // return True
+wordDictionary.search(".ad") // return True
+wordDictionary.search("b..") // return True
+
+Constraints:
+- 1 <= word.length <= 25
+- word consists of lowercase English letters
+- '.' matches any single letter in search
+- At most 10^4 calls will be made to addWord and search
+"""
+dependencies = ["neetcode_trie"]
