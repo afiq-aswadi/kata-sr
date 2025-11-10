@@ -786,6 +786,12 @@ impl Library {
     }
 
     fn handle_my_deck_input(&mut self, code: KeyCode) -> LibraryAction {
+        // Handle 'x' (toggle hide flagged) even when deck is empty
+        // This prevents users from getting trapped if all katas are filtered out
+        if code == KeyCode::Char('x') {
+            return LibraryAction::ToggleHideFlagged;
+        }
+
         if self.deck_katas.is_empty() {
             return LibraryAction::None;
         }
@@ -815,7 +821,6 @@ impl Library {
                 let kata = self.deck_katas[self.deck_selected].clone();
                 LibraryAction::ToggleFlagKata(kata)
             }
-            KeyCode::Char('x') => LibraryAction::ToggleHideFlagged,
             _ => LibraryAction::None,
         }
     }
