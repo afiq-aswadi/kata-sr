@@ -289,6 +289,7 @@ impl KataRepository {
     ///     num_skipped: Some(0),
     ///     duration_ms: Some(1234),
     ///     quality_rating: Some(2),
+    ///     code_attempt: None,
     /// };
     ///
     /// let session_id = repo.create_session(&session)?;
@@ -1999,7 +2000,8 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
 
         let session_id = repo.create_session(&session).unwrap();
@@ -2035,6 +2037,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(rating),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2181,7 +2184,8 @@ mod tests {
                 num_failed: None,
                 num_skipped: None,
                 duration_ms: None,
-                quality_rating: Some(3), // Good (FSRS)
+                quality_rating: Some(3), // Good (FSRS),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2219,7 +2223,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2262,7 +2267,8 @@ mod tests {
                 num_failed: None,
                 num_skipped: None,
                 duration_ms: None,
-                quality_rating: Some(3), // Good (FSRS)
+                quality_rating: Some(3), // Good (FSRS),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2278,7 +2284,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2382,6 +2389,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(rating),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2417,7 +2425,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2432,7 +2441,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(1), // Again (FSRS)
+            quality_rating: Some(1), // Again (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2486,7 +2496,8 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
