@@ -214,6 +214,175 @@ def kata_{}():
     Ok(())
 }
 
+/// Updates an existing kata's manifest.toml file.
+///
+/// This function rewrites the manifest.toml file with new metadata while
+/// preserving the file structure and tags. Used by the edit kata screen.
+///
+/// # Arguments
+///
+/// * `kata_dir` - Path to the kata directory (e.g., "katas/exercises/kata_name/")
+/// * `form_data` - Updated kata metadata
+/// * `slug` - The kata slug (directory name)
+/// * `tags` - Tags to preserve (read from existing manifest or database)
+///
+/// # Returns
+///
+/// Ok(()) on success, error on filesystem failures.
+pub fn update_manifest(
+    kata_dir: &Path,
+    form_data: &KataFormData,
+    slug: &str,
+    tags: &[String],
+) -> Result<()> {
+    let manifest_path = kata_dir.join("manifest.toml");
+
+    let dependencies_toml = if form_data.dependencies.is_empty() {
+        String::new()
+    } else {
+        let deps_list = form_data
+            .dependencies
+            .iter()
+            .map(|d| format!("\"{}\"", d))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("dependencies = [{}]\n", deps_list)
+    };
+
+    // Include tags if present
+    let tags_toml = if !tags.is_empty() {
+        let tags_list = tags
+            .iter()
+            .map(|t| format!("\"{}\"", t))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("tags = [{}]\n", tags_list)
+    } else {
+        String::new()
+    };
+
+    let content = format!(
+        r#"[kata]
+name = "{}"
+category = "{}"
+base_difficulty = {}
+description = """
+{}
+"""
+{}{}
+"#,
+        slug,
+        form_data.category,
+        form_data.difficulty,
+        form_data.description,
+        tags_toml,
+        dependencies_toml
+    );
+
+    fs::write(&manifest_path, content).context("Failed to update manifest.toml")?;
+
+    Ok(())
+}
+
+/// Updates a dependency reference in a kata's manifest.toml file.
+///
+/// This function reads a manifest, finds any references to `old_dep_slug` in the
+/// dependencies array, and replaces them with `new_dep_slug`. This is necessary
+/// when renaming a kata to ensure dependent katas don't have stale slug references.
+///
+/// # Arguments
+///
+/// * `kata_dir` - Path to the kata directory whose manifest should be updated
+/// * `old_dep_slug` - Old slug to find and replace
+/// * `new_dep_slug` - New slug to use instead
+///
+/// # Returns
+///
+/// Ok(()) on success, error if manifest read/write fails or TOML parsing fails.
+pub fn update_dependency_in_manifest(
+    kata_dir: &Path,
+    old_dep_slug: &str,
+    new_dep_slug: &str,
+) -> Result<()> {
+    let manifest_path = kata_dir.join("manifest.toml");
+
+    // Read manifest
+    let content = fs::read_to_string(&manifest_path)
+        .with_context(|| format!("Failed to read manifest at {:?}", manifest_path))?;
+
+    // Parse TOML
+    let mut manifest: toml::Table = toml::from_str(&content)
+        .with_context(|| format!("Failed to parse manifest at {:?}", manifest_path))?;
+
+    // Check if there's a kata section with dependencies
+    if let Some(toml::Value::Table(kata_table)) = manifest.get_mut("kata") {
+        if let Some(toml::Value::Array(deps)) = kata_table.get_mut("dependencies") {
+            // Replace old_dep_slug with new_dep_slug in dependencies array
+            for dep in deps.iter_mut() {
+                if let toml::Value::String(dep_str) = dep {
+                    if dep_str == old_dep_slug {
+                        *dep_str = new_dep_slug.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    // Write back to file
+    let updated_content = toml::to_string_pretty(&manifest)
+        .context("Failed to serialize updated manifest")?;
+
+    fs::write(&manifest_path, updated_content)
+        .with_context(|| format!("Failed to write updated manifest at {:?}", manifest_path))?;
+
+    Ok(())
+}
+
+/// Renames a kata directory atomically.
+///
+/// This function renames a kata directory and verifies the operation succeeded.
+/// Used when editing a kata's name through the edit kata screen.
+///
+/// # Arguments
+///
+/// * `exercises_dir` - Path to the exercises directory
+/// * `old_slug` - Current directory name
+/// * `new_slug` - New directory name
+///
+/// # Returns
+///
+/// Ok(()) on success, error if rename fails or new directory already exists.
+///
+/// # Safety
+///
+/// This operation should be called AFTER database updates are validated but
+/// BEFORE committing the database transaction. If this fails, the database
+/// update should be rolled back.
+pub fn rename_kata_directory(
+    exercises_dir: &Path,
+    old_slug: &str,
+    new_slug: &str,
+) -> Result<()> {
+    let old_path = exercises_dir.join(old_slug);
+    let new_path = exercises_dir.join(new_slug);
+
+    // Verify old directory exists
+    if !old_path.exists() {
+        anyhow::bail!("Kata directory '{}' does not exist", old_slug);
+    }
+
+    // Verify new directory doesn't exist
+    if new_path.exists() {
+        anyhow::bail!("Kata directory '{}' already exists", new_slug);
+    }
+
+    // Perform the rename
+    fs::rename(&old_path, &new_path)
+        .with_context(|| format!("Failed to rename directory '{}' to '{}'", old_slug, new_slug))?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

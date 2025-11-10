@@ -24,6 +24,8 @@ pub enum DetailsAction {
     AddKata(String),
     /// Return to library
     Back,
+    /// Edit this kata (if in deck)
+    EditKata(String),
 }
 
 /// Details screen state for viewing kata information.
@@ -118,7 +120,10 @@ impl DetailsScreen {
 
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
         let footer_text = if self.in_deck {
-            Line::from(vec![Span::raw("[Esc] Back to Library")])
+            Line::from(vec![
+                Span::raw("[e] Edit Kata  "),
+                Span::raw("[Esc] Back to Library"),
+            ])
         } else {
             Line::from(vec![
                 Span::raw("[a] Add to Deck  "),
@@ -136,6 +141,7 @@ impl DetailsScreen {
     /// # Keybindings
     ///
     /// - `a`: Add kata to deck (if not already added)
+    /// - `e`: Edit kata (if in deck)
     /// - `Esc`: Return to library
     pub fn handle_input(&self, code: KeyCode) -> DetailsAction {
         match code {
@@ -144,6 +150,13 @@ impl DetailsScreen {
                     DetailsAction::None
                 } else {
                     DetailsAction::AddKata(self.kata.name.clone())
+                }
+            }
+            KeyCode::Char('e') => {
+                if self.in_deck {
+                    DetailsAction::EditKata(self.kata.name.clone())
+                } else {
+                    DetailsAction::None
                 }
             }
             KeyCode::Esc => DetailsAction::Back,

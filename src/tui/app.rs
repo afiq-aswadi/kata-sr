@@ -16,6 +16,7 @@ use super::create_kata::{CreateKataAction, CreateKataScreen};
 use super::dashboard::{Dashboard, DashboardAction};
 use super::details::{DetailsAction, DetailsScreen};
 use super::done::{DoneAction, DoneScreen};
+use super::edit_kata::{EditKataAction, EditKataScreen};
 use super::keybindings;
 use super::library::{Library, LibraryAction};
 use super::practice::{PracticeAction, PracticeScreen};
@@ -82,6 +83,8 @@ pub enum Screen {
     Details(DetailsScreen),
     /// Create kata screen for generating new kata files
     CreateKata(CreateKataScreen),
+    /// Edit kata screen for modifying existing katas
+    EditKata(EditKataScreen),
     /// Session history screen showing past sessions for a kata
     SessionHistory(SessionHistoryScreen),
     /// Session detail screen showing full test results for a session
@@ -107,6 +110,15 @@ enum ScreenAction {
         slug: String,
     },
     CancelCreateKata,
+    OpenEditKata(i64),
+    SubmitEditKata {
+        kata_id: i64,
+        original_slug: String,
+        form_data: crate::core::kata_generator::KataFormData,
+        new_slug: String,
+    },
+    OpenEditorFile(std::path::PathBuf),
+    CancelEditKata,
     OpenSettings,
     CloseSettings,
     ViewSessionHistory(Kata),
@@ -312,6 +324,9 @@ impl App {
             Screen::CreateKata(create_kata) => {
                 create_kata.render(frame);
             }
+            Screen::EditKata(edit_kata) => {
+                edit_kata.render(frame);
+            }
             Screen::SessionHistory(session_history) => {
                 session_history.render(frame);
             }
@@ -363,6 +378,7 @@ impl App {
                     DashboardAction::RemoveKata(kata) => {
                         Some(ScreenAction::RemoveKataFromDeck(kata))
                     }
+                    DashboardAction::EditKata(kata) => Some(ScreenAction::OpenEditKata(kata.id)),
                     DashboardAction::ToggleFlagKata(kata) => {
                         // Toggle the problematic flag in database
                         if kata.is_problematic {
@@ -502,6 +518,15 @@ impl App {
                             Some(ScreenAction::ViewDetails(kata, in_deck))
                         }
                         LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
+                        LibraryAction::EditKataById(kata_id) => Some(ScreenAction::OpenEditKata(kata_id)),
+                        LibraryAction::EditKataByName(name) => {
+                            // Look up kata by name to get ID
+                            if let Ok(Some(kata)) = self.repo.get_kata_by_name(&name) {
+                                Some(ScreenAction::OpenEditKata(kata.id))
+                            } else {
+                                None
+                            }
+                        }
                         LibraryAction::None => None,
                     }
                 }
@@ -511,6 +536,14 @@ impl App {
                 match action {
                     DetailsAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
                     DetailsAction::Back => Some(ScreenAction::BackFromDetails),
+                    DetailsAction::EditKata(name) => {
+                        // Look up kata by name to get ID
+                        if let Ok(Some(kata)) = self.repo.get_kata_by_name(&name) {
+                            Some(ScreenAction::OpenEditKata(kata.id))
+                        } else {
+                            None
+                        }
+                    }
                     DetailsAction::None => None,
                 }
             }
@@ -523,6 +556,28 @@ impl App {
                     }
                     CreateKataAction::Cancel => Some(ScreenAction::CancelCreateKata),
                     CreateKataAction::None => None,
+                }
+            }
+            Screen::EditKata(edit_kata) => {
+                let exercises_dir = std::path::Path::new("katas/exercises");
+                let action = edit_kata.handle_input(code, exercises_dir);
+                match action {
+                    EditKataAction::Submit {
+                        kata_id,
+                        original_slug,
+                        form_data,
+                        new_slug,
+                    } => Some(ScreenAction::SubmitEditKata {
+                        kata_id,
+                        original_slug,
+                        form_data,
+                        new_slug,
+                    }),
+                    EditKataAction::OpenEditor { file_path } => {
+                        Some(ScreenAction::OpenEditorFile(file_path))
+                    }
+                    EditKataAction::Cancel => Some(ScreenAction::CancelEditKata),
+                    EditKataAction::None => None,
                 }
             }
             Screen::SessionHistory(session_history) => {
@@ -704,6 +759,283 @@ impl App {
                 let library = Library::load(&self.repo)?;
                 self.current_screen = Screen::Library(library);
             }
+            ScreenAction::OpenEditKata(kata_id) => {
+                // Load kata from database
+                if let Some(kata) = self.repo.get_kata_by_id(kata_id)? {
+                    // Load tags and dependencies
+                    let tags = self.repo.get_kata_tags(kata_id)?;
+                    let dependencies = self.repo.get_kata_dependencies(kata_id)?;
+
+                    // Get dependency names (not IDs)
+                    let dep_names: Vec<String> = dependencies
+                        .iter()
+                        .filter_map(|dep_id| {
+                            self.repo.get_kata_by_id(*dep_id).ok().flatten().map(|k| k.name)
+                        })
+                        .collect();
+
+                    // Load available katas for dependency selection
+                    let available_katas = crate::core::kata_loader::load_available_katas()?;
+                    let kata_names: Vec<String> =
+                        available_katas.iter().map(|k| k.name.clone()).collect();
+
+                    let exercises_dir = std::path::PathBuf::from("katas/exercises");
+                    let edit_kata_screen =
+                        EditKataScreen::new(&kata, tags, dep_names, kata_names, exercises_dir);
+                    self.current_screen = Screen::EditKata(edit_kata_screen);
+                }
+            }
+            ScreenAction::SubmitEditKata {
+                kata_id,
+                original_slug,
+                form_data,
+                new_slug,
+            } => {
+                use crate::core::kata_generator::{rename_kata_directory, update_dependency_in_manifest, update_manifest};
+
+                let exercises_dir = std::path::Path::new("katas/exercises");
+                let name_changed = original_slug != new_slug;
+
+                // Get original state for rollback
+                let original_kata = self.repo.get_kata_by_id(kata_id)?
+                    .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
+                let original_dependencies = self.repo.get_kata_dependencies(kata_id)?;
+                let tags = self.repo.get_kata_tags(kata_id)?;
+
+                if name_changed {
+                    // 1. Update database first
+                    match self.repo.update_kata_full_metadata(
+                        kata_id,
+                        &new_slug,
+                        &form_data.description,
+                        &form_data.category,
+                        form_data.difficulty as i32,
+                    ) {
+                        Ok(_) => {
+                            // 2. Update dependencies in DB
+                            let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
+                            if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
+                                // Rollback ALL database changes
+                                let _ = self.repo.update_kata_full_metadata(
+                                    kata_id,
+                                    &original_kata.name,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                eprintln!("Failed to update dependencies: {}", e);
+                                return Ok(());
+                            }
+
+                            // 3. Now rename directory (if this fails, rollback DB)
+                            match rename_kata_directory(exercises_dir, &original_slug, &new_slug) {
+                                Ok(_) => {
+                                    // 4. Update manifest in new location
+                                    let kata_dir = exercises_dir.join(&new_slug);
+                                    if let Err(e) =
+                                        update_manifest(&kata_dir, &form_data, &new_slug, &tags)
+                                    {
+                                        // Rollback: rename directory back and revert ALL database changes
+                                        let _ = rename_kata_directory(
+                                            exercises_dir,
+                                            &new_slug,
+                                            &original_slug,
+                                        );
+                                        let _ = self.repo.update_kata_full_metadata(
+                                            kata_id,
+                                            &original_kata.name,
+                                            &original_kata.description,
+                                            &original_kata.category,
+                                            original_kata.base_difficulty,
+                                        );
+                                        let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
+                                        eprintln!("Failed to update manifest: {}", e);
+                                        return Ok(());
+                                    }
+
+                                    // 5. Update all dependent kata manifests to use new slug
+                                    let dependent_kata_ids = self.repo.get_dependent_katas(kata_id)?;
+                                    for dep_kata_id in &dependent_kata_ids {
+                                        if let Ok(Some(dep_kata)) = self.repo.get_kata_by_id(*dep_kata_id) {
+                                            let dep_kata_dir = exercises_dir.join(&dep_kata.name);
+                                            if let Err(e) = update_dependency_in_manifest(
+                                                &dep_kata_dir,
+                                                &original_slug,
+                                                &new_slug
+                                            ) {
+                                                // Rollback: rename directory back, revert DB, and rollback any
+                                                // already-updated dependent manifests
+                                                eprintln!("Failed to update dependent manifest for '{}': {}", dep_kata.name, e);
+
+                                                // Try to rollback dependent manifests we already updated
+                                                for rollback_id in &dependent_kata_ids {
+                                                    if rollback_id == dep_kata_id {
+                                                        break; // Don't rollback the one that failed
+                                                    }
+                                                    if let Ok(Some(rb_kata)) = self.repo.get_kata_by_id(*rollback_id) {
+                                                        let rb_kata_dir = exercises_dir.join(&rb_kata.name);
+                                                        let _ = update_dependency_in_manifest(
+                                                            &rb_kata_dir,
+                                                            &new_slug,
+                                                            &original_slug
+                                                        );
+                                                    }
+                                                }
+
+                                                // Rollback renamed kata
+                                                let _ = rename_kata_directory(
+                                                    exercises_dir,
+                                                    &new_slug,
+                                                    &original_slug,
+                                                );
+                                                let _ = self.repo.update_kata_full_metadata(
+                                                    kata_id,
+                                                    &original_kata.name,
+                                                    &original_kata.description,
+                                                    &original_kata.category,
+                                                    original_kata.base_difficulty,
+                                                );
+                                                let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
+                                                return Ok(());
+                                            }
+                                        }
+                                    }
+
+                                    // Success! Return to library
+                                    let library = Library::load(&self.repo)?;
+                                    self.current_screen = Screen::Library(library);
+                                    eprintln!("Kata '{}' updated successfully!", new_slug);
+                                }
+                                Err(e) => {
+                                    // Rollback ALL database changes
+                                    let _ = self.repo.update_kata_full_metadata(
+                                        kata_id,
+                                        &original_kata.name,
+                                        &original_kata.description,
+                                        &original_kata.category,
+                                        original_kata.base_difficulty,
+                                    );
+                                    let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
+                                    eprintln!("Failed to rename kata directory: {}", e);
+                                    // Stay on edit screen
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to update database: {}", e);
+                            // Stay on edit screen (nothing to rollback - first operation failed)
+                        }
+                    }
+                } else {
+                    // Name didn't change, just update metadata
+                    match self.repo.update_kata_metadata(
+                        kata_id,
+                        &form_data.description,
+                        &form_data.category,
+                        form_data.difficulty as i32,
+                    ) {
+                        Ok(_) => {
+                            // Update dependencies
+                            let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
+                            if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
+                                // Rollback metadata changes
+                                let _ = self.repo.update_kata_metadata(
+                                    kata_id,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                eprintln!("Failed to update dependencies: {}", e);
+                                return Ok(());
+                            }
+
+                            // Update manifest with tags preserved
+                            let kata_dir = exercises_dir.join(&original_slug);
+                            if let Err(e) = update_manifest(&kata_dir, &form_data, &original_slug, &tags) {
+                                // Rollback ALL database changes
+                                let _ = self.repo.update_kata_metadata(
+                                    kata_id,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
+                                eprintln!("Failed to update manifest: {}", e);
+                                return Ok(());
+                            }
+
+                            // Success! Return to library
+                            let library = Library::load(&self.repo)?;
+                            self.current_screen = Screen::Library(library);
+                            eprintln!("Kata '{}' updated successfully!", original_slug);
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to update kata: {}", e);
+                            // Stay on edit screen (nothing to rollback - first operation failed)
+                        }
+                    }
+                }
+            }
+            ScreenAction::OpenEditorFile(file_path) => {
+                // Spawn external editor with proper terminal handling
+                use std::io::Write;
+                use std::process::Command;
+
+                let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
+
+                // Exit alternate screen and disable raw mode to hand control to editor
+                let mut stdout = std::io::stdout();
+                crossterm::execute!(
+                    stdout,
+                    crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+                    crossterm::cursor::Show,
+                    crossterm::terminal::LeaveAlternateScreen,
+                )
+                .context("Failed to leave alternate screen before launching editor")?;
+
+                crossterm::terminal::disable_raw_mode()
+                    .context("Failed to disable raw mode before launching editor")?;
+
+                // Launch editor and wait for it to complete
+                let status_result = Command::new(&editor).arg(&file_path).status();
+
+                // Re-enable raw mode and re-enter alternate screen to restore TUI
+                crossterm::terminal::enable_raw_mode()
+                    .context("Failed to re-enable raw mode after exiting editor")?;
+
+                crossterm::execute!(
+                    stdout,
+                    crossterm::terminal::EnterAlternateScreen,
+                    crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+                    crossterm::cursor::Hide,
+                    crossterm::cursor::MoveTo(0, 0),
+                )
+                .context("Failed to re-enter alternate screen after exiting editor")?;
+
+                // Flush to ensure all commands are executed
+                stdout
+                    .flush()
+                    .context("Failed to flush stdout after terminal reset")?;
+
+                // Check editor exit status
+                let editor_status = status_result
+                    .with_context(|| format!("Failed to launch {}", editor))?;
+
+                if !editor_status.success() {
+                    eprintln!(
+                        "{} exited with non-zero status (code {:?})",
+                        editor,
+                        editor_status.code()
+                    );
+                }
+
+                // Stay on edit screen
+            }
+            ScreenAction::CancelEditKata => {
+                // Return to library
+                let library = Library::load(&self.repo)?;
+                self.current_screen = Screen::Library(library);
+            }
             ScreenAction::OpenSettings => {
                 let settings_screen = SettingsScreen::new(self.config.clone());
                 self.current_screen = Screen::Settings(settings_screen);
@@ -734,6 +1066,17 @@ impl App {
             }
         }
         Ok(())
+    }
+
+    /// Resolves kata dependency names to their database IDs.
+    fn resolve_dependency_ids(&self, dep_names: &[String]) -> anyhow::Result<Vec<i64>> {
+        let mut dep_ids = Vec::new();
+        for name in dep_names {
+            if let Some(kata) = self.repo.get_kata_by_name(name)? {
+                dep_ids.push(kata.id);
+            }
+        }
+        Ok(dep_ids)
     }
 
     /// Handles async events from background threads.

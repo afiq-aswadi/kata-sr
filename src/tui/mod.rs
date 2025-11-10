@@ -3,6 +3,7 @@ pub mod create_kata;
 pub mod dashboard;
 pub mod details;
 pub mod done;
+pub mod edit_kata;
 pub mod heatmap;
 pub mod heatmap_calendar;
 pub mod keybindings;

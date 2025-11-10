@@ -246,7 +246,7 @@ impl Dashboard {
 
         // stats summary
         let stats_text = format!(
-            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'd' to remove selected kata | Press 's' to change sort order",
+            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'd' to remove | Press 'e' to edit | Press 'f' to flag | Press 's' to change sort order",
             self.stats.streak_days,
             self.stats.total_reviews_today,
             self.stats.success_rate_7d * 100.0
@@ -282,6 +282,13 @@ impl Dashboard {
                     DashboardAction::None
                 }
             }
+            KeyCode::Char('e') => {
+                if let Some(kata) = self.katas_due.get(self.selected_index) {
+                    DashboardAction::EditKata(kata.clone())
+                } else {
+                    DashboardAction::None
+                }
+            }
             KeyCode::Char('f') => {
                 if let Some(kata) = self.katas_due.get(self.selected_index) {
                     DashboardAction::ToggleFlagKata(kata.clone())
@@ -302,5 +309,6 @@ pub enum DashboardAction {
     None,
     SelectKata(Kata),
     RemoveKata(Kata),
+    EditKata(Kata),
     ToggleFlagKata(Kata),
 }

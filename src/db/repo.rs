@@ -532,6 +532,50 @@ impl KataRepository {
     ///
     /// * `kata_id` - The kata whose dependencies should be replaced
     /// * `dependency_ids` - Slice of prerequisite kata IDs (each requires one success by default)
+    /// Gets the IDs of all katas that this kata depends on.
+    ///
+    /// Returns a vector of kata IDs that are dependencies of the given kata.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to get dependencies for
+    pub fn get_kata_dependencies(&self, kata_id: i64) -> Result<Vec<i64>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT depends_on_kata_id FROM kata_dependencies WHERE kata_id = ?1")?;
+
+        let deps = stmt
+            .query_map(params![kata_id], |row| row.get(0))?
+            .collect::<Result<Vec<i64>, _>>()?;
+
+        Ok(deps)
+    }
+
+    /// Gets all katas that depend on the given kata (reverse dependency lookup).
+    ///
+    /// This is the inverse of get_kata_dependencies: instead of finding what a kata
+    /// depends on, it finds what katas depend on this kata. This is useful when
+    /// renaming a kata to update all dependent manifests.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to find dependents for
+    ///
+    /// # Returns
+    ///
+    /// Vector of kata IDs that depend on this kata
+    pub fn get_dependent_katas(&self, kata_id: i64) -> Result<Vec<i64>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT kata_id FROM kata_dependencies WHERE depends_on_kata_id = ?1")?;
+
+        let dependents = stmt
+            .query_map(params![kata_id], |row| row.get(0))?
+            .collect::<Result<Vec<i64>, _>>()?;
+
+        Ok(dependents)
+    }
+
     pub fn replace_dependencies(&self, kata_id: i64, dependency_ids: &[i64]) -> Result<()> {
         let tx = self.conn.unchecked_transaction()?;
         tx.execute(
@@ -1366,6 +1410,58 @@ impl KataRepository {
                  base_difficulty = ?3
              WHERE id = ?4",
             params![description, category, base_difficulty, kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Updates a kata's name (slug).
+    ///
+    /// This method updates only the kata's name field while preserving all
+    /// other metadata and scheduling state. Used when renaming a kata through
+    /// the edit kata screen.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to update
+    /// * `new_name` - New name (slug) for the kata
+    pub fn update_kata_name(&self, kata_id: i64, new_name: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas SET name = ?1 WHERE id = ?2",
+            params![new_name, kata_id],
+        )?;
+        Ok(())
+    }
+
+    /// Updates a kata's full metadata including name.
+    ///
+    /// This method updates all editable fields of a kata (name, description,
+    /// category, difficulty) while preserving scheduling state (FSRS card,
+    /// next review date, etc). This is the comprehensive update method used
+    /// by the edit kata screen.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to update
+    /// * `name` - New name (slug)
+    /// * `description` - New description
+    /// * `category` - New category
+    /// * `base_difficulty` - New base difficulty
+    pub fn update_kata_full_metadata(
+        &self,
+        kata_id: i64,
+        name: &str,
+        description: &str,
+        category: &str,
+        base_difficulty: i32,
+    ) -> Result<()> {
+        self.conn.execute(
+            "UPDATE katas
+             SET name = ?1,
+                 description = ?2,
+                 category = ?3,
+                 base_difficulty = ?4
+             WHERE id = ?5",
+            params![name, description, category, base_difficulty, kata_id],
         )?;
         Ok(())
     }
