@@ -1,0 +1,13 @@
+[kata]
+name = "find_missing_number"
+category = "arrays"
+base_difficulty = 1
+description = """
+Find the missing number in a sequence from 0 to n.
+
+Given an array containing n distinct numbers from 0 to n, find the one
+number that is missing from the array. Use O(1) space complexity.
+
+Key concepts: math formulas, XOR operations, bit manipulation
+"""
+dependencies = []

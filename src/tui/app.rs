@@ -483,7 +483,9 @@ impl App {
                         // Open solution in editor. When user closes editor, auto-submit Rating::Again
                         match results_screen.open_solution_in_editor(true) {
                             Ok(()) => {
-                                // Successfully viewed solution, auto-submit Rating::Again (1)
+                                // Successfully viewed solution, signal terminal clear needed
+                                self.needs_terminal_clear = true;
+                                // Auto-submit Rating::Again (1)
                                 Some(ScreenAction::SubmitRating(kata.clone(), 1, results_screen.get_results().clone()))
                             }
                             Err(e) => {
@@ -492,6 +494,11 @@ impl App {
                                 None
                             }
                         }
+                    }
+                    ResultsAction::SolutionViewed => {
+                        // External editor was used, signal terminal needs clearing
+                        self.needs_terminal_clear = true;
+                        None
                     }
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),

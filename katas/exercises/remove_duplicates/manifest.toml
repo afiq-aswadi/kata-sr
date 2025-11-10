@@ -1,0 +1,13 @@
+[kata]
+name = "remove_duplicates"
+category = "arrays"
+base_difficulty = 1
+description = """
+Remove duplicates from a sorted array in-place.
+
+Given a sorted array, remove duplicates in-place such that each element
+appears only once. Return the new length. Use O(1) extra space.
+
+Key concepts: two-pointer technique, in-place modification
+"""
+dependencies = []

@@ -1,0 +1,12 @@
+[kata]
+name = "string_to_uppercase"
+category = "strings"
+base_difficulty = 1
+description = """
+Convert a string to uppercase.
+
+Implement a function that converts all lowercase letters in a string to uppercase.
+
+Example: "hello" -> "HELLO", "Hello World!" -> "HELLO WORLD!"
+"""
+dependencies = []
