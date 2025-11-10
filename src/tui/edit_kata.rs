@@ -73,7 +73,7 @@ impl FormField {
     fn label(self) -> &'static str {
         match self {
             FormField::Name => "Name",
-            FormField::Category => "Category",
+            FormField::Category => "Tags (comma-separated)",
             FormField::Description => "Description",
             FormField::Difficulty => "Difficulty",
             FormField::Dependencies => "Dependencies",
@@ -128,19 +128,27 @@ impl EditKataScreen {
     /// * `exercises_dir` - Path to exercises directory for file operations
     pub fn new(
         kata: &Kata,
-        _tags: Vec<String>,
+        tags: Vec<String>,
         dependencies: Vec<String>,
         available_katas: Vec<String>,
         exercises_dir: std::path::PathBuf,
     ) -> Self {
         let original_slug = kata.name.clone();
 
+        // Display tags as comma-separated in category field
+        // If no tags, fall back to the category from kata metadata
+        let category_display = if !tags.is_empty() {
+            tags.join(", ")
+        } else {
+            kata.category.clone()
+        };
+
         Self {
             kata_id: kata.id,
             original_name: kata.name.clone(),
             original_slug: original_slug.clone(),
             name_input: kata.name.clone(),
-            category_input: kata.category.clone(),
+            category_input: category_display,
             description_input: kata.description.clone(),
             difficulty: kata.base_difficulty as u8,
             selected_dependencies: dependencies,
