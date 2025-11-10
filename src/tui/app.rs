@@ -450,32 +450,6 @@ impl App {
                 DoneAction::None => None,
             },
             Screen::Results(kata, results_screen) => {
-                // Handle 'f' to toggle flag on current kata
-                if code == KeyCode::Char('f') {
-                    let kata_id = kata.id;
-                    let was_problematic = kata.is_problematic;
-
-                    // Toggle the flag in database
-                    if was_problematic {
-                        self.repo.unflag_kata(kata_id)?;
-                    } else {
-                        self.repo.flag_kata(kata_id, None)?;
-                    }
-
-                    // Reload fresh kata state from database and update Screen enum
-                    if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
-                        // Extract the results_screen by temporarily replacing current_screen
-                        let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
-                        if let Screen::Results(_, rs) = old_screen {
-                            self.current_screen = Screen::Results(fresh_kata, rs);
-                        }
-                    }
-
-                    // Also reload dashboard for consistency
-                    self.dashboard = Dashboard::load(&self.repo)?;
-                    return Ok(());
-                }
-
                 let action = results_screen.handle_input(code);
                 match action {
                     ResultsAction::SubmitRating(rating) => {
@@ -491,6 +465,32 @@ impl App {
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    ResultsAction::ToggleFlagWithReason(reason) => {
+                        let kata_id = kata.id;
+                        let was_problematic = kata.is_problematic;
+
+                        // Toggle the flag in database with reason
+                        if was_problematic {
+                            self.repo.unflag_kata(kata_id)?;
+                        } else {
+                            self.repo.flag_kata(kata_id, reason)?;
+                        }
+
+                        // Reload fresh kata state from database and update Screen enum
+                        if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
+                            // Extract the results_screen by temporarily replacing current_screen
+                            let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
+                            if let Screen::Results(_, mut rs) = old_screen {
+                                // Update the kata inside ResultsScreen so flag popup shows correct status
+                                rs.update_kata(fresh_kata.clone());
+                                self.current_screen = Screen::Results(fresh_kata, rs);
+                            }
+                        }
+
+                        // Also reload dashboard for consistency
+                        self.dashboard = Dashboard::load(&self.repo)?;
+                        None
+                    }
                     ResultsAction::None => None,
                 }
             }
