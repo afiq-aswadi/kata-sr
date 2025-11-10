@@ -183,7 +183,7 @@ impl ResultsScreen {
 
     fn render_actions(&self, frame: &mut Frame, area: Rect) {
         if !self.results.passed && !self.rating_submitted {
-            let text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output";
+            let text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output    [s] Settings";
             let block = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL).title("Next steps"));
             frame.render_widget(block, area);
@@ -199,7 +199,7 @@ impl ResultsScreen {
             let lines = vec![
                 "Gave up and viewed solution. Rating saved: Again".to_string(),
                 remaining_msg,
-                "[Enter/d] Dashboard   [n] Next due   [r] Review picker".to_string(),
+                "[Enter/d] Dashboard   [n] Next due   [r] Review picker   [s] Settings".to_string(),
             ];
             let block = Paragraph::new(lines.join("\n"))
                 .block(Block::default().borders(Borders::ALL).title("What next?"));
@@ -220,7 +220,7 @@ impl ResultsScreen {
             let lines = vec![
                 format!("Saved rating: {}", rating_name),
                 remaining_msg,
-                "[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [o] Inspect output"
+                "[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [s] Settings"
                     .to_string(),
             ];
             let block = Paragraph::new(lines.join("\n"))
@@ -255,7 +255,7 @@ impl ResultsScreen {
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
-        lines.push(Line::from("Press Enter to submit rating, or [b] to bury (postpone to tomorrow)."));
+        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), or [s] for Settings."));
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",
@@ -391,6 +391,10 @@ impl ResultsScreen {
             return ResultsAction::None;
         }
 
+        if code == KeyCode::Char('s') {
+            return ResultsAction::OpenSettings;
+        }
+
         if self.focus == ResultsFocus::Tests {
             match code {
                 KeyCode::Up | KeyCode::Char('k') => {
@@ -524,6 +528,7 @@ pub enum ResultsAction {
     BackToDashboard,
     StartNextDue,
     ReviewAnother,
+    OpenSettings,
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {

@@ -491,6 +491,7 @@ impl App {
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
                     ResultsAction::None => None,
                 }
             }
