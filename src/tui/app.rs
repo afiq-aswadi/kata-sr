@@ -365,7 +365,9 @@ impl App {
             Screen::Startup(startup_screen) => {
                 let action = startup_screen.handle_input(code);
                 match action {
-                    StartupAction::Continue => Some(ScreenAction::ReturnToDashboard),
+                    StartupAction::StartReview => Some(ScreenAction::ReturnToDashboard),
+                    StartupAction::OpenLibrary => Some(ScreenAction::OpenLibrary),
+                    StartupAction::OpenSettings => Some(ScreenAction::OpenSettings),
                     StartupAction::None => None,
                 }
             }
