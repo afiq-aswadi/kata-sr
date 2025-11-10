@@ -180,9 +180,10 @@ impl App {
     pub fn new(repo: KataRepository, config: AppConfig) -> anyhow::Result<Self> {
         let (tx, rx) = channel();
         let dashboard = Dashboard::load(&repo)?;
+        let startup_screen = StartupScreen::load(&repo)?;
 
         let app = Self {
-            current_screen: Screen::Startup(StartupScreen::new()),
+            current_screen: Screen::Startup(startup_screen),
             dashboard,
             repo,
             config,

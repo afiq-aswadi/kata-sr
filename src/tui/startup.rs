@@ -1,3 +1,5 @@
+use crate::db::repo::KataRepository;
+use crate::tui::heatmap_calendar::HeatmapCalendar;
 use crossterm::event::KeyCode;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
@@ -14,6 +16,8 @@ const MENU_ITEMS: &[&str] = &["Start Review", "Go to Library", "Go to Settings"]
 pub struct StartupScreen {
     /// Currently selected menu item index
     selected_index: usize,
+    /// GitHub-style heatmap calendar
+    heatmap_calendar: HeatmapCalendar,
 }
 
 /// Actions available on the startup screen.
@@ -25,22 +29,26 @@ pub enum StartupAction {
 }
 
 impl StartupScreen {
-    pub fn new() -> Self {
-        Self {
+    pub fn load(repo: &KataRepository) -> anyhow::Result<Self> {
+        let heatmap_calendar = HeatmapCalendar::new(repo)?;
+
+        Ok(Self {
             selected_index: 0,
-        }
+            heatmap_calendar,
+        })
     }
 
     pub fn render(&self, frame: &mut Frame) {
         let area = frame.size();
 
-        // Create main layout: top padding, content, bottom padding
+        // Create main layout: top padding, content, heatmap, bottom padding
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(20),
-                Constraint::Percentage(60),
-                Constraint::Percentage(20),
+                Constraint::Percentage(10),
+                Constraint::Min(15),      // ASCII art and menu
+                Constraint::Min(12),      // Heatmap
+                Constraint::Percentage(10),
             ])
             .split(area);
 
@@ -102,6 +110,9 @@ impl StartupScreen {
             .block(Block::default());
 
         frame.render_widget(paragraph, chunks[1]);
+
+        // Render heatmap calendar
+        self.heatmap_calendar.render(frame, chunks[2]);
     }
 
     pub fn handle_input(&mut self, code: KeyCode) -> StartupAction {
