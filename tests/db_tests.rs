@@ -623,3 +623,92 @@ fn test_empty_database_queries() {
     let graph = repo.load_dependency_graph().unwrap();
     assert_eq!(graph.get_all_kata_ids().len(), 0);
 }
+
+#[test]
+fn test_get_future_review_counts() {
+    let repo = setup_test_repo();
+    let today = Utc::now().date_naive();
+
+    // Create katas with different future review dates
+    let kata1 = NewKata {
+        name: "kata_tomorrow".to_string(),
+        category: "test".to_string(),
+        description: "Due tomorrow".to_string(),
+        base_difficulty: 3,
+        parent_kata_id: None,
+        variation_params: None,
+    };
+    let id1 = repo.create_kata(&kata1, Utc::now()).unwrap();
+
+    let kata2 = NewKata {
+        name: "kata_next_week".to_string(),
+        category: "test".to_string(),
+        description: "Due next week".to_string(),
+        base_difficulty: 3,
+        parent_kata_id: None,
+        variation_params: None,
+    };
+    let id2 = repo.create_kata(&kata2, Utc::now()).unwrap();
+
+    let kata3 = NewKata {
+        name: "kata_same_day".to_string(),
+        category: "test".to_string(),
+        description: "Due same day as kata2".to_string(),
+        base_difficulty: 3,
+        parent_kata_id: None,
+        variation_params: None,
+    };
+    let id3 = repo.create_kata(&kata3, Utc::now()).unwrap();
+
+    // Set different next_review_at dates using FSRS
+    let tomorrow = (Utc::now() + Duration::days(1)).date_naive();
+    let next_week = (Utc::now() + Duration::days(7)).date_naive();
+
+    let params = FsrsParams::default();
+
+    // Schedule kata1 for tomorrow
+    let mut card1 = FsrsCard::new();
+    card1.schedule(Rating::Good, &params, Utc::now());
+    let next_review1 = Utc::now() + Duration::days(1);
+    repo.update_kata_after_fsrs_review(id1, &card1, next_review1, Utc::now()).unwrap();
+
+    // Schedule kata2 for next week
+    let mut card2 = FsrsCard::new();
+    card2.schedule(Rating::Good, &params, Utc::now());
+    let next_review2 = Utc::now() + Duration::days(7);
+    repo.update_kata_after_fsrs_review(id2, &card2, next_review2, Utc::now()).unwrap();
+
+    // Schedule kata3 for next week (same day as kata2)
+    let mut card3 = FsrsCard::new();
+    card3.schedule(Rating::Good, &params, Utc::now());
+    let next_review3 = Utc::now() + Duration::days(7);
+    repo.update_kata_after_fsrs_review(id3, &card3, next_review3, Utc::now()).unwrap();
+
+    // Query future review counts
+    let end_date = today + Duration::days(14);
+    let counts = repo.get_future_review_counts(today, end_date).unwrap();
+
+    // Should have 2 entries: one for tomorrow (1 kata) and one for next week (2 katas)
+    assert!(counts.len() >= 2, "Expected at least 2 dates with scheduled reviews");
+
+    // Find the count for tomorrow
+    let tomorrow_count = counts.iter().find(|dc| dc.date == tomorrow);
+    assert!(tomorrow_count.is_some(), "Should have count for tomorrow");
+    assert_eq!(tomorrow_count.unwrap().count, 1, "Should have 1 kata due tomorrow");
+
+    // Find the count for next week
+    let next_week_count = counts.iter().find(|dc| dc.date == next_week);
+    assert!(next_week_count.is_some(), "Should have count for next week");
+    assert_eq!(next_week_count.unwrap().count, 2, "Should have 2 katas due next week");
+}
+
+#[test]
+fn test_get_future_review_counts_empty() {
+    let repo = setup_test_repo();
+    let today = Utc::now().date_naive();
+    let end_date = today + Duration::days(14);
+
+    // Empty database should return empty vector
+    let counts = repo.get_future_review_counts(today, end_date).unwrap();
+    assert_eq!(counts.len(), 0, "Empty database should have no scheduled reviews");
+}

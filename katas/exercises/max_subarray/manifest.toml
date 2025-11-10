@@ -1,0 +1,13 @@
+[kata]
+name = "max_subarray"
+category = "arrays"
+base_difficulty = 1
+description = """
+Find the contiguous subarray with the maximum sum (Kadane's algorithm).
+
+Given an array of integers (positive and negative), find the contiguous
+subarray with the largest sum and return the sum value.
+
+Key concepts: dynamic programming, Kadane's algorithm, O(n) time
+"""
+dependencies = []

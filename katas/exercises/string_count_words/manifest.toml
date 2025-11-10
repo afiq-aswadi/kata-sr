@@ -1,0 +1,13 @@
+[kata]
+name = "string_count_words"
+category = "strings"
+base_difficulty = 1
+description = """
+Count the number of words in a string.
+
+Implement a function that counts words separated by spaces.
+Multiple consecutive spaces should be treated as one separator.
+
+Example: "hello world" -> 2, "  hello   world  " -> 2
+"""
+dependencies = []

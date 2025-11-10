@@ -79,6 +79,11 @@ impl ResultsScreen {
         self.remaining_due_after_submit = Some(remaining_due);
     }
 
+    /// Returns a reference to the test results.
+    pub fn get_results(&self) -> &TestResults {
+        &self.results
+    }
+
     /// Update the kata after it's been modified in the database.
     /// This ensures the flag popup shows the current flag status.
     pub fn update_kata(&mut self, kata: Kata) {
@@ -190,6 +195,31 @@ impl ResultsScreen {
     }
 
     fn render_actions(&self, frame: &mut Frame, area: Rect) {
+        // Check if this is preview mode (kata not in deck)
+        let is_preview_mode = self.kata.id == -1;
+
+        if is_preview_mode {
+            // Preview mode: no rating, just back to library
+            let status_text = if self.results.passed {
+                "Tests passed! This was a preview attempt.\nAdd this kata to your deck to track progress and schedule reviews."
+            } else {
+                "Tests failed. This was a preview attempt.\nFix your implementation and retry, or view the solution."
+            };
+
+            let actions_text = if self.results.passed {
+                "\n[Esc] Back to library"
+            } else {
+                "\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to library"
+            };
+
+            let text = format!("{}{}", status_text, actions_text);
+            let block = Paragraph::new(text)
+                .wrap(Wrap { trim: false })
+                .block(Block::default().borders(Borders::ALL).title("Preview Mode"));
+            frame.render_widget(block, area);
+            return;
+        }
+
         if !self.results.passed && !self.rating_submitted {
             let text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output    [s] Settings";
             let block = Paragraph::new(text)
@@ -263,7 +293,7 @@ impl ResultsScreen {
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
-        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), or [s] for Settings."));
+        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings."));
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",
@@ -547,11 +577,28 @@ impl ResultsScreen {
             }
         }
 
+        // Check if this is preview mode
+        let is_preview_mode = self.kata.id == -1;
+
         if !self.results.passed && !self.rating_submitted {
             return match code {
                 KeyCode::Char('r') => ResultsAction::Retry,
                 KeyCode::Char('g') => ResultsAction::GiveUp,
-                KeyCode::Esc => ResultsAction::BackToDashboard,
+                KeyCode::Esc => {
+                    if is_preview_mode {
+                        ResultsAction::BackToLibrary
+                    } else {
+                        ResultsAction::BackToDashboard
+                    }
+                }
+                _ => ResultsAction::None,
+            };
+        }
+
+        // In preview mode, if tests passed, just go back to library
+        if is_preview_mode && self.results.passed {
+            return match code {
+                KeyCode::Esc => ResultsAction::BackToLibrary,
                 _ => ResultsAction::None,
             };
         }
@@ -748,10 +795,12 @@ pub enum ResultsAction {
     Retry,
     GiveUp,
     BackToDashboard,
+    BackToLibrary,
     StartNextDue,
     ReviewAnother,
     OpenSettings,
     ToggleFlagWithReason(Option<String>),
+    SolutionViewed, // Signal that external editor was used and terminal needs clearing
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {

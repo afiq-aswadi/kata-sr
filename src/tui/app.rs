@@ -97,8 +97,9 @@ pub enum Screen {
 /// Internal enum for handling screen transitions without borrow conflicts.
 enum ScreenAction {
     StartPractice(Kata),
+    AttemptKataWithoutDeck(crate::core::kata_loader::AvailableKata),
     ReturnToDashboard,
-    SubmitRating(Kata, u8),
+    SubmitRating(Kata, u8, TestResults),
     BuryKata(Kata),
     StartNextDue,
     OpenLibrary,
@@ -487,16 +488,25 @@ impl App {
                 let action = results_screen.handle_input(code);
                 match action {
                     ResultsAction::SubmitRating(rating) => {
-                        Some(ScreenAction::SubmitRating(kata.clone(), rating))
+                        Some(ScreenAction::SubmitRating(kata.clone(), rating, results_screen.get_results().clone()))
                     }
                     ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
                     ResultsAction::GiveUp => {
-                        // Open solution in editor. When user closes editor, auto-submit Rating::Again
+                        // Open solution in editor
                         match results_screen.open_solution_in_editor(true) {
                             Ok(()) => {
-                                // Successfully viewed solution, auto-submit Rating::Again (1)
-                                Some(ScreenAction::SubmitRating(kata.clone(), 1))
+                                // Successfully viewed solution, signal terminal clear needed
+                                self.needs_terminal_clear = true;
+
+                                // Check if this is preview mode (kata not in deck)
+                                if kata.id == -1 {
+                                    // Preview mode: don't save rating, just return to library
+                                    Some(ScreenAction::OpenLibrary)
+                                } else {
+                                    // Normal mode: auto-submit Rating::Again (1)
+                                    Some(ScreenAction::SubmitRating(kata.clone(), 1, results_screen.get_results().clone()))
+                                }
                             }
                             Err(e) => {
                                 // Failed to open editor - stay on results screen
@@ -505,9 +515,15 @@ impl App {
                             }
                         }
                     }
+                    ResultsAction::SolutionViewed => {
+                        // External editor was used, signal terminal needs clearing
+                        self.needs_terminal_clear = true;
+                        None
+                    }
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    ResultsAction::BackToLibrary => Some(ScreenAction::OpenLibrary),
                     ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
                     ResultsAction::ToggleFlagWithReason(reason) => {
                         let kata_id = kata.id;
@@ -585,9 +601,13 @@ impl App {
                     let action = library.handle_input(code);
                     match action {
                         LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
+                        LibraryAction::AttemptKata(available_kata) => {
+                            Some(ScreenAction::AttemptKataWithoutDeck(available_kata))
+                        }
+                        LibraryAction::PracticeKata(kata) => Some(ScreenAction::StartPractice(kata)),
                         LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
                         LibraryAction::ToggleFlagKata(kata) => {
-                            // Toggle the problematic flag in database
+                            // Toggle the problematic flag in database (deprecated - kept for backward compatibility)
                             if kata.is_problematic {
                                 self.repo.unflag_kata(kata.id)?;
                             } else {
@@ -604,6 +624,18 @@ impl App {
                             let new_library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, self.library_hide_flagged)?;
                             self.current_screen = Screen::Library(new_library);
                             None
+                        }
+                        LibraryAction::ToggleFlagWithReason(kata, reason) => {
+                            // Toggle the problematic flag in database with reason
+                            if kata.is_problematic {
+                                self.repo.unflag_kata(kata.id)?;
+                            } else {
+                                self.repo.flag_kata(kata.id, reason)?;
+                            }
+                            // Reload dashboard for consistency (preserve hide_flagged state)
+                            self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
+                            // Reload library with fresh kata states
+                            return self.execute_action(ScreenAction::OpenLibrary);
                         }
                         LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
                         LibraryAction::ViewDetails(kata) => {
@@ -737,12 +769,45 @@ impl App {
                 let practice_screen = PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
+            ScreenAction::AttemptKataWithoutDeck(available_kata) => {
+                // Create a temporary Kata object for preview mode (id = -1)
+                let preview_kata = Kata {
+                    id: -1, // Special ID to indicate preview mode
+                    name: available_kata.name.clone(),
+                    category: available_kata.category.clone(),
+                    description: available_kata.description.clone(),
+                    tags: available_kata.tags.clone(),
+                    base_difficulty: available_kata.base_difficulty,
+                    current_difficulty: available_kata.base_difficulty as f64,
+                    parent_kata_id: None,
+                    variation_params: None,
+                    next_review_at: None,
+                    last_reviewed_at: None,
+                    current_ease_factor: 2.5,
+                    current_interval_days: 0,
+                    current_repetition_count: 0,
+                    fsrs_stability: 0.0,
+                    fsrs_difficulty: 0.0,
+                    fsrs_elapsed_days: 0,
+                    fsrs_scheduled_days: 0,
+                    fsrs_reps: 0,
+                    fsrs_lapses: 0,
+                    fsrs_state: "New".to_string(),
+                    scheduler_type: "FSRS".to_string(),
+                    is_problematic: false,
+                    problematic_notes: None,
+                    flagged_at: None,
+                    created_at: Utc::now(),
+                };
+                let practice_screen = PracticeScreen::new(preview_kata.clone(), self.config.editor.clone())?;
+                self.current_screen = Screen::Practice(preview_kata, practice_screen);
+            }
             ScreenAction::ReturnToDashboard => {
                 self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                 self.refresh_dashboard_screen()?;
             }
-            ScreenAction::SubmitRating(kata, rating) => {
-                self.handle_rating_submission(kata, rating)?;
+            ScreenAction::SubmitRating(kata, rating, results) => {
+                self.handle_rating_submission(kata, rating, results)?;
                 self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
                 if let Screen::Results(_, results_screen) = &mut self.current_screen {
                     results_screen.mark_rating_submitted(rating, self.dashboard.katas_due.len());
@@ -1321,7 +1386,8 @@ impl App {
     ///
     /// * `kata` - The kata that was reviewed
     /// * `rating` - User's quality rating (1-4 for FSRS: Again/Hard/Good/Easy)
-    fn handle_rating_submission(&mut self, kata: Kata, rating: u8) -> anyhow::Result<()> {
+    /// * `results` - Test results from the practice session
+    fn handle_rating_submission(&mut self, kata: Kata, rating: u8, results: TestResults) -> anyhow::Result<()> {
         // Convert rating to FSRS Rating enum (1-4 scale)
         let fsrs_rating = Rating::from_int(rating as i32)
             .ok_or_else(|| anyhow::anyhow!("Invalid rating: {}", rating))?;
@@ -1345,17 +1411,25 @@ impl App {
             .update_kata_after_fsrs_review(kata.id, &card, next_review, now)
             .context("Failed to update kata after FSRS review")?;
 
+        // Read the user's code attempt from the temp file
+        let template_path = std::path::PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+        let code_attempt = std::fs::read_to_string(&template_path).ok();
+
+        // Serialize test results to JSON
+        let test_results_json = serde_json::to_string(&results.results).ok();
+
         // Create session record
         let session = NewSession {
             kata_id: kata.id,
             started_at: now,
             completed_at: Some(now),
-            test_results_json: None, // could serialize TestResults if needed
-            num_passed: None,
-            num_failed: None,
-            num_skipped: None,
-            duration_ms: None,
+            test_results_json,
+            num_passed: Some(results.num_passed as i32),
+            num_failed: Some(results.num_failed as i32),
+            num_skipped: Some(results.num_skipped as i32),
+            duration_ms: Some(results.duration_ms as i64),
             quality_rating: Some(rating as i32),
+            code_attempt,
         };
 
         self.repo
