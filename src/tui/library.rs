@@ -46,6 +46,8 @@ pub enum LibraryAction {
     RemoveKata(Kata),
     /// Toggle flag on a kata as problematic
     ToggleFlagKata(Kata),
+    /// Toggle hiding flagged katas from My Deck view
+    ToggleHideFlagged,
     /// Toggle flag with a reason (from popup)
     ToggleFlagWithReason(Kata, Option<String>),
     /// View detailed information about a kata
@@ -139,6 +141,8 @@ pub struct Library {
     /// Sort direction: true = ascending, false = descending
     pub sort_ascending: bool,
 
+    // Filtering flagged katas (for My Deck tab)
+    pub hide_flagged: bool,
     // Flag popup (for My Deck tab)
     pub flag_popup_active: bool,
     pub flag_reason: String,
@@ -161,8 +165,22 @@ impl Library {
     /// # Ok::<(), anyhow::Error>(())
     /// ```
     pub fn load(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool) -> Result<Self> {
+        Self::load_with_filter(repo, default_sort, default_sort_ascending, false)
+    }
+
+    pub fn load_with_filter(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool, hide_flagged: bool) -> Result<Self> {
         let available_katas = load_available_katas()?;
-        let deck_katas = repo.get_all_katas()?;
+        let all_deck_katas = repo.get_all_katas()?;
+
+        // Build kata_ids_in_deck from ALL katas (before filtering)
+        // This ensures the "In Deck" indicator is accurate regardless of filter
+        let kata_ids_in_deck: HashSet<String> = all_deck_katas.iter().map(|k| k.name.clone()).collect();
+
+        // Apply flagged filter for display only
+        let mut deck_katas = all_deck_katas;
+        if hide_flagged {
+            deck_katas.retain(|kata| !kata.is_problematic);
+        }
 
         // Load tags for all katas in deck
         let mut deck_kata_tags = HashMap::new();
@@ -172,7 +190,6 @@ impl Library {
             }
         }
 
-        let kata_ids_in_deck = deck_katas.iter().map(|k| k.name.clone()).collect();
         let available_categories = get_unique_categories(&available_katas);
 
         let mut library = Self {
@@ -195,6 +212,7 @@ impl Library {
             category_scroll_offset: 0,
             sort_mode: SortMode::from_str(default_sort),
             sort_ascending: default_sort_ascending,
+            hide_flagged,
             flag_popup_active: false,
             flag_reason: String::new(),
         };
@@ -325,10 +343,12 @@ impl Library {
                     .iter()
                     .filter(|k| k.next_review_at.map_or(true, |t| t <= Utc::now()))
                     .count();
+                let filter_status = if self.hide_flagged { " | Hiding flagged ⚠️" } else { "" };
                 format!(
-                    "Due today: {} | Total in deck: {}",
+                    "Due today: {} | Total in deck: {}{}",
                     due_count,
-                    self.deck_katas.len()
+                    self.deck_katas.len(),
+                    filter_status
                 )
             }
             LibraryTab::AllKatas => {
@@ -694,6 +714,7 @@ impl Library {
                         Span::raw("[d] Remove  "),
                         Span::raw("[e] Edit  "),
                         Span::raw("[f] Flag  "),
+                        Span::raw("[x] Toggle hide flagged  "),
                         Span::raw("[n] Create  "),
                         Span::raw("[Esc] Back"),
                     ])
@@ -916,6 +937,12 @@ impl Library {
     }
 
     fn handle_my_deck_input(&mut self, code: KeyCode) -> LibraryAction {
+        // Handle 'x' (toggle hide flagged) even when deck is empty
+        // This prevents users from getting trapped if all katas are filtered out
+        if code == KeyCode::Char('x') {
+            return LibraryAction::ToggleHideFlagged;
+        }
+
         if self.deck_katas.is_empty() {
             return LibraryAction::None;
         }
@@ -1360,6 +1387,7 @@ mod tests {
             category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
             flag_popup_active: false,
             flag_reason: String::new(),
         };
@@ -1377,6 +1405,7 @@ mod tests {
 
         let mut library = Library {
             active_tab: LibraryTab::MyDeck,
+            hide_flagged: false,
             deck_katas: vec![
                 Kata {
                     id: 1,
@@ -1504,6 +1533,7 @@ mod tests {
             category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
             flag_popup_active: false,
             flag_reason: String::new(),
         };
@@ -1546,6 +1576,7 @@ mod tests {
             category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
             flag_popup_active: false,
             flag_reason: String::new(),
         };
@@ -1578,6 +1609,7 @@ mod tests {
             category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
             flag_popup_active: false,
             flag_reason: String::new(),
         };
@@ -1610,6 +1642,7 @@ mod tests {
             category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
             flag_popup_active: false,
             flag_reason: String::new(),
         };
@@ -1640,6 +1673,7 @@ mod tests {
             category_scroll_offset: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
             flag_popup_active: false,
             flag_reason: String::new(),
         };
