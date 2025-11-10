@@ -29,8 +29,8 @@ pub enum StartupAction {
 }
 
 impl StartupScreen {
-    pub fn load(repo: &KataRepository) -> anyhow::Result<Self> {
-        let heatmap_calendar = HeatmapCalendar::new(repo)?;
+    pub fn load(repo: &KataRepository, heatmap_days: usize) -> anyhow::Result<Self> {
+        let heatmap_calendar = HeatmapCalendar::new(repo, heatmap_days)?;
 
         Ok(Self {
             selected_index: 0,
