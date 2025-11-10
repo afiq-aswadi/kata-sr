@@ -80,6 +80,15 @@ impl SortMode {
             Self::DateAdded => "Date Added",
         }
     }
+
+    fn from_str(s: &str) -> Self {
+        match s {
+            "Difficulty" => Self::Difficulty,
+            "Category" => Self::Category,
+            "Recent" | "Date Added" => Self::DateAdded,
+            _ => Self::Name, // Default to Name
+        }
+    }
 }
 
 /// Library screen state for browsing available katas.
@@ -137,10 +146,10 @@ impl Library {
     /// # use kata_sr::db::repo::KataRepository;
     /// # use kata_sr::tui::library::Library;
     /// let repo = KataRepository::new("kata.db")?;
-    /// let library = Library::load(&repo)?;
+    /// let library = Library::load(&repo, "Name", true)?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn load(repo: &KataRepository) -> Result<Self> {
+    pub fn load(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool) -> Result<Self> {
         let available_katas = load_available_katas()?;
         let deck_katas = repo.get_all_katas()?;
 
@@ -172,8 +181,8 @@ impl Library {
             available_categories,
             selected_categories: Vec::new(),
             category_selected_index: 0,
-            sort_mode: SortMode::Name,
-            sort_ascending: true,
+            sort_mode: SortMode::from_str(default_sort),
+            sort_ascending: default_sort_ascending,
         };
 
         library.apply_filters();
@@ -519,10 +528,19 @@ impl Library {
                     Style::default()
                 };
 
+                // Display all tags if available, otherwise fall back to category
+                let tags_display = if !kata.tags.is_empty() {
+                    kata.tags.join(", ")
+                } else if !kata.category.is_empty() {
+                    kata.category.clone()
+                } else {
+                    "—".to_string()
+                };
+
                 Row::new(vec![
                     Cell::from(prefix),
                     Cell::from(kata.name.clone()),
-                    Cell::from(kata.category.clone()),
+                    Cell::from(tags_display),
                     Cell::from(difficulty_str),
                     Cell::from(in_deck_marker).style(in_deck_style),
                 ])
@@ -948,9 +966,21 @@ impl Library {
             filtered = scored.into_iter().map(|(kata, _)| kata).collect();
         }
 
-        // Apply category filter
+        // Apply category filter - check if any of the kata's tags match any of the selected categories
         if !self.selected_categories.is_empty() {
-            filtered.retain(|kata| self.selected_categories.contains(&kata.category));
+            filtered.retain(|kata| {
+                // Check if the primary category matches
+                if self.selected_categories.contains(&kata.category) {
+                    return true;
+                }
+                // Check if any of the kata's tags match
+                for tag in &kata.tags {
+                    if self.selected_categories.contains(tag) {
+                        return true;
+                    }
+                }
+                false
+            });
         }
 
         // Apply sorting
