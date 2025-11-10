@@ -182,10 +182,27 @@ impl ResultsScreen {
     }
 
     fn render_actions(&self, frame: &mut Frame, area: Rect) {
-        if !self.results.passed {
+        if !self.results.passed && !self.rating_submitted {
             let text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output";
             let block = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL).title("Next steps"));
+            frame.render_widget(block, area);
+            return;
+        }
+
+        if !self.results.passed && self.rating_submitted {
+            let remaining_msg = match self.remaining_due_after_submit {
+                Some(0) => "No more katas due today.".to_string(),
+                Some(count) => format!("{} kata(s) still due.", count),
+                None => "Loading queue...".to_string(),
+            };
+            let lines = vec![
+                "Gave up and viewed solution. Rating saved: Again".to_string(),
+                remaining_msg,
+                "[Enter/d] Dashboard   [n] Next due   [r] Review picker".to_string(),
+            ];
+            let block = Paragraph::new(lines.join("\n"))
+                .block(Block::default().borders(Borders::ALL).title("What next?"));
             frame.render_widget(block, area);
             return;
         }
@@ -396,7 +413,7 @@ impl ResultsScreen {
             }
         }
 
-        if !self.results.passed {
+        if !self.results.passed && !self.rating_submitted {
             return match code {
                 KeyCode::Char('r') => ResultsAction::Retry,
                 KeyCode::Char('g') => ResultsAction::GiveUp,
