@@ -866,6 +866,23 @@ impl KataRepository {
         Ok(())
     }
 
+    /// Buries a kata by postponing it to tomorrow without affecting FSRS state.
+    ///
+    /// Sets next_review_at to tomorrow (24 hours from now). This allows users
+    /// to defer a kata without impacting the spaced repetition scheduling.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to bury
+    pub fn bury_kata(&self, kata_id: i64) -> Result<()> {
+        let tomorrow = Utc::now() + chrono::Duration::days(1);
+        self.conn.execute(
+            "UPDATE katas SET next_review_at = ?1 WHERE id = ?2",
+            params![tomorrow.timestamp(), kata_id],
+        )?;
+        Ok(())
+    }
+
     /// Flags a kata as problematic with optional notes.
     ///
     /// Marks a kata as having bugs, broken tests, or other issues that need fixing.

@@ -97,6 +97,7 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("4", "Rate as Very Easy"),
             Keybinding::new("h / ←", "Move to harder rating option"),
             Keybinding::new("l / →", "Move to easier rating option"),
+            Keybinding::new("b", "Bury card (postpone to tomorrow without rating)"),
             Keybinding::new("Tab", "Toggle focus between rating panel and test list"),
             Keybinding::new("o", "Open/close detailed output for selected test"),
             Keybinding::new("f", "Flag/unflag kata as problematic (toggle)"),
@@ -177,7 +178,7 @@ pub fn render_help_screen(frame: &mut Frame) {
             Constraint::Length(4),  // Global
             Constraint::Length(9),  // Dashboard (added one for 'f')
             Constraint::Length(6),  // Practice
-            Constraint::Length(10), // Results
+            Constraint::Length(11), // Results (added one for 'b' bury)
             Constraint::Length(11), // Library (added some for new keybindings)
             Constraint::Min(1),     // Spacer
             Constraint::Length(2),  // Footer
