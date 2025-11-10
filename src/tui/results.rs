@@ -328,15 +328,17 @@ impl ResultsScreen {
             .split(area);
 
         // Kata info section
+        let description_preview = if self.kata.description.chars().count() > 80 {
+            let truncated: String = self.kata.description.chars().take(80).collect();
+            format!("{}...", truncated)
+        } else {
+            self.kata.description.clone()
+        };
         let kata_info = format!(
             "Kata: {}\nCategory: {}\nDescription: {}",
             self.kata.name,
             self.kata.category,
-            if self.kata.description.len() > 80 {
-                format!("{}...", &self.kata.description[..80])
-            } else {
-                self.kata.description.clone()
-            }
+            description_preview
         );
         let info_widget = Paragraph::new(kata_info)
             .wrap(Wrap { trim: false })
