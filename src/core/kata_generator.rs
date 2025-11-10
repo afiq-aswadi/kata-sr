@@ -284,6 +284,60 @@ description = """
     Ok(())
 }
 
+/// Updates a dependency reference in a kata's manifest.toml file.
+///
+/// This function reads a manifest, finds any references to `old_dep_slug` in the
+/// dependencies array, and replaces them with `new_dep_slug`. This is necessary
+/// when renaming a kata to ensure dependent katas don't have stale slug references.
+///
+/// # Arguments
+///
+/// * `kata_dir` - Path to the kata directory whose manifest should be updated
+/// * `old_dep_slug` - Old slug to find and replace
+/// * `new_dep_slug` - New slug to use instead
+///
+/// # Returns
+///
+/// Ok(()) on success, error if manifest read/write fails or TOML parsing fails.
+pub fn update_dependency_in_manifest(
+    kata_dir: &Path,
+    old_dep_slug: &str,
+    new_dep_slug: &str,
+) -> Result<()> {
+    let manifest_path = kata_dir.join("manifest.toml");
+
+    // Read manifest
+    let content = fs::read_to_string(&manifest_path)
+        .with_context(|| format!("Failed to read manifest at {:?}", manifest_path))?;
+
+    // Parse TOML
+    let mut manifest: toml::Table = toml::from_str(&content)
+        .with_context(|| format!("Failed to parse manifest at {:?}", manifest_path))?;
+
+    // Check if there's a kata section with dependencies
+    if let Some(toml::Value::Table(kata_table)) = manifest.get_mut("kata") {
+        if let Some(toml::Value::Array(deps)) = kata_table.get_mut("dependencies") {
+            // Replace old_dep_slug with new_dep_slug in dependencies array
+            for dep in deps.iter_mut() {
+                if let toml::Value::String(dep_str) = dep {
+                    if dep_str == old_dep_slug {
+                        *dep_str = new_dep_slug.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    // Write back to file
+    let updated_content = toml::to_string_pretty(&manifest)
+        .context("Failed to serialize updated manifest")?;
+
+    fs::write(&manifest_path, updated_content)
+        .with_context(|| format!("Failed to write updated manifest at {:?}", manifest_path))?;
+
+    Ok(())
+}
+
 /// Renames a kata directory atomically.
 ///
 /// This function renames a kata directory and verifies the operation succeeded.

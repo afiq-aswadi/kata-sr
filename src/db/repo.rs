@@ -551,6 +551,31 @@ impl KataRepository {
         Ok(deps)
     }
 
+    /// Gets all katas that depend on the given kata (reverse dependency lookup).
+    ///
+    /// This is the inverse of get_kata_dependencies: instead of finding what a kata
+    /// depends on, it finds what katas depend on this kata. This is useful when
+    /// renaming a kata to update all dependent manifests.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata_id` - ID of the kata to find dependents for
+    ///
+    /// # Returns
+    ///
+    /// Vector of kata IDs that depend on this kata
+    pub fn get_dependent_katas(&self, kata_id: i64) -> Result<Vec<i64>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT kata_id FROM kata_dependencies WHERE depends_on_kata_id = ?1")?;
+
+        let dependents = stmt
+            .query_map(params![kata_id], |row| row.get(0))?
+            .collect::<Result<Vec<i64>, _>>()?;
+
+        Ok(dependents)
+    }
+
     pub fn replace_dependencies(&self, kata_id: i64, dependency_ids: &[i64]) -> Result<()> {
         let tx = self.conn.unchecked_transaction()?;
         tx.execute(

@@ -791,7 +791,7 @@ impl App {
                 form_data,
                 new_slug,
             } => {
-                use crate::core::kata_generator::{rename_kata_directory, update_manifest};
+                use crate::core::kata_generator::{rename_kata_directory, update_dependency_in_manifest, update_manifest};
 
                 let exercises_dir = std::path::Path::new("katas/exercises");
                 let name_changed = original_slug != new_slug;
@@ -851,6 +851,54 @@ impl App {
                                         let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                         eprintln!("Failed to update manifest: {}", e);
                                         return Ok(());
+                                    }
+
+                                    // 5. Update all dependent kata manifests to use new slug
+                                    let dependent_kata_ids = self.repo.get_dependent_katas(kata_id)?;
+                                    for dep_kata_id in &dependent_kata_ids {
+                                        if let Ok(Some(dep_kata)) = self.repo.get_kata_by_id(*dep_kata_id) {
+                                            let dep_kata_dir = exercises_dir.join(&dep_kata.name);
+                                            if let Err(e) = update_dependency_in_manifest(
+                                                &dep_kata_dir,
+                                                &original_slug,
+                                                &new_slug
+                                            ) {
+                                                // Rollback: rename directory back, revert DB, and rollback any
+                                                // already-updated dependent manifests
+                                                eprintln!("Failed to update dependent manifest for '{}': {}", dep_kata.name, e);
+
+                                                // Try to rollback dependent manifests we already updated
+                                                for rollback_id in &dependent_kata_ids {
+                                                    if rollback_id == dep_kata_id {
+                                                        break; // Don't rollback the one that failed
+                                                    }
+                                                    if let Ok(Some(rb_kata)) = self.repo.get_kata_by_id(*rollback_id) {
+                                                        let rb_kata_dir = exercises_dir.join(&rb_kata.name);
+                                                        let _ = update_dependency_in_manifest(
+                                                            &rb_kata_dir,
+                                                            &new_slug,
+                                                            &original_slug
+                                                        );
+                                                    }
+                                                }
+
+                                                // Rollback renamed kata
+                                                let _ = rename_kata_directory(
+                                                    exercises_dir,
+                                                    &new_slug,
+                                                    &original_slug,
+                                                );
+                                                let _ = self.repo.update_kata_full_metadata(
+                                                    kata_id,
+                                                    &original_kata.name,
+                                                    &original_kata.description,
+                                                    &original_kata.category,
+                                                    original_kata.base_difficulty,
+                                                );
+                                                let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
+                                                return Ok(());
+                                            }
+                                        }
                                     }
 
                                     // Success! Return to library
