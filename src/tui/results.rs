@@ -388,7 +388,9 @@ impl ResultsScreen {
                 }
                 KeyCode::Char(c) => {
                     // Add character to reason
-                    self.flag_reason.insert(self.flag_cursor_position, c);
+                    // Convert character position to byte index
+                    let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                    self.flag_reason.insert(byte_idx, c);
                     self.flag_cursor_position += 1;
                     return ResultsAction::None;
                 }
@@ -396,14 +398,17 @@ impl ResultsScreen {
                     // Remove character before cursor
                     if self.flag_cursor_position > 0 {
                         self.flag_cursor_position -= 1;
-                        self.flag_reason.remove(self.flag_cursor_position);
+                        let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                        self.flag_reason.remove(byte_idx);
                     }
                     return ResultsAction::None;
                 }
                 KeyCode::Delete => {
                     // Remove character at cursor
-                    if self.flag_cursor_position < self.flag_reason.len() {
-                        self.flag_reason.remove(self.flag_cursor_position);
+                    let char_count = self.flag_reason.chars().count();
+                    if self.flag_cursor_position < char_count {
+                        let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                        self.flag_reason.remove(byte_idx);
                     }
                     return ResultsAction::None;
                 }
@@ -416,7 +421,8 @@ impl ResultsScreen {
                 }
                 KeyCode::Right => {
                     // Move cursor right
-                    if self.flag_cursor_position < self.flag_reason.len() {
+                    let char_count = self.flag_reason.chars().count();
+                    if self.flag_cursor_position < char_count {
                         self.flag_cursor_position += 1;
                     }
                     return ResultsAction::None;
@@ -428,7 +434,7 @@ impl ResultsScreen {
                 }
                 KeyCode::End => {
                     // Move cursor to end
-                    self.flag_cursor_position = self.flag_reason.len();
+                    self.flag_cursor_position = self.flag_reason.chars().count();
                     return ResultsAction::None;
                 }
                 _ => {
@@ -582,6 +588,15 @@ impl ResultsScreen {
         let next = (current + delta).clamp(0, max_index);
         self.selected_test = next as usize;
         self.test_state.select(Some(self.selected_test));
+    }
+
+    /// Convert a character position (0-indexed) to a byte index for use with String operations.
+    /// This ensures we always land on valid UTF-8 character boundaries.
+    fn char_pos_to_byte_idx(&self, s: &str, char_pos: usize) -> usize {
+        s.char_indices()
+            .nth(char_pos)
+            .map(|(byte_idx, _)| byte_idx)
+            .unwrap_or(s.len())
     }
 }
 
