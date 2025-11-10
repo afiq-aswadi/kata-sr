@@ -483,6 +483,11 @@ impl App {
                     }
                     ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
+                    ResultsAction::GiveUp => {
+                        // Load and show solution. When user closes it (Esc), it auto-submits Rating::Again
+                        results_screen.load_and_show_solution(true);
+                        None
+                    }
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
