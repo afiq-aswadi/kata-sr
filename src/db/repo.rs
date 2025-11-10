@@ -1050,6 +1050,28 @@ impl KataRepository {
         Ok(())
     }
 
+    /// Deletes a specific session by ID.
+    ///
+    /// Returns Ok(()) if the session was deleted or didn't exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `session_id` - The ID of the session to delete
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// repo.delete_session(42)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn delete_session(&self, session_id: i64) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM sessions WHERE id = ?1", [session_id])?;
+        Ok(())
+    }
+
     /// Deletes all daily statistics records.
     pub fn clear_daily_stats(&self) -> Result<()> {
         self.conn.execute("DELETE FROM daily_stats", [])?;
