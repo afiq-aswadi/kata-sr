@@ -1,3 +1,4 @@
+use crate::config::EditorConfig;
 use crate::db::repo::Kata;
 use crate::runner::python_runner::TestResults;
 use crate::tui::app::AppEvent;
@@ -17,6 +18,7 @@ pub struct PracticeScreen {
     kata: Kata,
     template_path: PathBuf,
     status: PracticeStatus,
+    editor_config: EditorConfig,
 }
 
 enum PracticeStatus {
@@ -26,7 +28,7 @@ enum PracticeStatus {
 }
 
 impl PracticeScreen {
-    pub fn new(kata: Kata) -> anyhow::Result<Self> {
+    pub fn new(kata: Kata, editor_config: EditorConfig) -> anyhow::Result<Self> {
         let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
 
         let katas_root = std::env::var("KATA_SR_KATAS_DIR")
@@ -45,6 +47,7 @@ impl PracticeScreen {
             kata,
             template_path,
             status: PracticeStatus::ShowingDescription,
+            editor_config,
         })
     }
 
@@ -94,7 +97,7 @@ impl PracticeScreen {
     /// let practice_screen = PracticeScreen::new_retry(kata)?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn new_retry(kata: Kata) -> anyhow::Result<Self> {
+    pub fn new_retry(kata: Kata, editor_config: EditorConfig) -> anyhow::Result<Self> {
         let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
 
         // verify the file exists (it should, since we're retrying)
@@ -109,6 +112,7 @@ impl PracticeScreen {
             kata,
             template_path,
             status: PracticeStatus::ShowingDescription,
+            editor_config,
         })
     }
 
@@ -180,8 +184,8 @@ impl PracticeScreen {
         self.status = PracticeStatus::EditingInProgress;
 
         let result = (|| -> anyhow::Result<()> {
-            // Determine which editor to use (respects EDITOR env var)
-            let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
+            // Use editor from config
+            let editor = &self.editor_config.command;
 
             // Exit alternate screen and disable raw mode to hand control to editor
             let mut stdout = std::io::stdout();
@@ -197,7 +201,10 @@ impl PracticeScreen {
                 .context("failed to disable raw mode before launching editor")?;
 
             // Launch editor and wait for it to complete
-            let status_result = Command::new(&editor).arg(&self.template_path).status();
+            let mut cmd = Command::new(editor);
+            cmd.args(&self.editor_config.args);
+            cmd.arg(&self.template_path);
+            let status_result = cmd.status();
 
             // Re-enable raw mode and re-enter alternate screen to restore TUI
             crossterm::terminal::enable_raw_mode()

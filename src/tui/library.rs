@@ -80,6 +80,15 @@ impl SortMode {
             Self::DateAdded => "Date Added",
         }
     }
+
+    fn from_str(s: &str) -> Self {
+        match s {
+            "Difficulty" => Self::Difficulty,
+            "Category" => Self::Category,
+            "Recent" | "Date Added" => Self::DateAdded,
+            _ => Self::Name, // Default to Name
+        }
+    }
 }
 
 /// Library screen state for browsing available katas.
@@ -140,7 +149,7 @@ impl Library {
     /// let library = Library::load(&repo)?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn load(repo: &KataRepository) -> Result<Self> {
+    pub fn load(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool) -> Result<Self> {
         let available_katas = load_available_katas()?;
         let deck_katas = repo.get_all_katas()?;
 
@@ -172,8 +181,8 @@ impl Library {
             available_categories,
             selected_categories: Vec::new(),
             category_selected_index: 0,
-            sort_mode: SortMode::Name,
-            sort_ascending: true,
+            sort_mode: SortMode::from_str(default_sort),
+            sort_ascending: default_sort_ascending,
         };
 
         library.apply_filters();

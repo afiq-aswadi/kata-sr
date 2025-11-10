@@ -499,9 +499,30 @@ impl App {
                 let action = settings_screen.handle_input(code);
                 match action {
                     SettingsAction::Cancel => Some(ScreenAction::CloseSettings),
-                    SettingsAction::Save => {
-                        // TODO: implement save
-                        Some(ScreenAction::CloseSettings)
+                    SettingsAction::Save(config) => {
+                        // Save config to file
+                        match config.save() {
+                            Ok(_) => {
+                                // Update app config
+                                self.config = config;
+                                // Show success popup
+                                self.popup_message = Some(PopupMessage {
+                                    title: "Settings Saved".to_string(),
+                                    message: "Settings have been saved to ~/.config/kata-sr/config.toml".to_string(),
+                                    style: PopupStyle::Success,
+                                });
+                                None
+                            }
+                            Err(e) => {
+                                // Show error popup
+                                self.popup_message = Some(PopupMessage {
+                                    title: "Error Saving Settings".to_string(),
+                                    message: format!("Failed to save settings:\n\n{}", e),
+                                    style: PopupStyle::Error,
+                                });
+                                None
+                            }
+                        }
                     }
                     SettingsAction::None => None,
                 }
@@ -632,7 +653,7 @@ impl App {
     fn execute_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
         match action {
             ScreenAction::StartPractice(kata) => {
-                let practice_screen = PracticeScreen::new(kata.clone())?;
+                let practice_screen = PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::ReturnToDashboard => {
@@ -656,14 +677,14 @@ impl App {
                     self.dashboard = Dashboard::load(&self.repo)?;
                 }
                 if let Some(next_kata) = self.dashboard.katas_due.first().cloned() {
-                    let practice_screen = PracticeScreen::new(next_kata.clone())?;
+                    let practice_screen = PracticeScreen::new(next_kata.clone(), self.config.editor.clone())?;
                     self.current_screen = Screen::Practice(next_kata, practice_screen);
                 } else {
                     self.refresh_dashboard_screen()?;
                 }
             }
             ScreenAction::OpenLibrary => {
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::AddKataFromLibrary(kata_name) => {
@@ -692,7 +713,7 @@ impl App {
                         }
                         Screen::Details(_) => {
                             // navigate back to library with updated state
-                            let library = Library::load(&self.repo)?;
+                            let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                             self.current_screen = Screen::Library(library);
                             // Force terminal clear to prevent display corruption
                             self.needs_terminal_clear = true;
@@ -712,11 +733,11 @@ impl App {
                 self.current_screen = Screen::Details(details);
             }
             ScreenAction::BackFromDetails => {
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::RetryKata(kata) => {
-                let practice_screen = PracticeScreen::new_retry(kata.clone())?;
+                let practice_screen = PracticeScreen::new_retry(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::RemoveKataFromDeck(kata) => {
@@ -755,7 +776,7 @@ impl App {
                 match generate_kata_files(&form_data, exercises_dir) {
                     Ok(created_slug) => {
                         // Success! Return to library and show success popup
-                        let library = Library::load(&self.repo)?;
+                        let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                         self.current_screen = Screen::Library(library);
 
                         self.popup_message = Some(PopupMessage {
@@ -769,7 +790,7 @@ impl App {
                     }
                     Err(e) => {
                         // Error! Return to library and show error popup
-                        let library = Library::load(&self.repo)?;
+                        let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                         self.current_screen = Screen::Library(library);
 
                         self.popup_message = Some(PopupMessage {
@@ -782,7 +803,7 @@ impl App {
             }
             ScreenAction::CancelCreateKata => {
                 // Return to library
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenEditKata(kata_id) => {
@@ -928,7 +949,7 @@ impl App {
                                     }
 
                                     // Success! Return to library
-                                    let library = Library::load(&self.repo)?;
+                                    let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                                     self.current_screen = Screen::Library(library);
                                     eprintln!("Kata '{}' updated successfully!", new_slug);
                                 }
@@ -991,7 +1012,7 @@ impl App {
                             }
 
                             // Success! Return to library
-                            let library = Library::load(&self.repo)?;
+                            let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                             self.current_screen = Screen::Library(library);
                             eprintln!("Kata '{}' updated successfully!", original_slug);
                         }
@@ -1059,7 +1080,7 @@ impl App {
             }
             ScreenAction::CancelEditKata => {
                 // Return to library
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenSettings => {
