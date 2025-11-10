@@ -57,6 +57,7 @@ fn test_end_to_end_kata_lifecycle() {
         num_skipped: Some(0),
         duration_ms: Some(3000),
         quality_rating: Some(3), // FSRS Good = 3
+        code_attempt: None,
     };
 
     let session_id = repo.create_session(&session).unwrap();
@@ -120,6 +121,7 @@ fn test_fsrs_progression_through_multiple_reviews() {
             num_skipped: None,
             duration_ms: Some(1000),
             quality_rating: Some(*rating as i32),
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -222,6 +224,7 @@ fn test_dependency_graph_with_unlocking() {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
     }
@@ -378,6 +381,7 @@ fn test_data_persistence_across_connections() {
             num_skipped: Some(0),
             duration_ms: Some(2000),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         };
 
         repo.create_session(&session).unwrap();
@@ -423,6 +427,7 @@ fn test_adaptive_difficulty_workflow() {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(3),
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
     }
@@ -445,6 +450,7 @@ fn test_adaptive_difficulty_workflow() {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(1), // Again (FSRS)
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
     }
@@ -566,6 +572,7 @@ fn test_analytics_daily_stats_accuracy() {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS) // Good
+            code_attempt: None,
         })
         .unwrap();
     }
@@ -581,6 +588,7 @@ fn test_analytics_daily_stats_accuracy() {
         num_skipped: Some(0),
         duration_ms: Some(100),
         quality_rating: Some(1), // Again (FSRS)
+        code_attempt: None,
     })
     .unwrap();
 
@@ -632,6 +640,7 @@ fn test_analytics_streak_calculation() {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })
         .unwrap();
     }
@@ -676,6 +685,7 @@ fn test_analytics_streak_with_gap() {
         num_skipped: Some(0),
         duration_ms: Some(100),
         quality_rating: Some(2),
+        code_attempt: None,
     })
     .unwrap();
 
@@ -691,6 +701,7 @@ fn test_analytics_streak_with_gap() {
         num_skipped: Some(0),
         duration_ms: Some(100),
         quality_rating: Some(2),
+        code_attempt: None,
     })
     .unwrap();
 
@@ -728,6 +739,7 @@ fn test_analytics_daily_stats_persistence() {
         num_skipped: Some(0),
         duration_ms: Some(100),
         quality_rating: Some(3), // Good (FSRS)
+        code_attempt: None,
     })
     .unwrap();
 
@@ -780,6 +792,7 @@ fn test_analytics_success_rate_calculation() {
             num_skipped: None,
             duration_ms: Some(100),
             quality_rating: Some(*rating),
+            code_attempt: None,
         })
         .unwrap();
     }
@@ -831,6 +844,7 @@ fn test_analytics_category_breakdown() {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })
         .unwrap();
     }
@@ -846,6 +860,7 @@ fn test_analytics_category_breakdown() {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })
         .unwrap();
     }
@@ -860,6 +875,7 @@ fn test_analytics_category_breakdown() {
         num_skipped: Some(0),
         duration_ms: Some(100),
         quality_rating: Some(2),
+        code_attempt: None,
     })
     .unwrap();
 

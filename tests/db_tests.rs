@@ -254,6 +254,7 @@ fn test_create_session() {
         num_skipped: Some(0),
         duration_ms: Some(2345),
         quality_rating: Some(3), // Good (FSRS)
+        code_attempt: None,
     };
 
     let session_id = repo.create_session(&session).unwrap();
@@ -285,6 +286,7 @@ fn test_get_recent_sessions() {
             num_skipped: Some(0),
             duration_ms: Some(1000),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
     }
@@ -320,6 +322,7 @@ fn test_get_success_counts() {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(rating),
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
     }
@@ -373,6 +376,7 @@ fn test_success_counts_multiple_katas() {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })
         .unwrap();
     }
@@ -389,6 +393,7 @@ fn test_success_counts_multiple_katas() {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(3), // Good (FSRS) // Hard (FSRS)
+            code_attempt: None,
         })
         .unwrap();
     }
@@ -590,6 +595,7 @@ fn test_quality_rating_bounds_in_constraint() {
         num_skipped: None,
         duration_ms: None,
         quality_rating: Some(0),
+        code_attempt: None,
     };
 
     let result = repo.create_session(&invalid_session_low);
@@ -606,6 +612,7 @@ fn test_quality_rating_bounds_in_constraint() {
         num_skipped: None,
         duration_ms: None,
         quality_rating: Some(5),
+        code_attempt: None,
     };
 
     let result = repo.create_session(&invalid_session_high);

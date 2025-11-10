@@ -144,6 +144,7 @@ fn test_dashboard_shows_stats_after_reviews() {
             num_skipped: Some(0),
             duration_ms: Some(1000),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
     }
@@ -449,6 +450,7 @@ fn test_end_to_end_kata_workflow() {
             num_skipped: Some(results.num_skipped),
             duration_ms: Some(results.duration_ms),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
