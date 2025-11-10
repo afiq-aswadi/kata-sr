@@ -1,0 +1,13 @@
+[kata]
+name = "rotate_array"
+category = "arrays"
+base_difficulty = 1
+description = """
+Rotate an array to the right by k positions in-place.
+
+Given an array, rotate it to the right by k steps, where k is non-negative.
+Modify the array in-place with O(1) extra space.
+
+Key concepts: array manipulation, in-place algorithms, modular arithmetic
+"""
+dependencies = []
