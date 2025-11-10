@@ -484,9 +484,12 @@ impl App {
                     ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
                     ResultsAction::GiveUp => {
-                        // Load and show solution. When user closes it (Esc), it auto-submits Rating::Again
-                        results_screen.load_and_show_solution(true);
-                        None
+                        // Open solution in editor. When user closes editor, auto-submit Rating::Again
+                        if let Err(e) = results_screen.open_solution_in_editor(true) {
+                            eprintln!("Failed to open solution: {}", e);
+                        }
+                        // After viewing solution, auto-submit Rating::Again (1)
+                        Some(ScreenAction::SubmitRating(kata.clone(), 1))
                     }
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
