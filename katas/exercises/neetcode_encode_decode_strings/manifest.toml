@@ -1,0 +1,23 @@
+[kata]
+name = "neetcode_encode_decode_strings"
+category = "exercises"
+base_difficulty = 2
+description = """Encode and Decode Strings (LeetCode 271)
+
+Design an algorithm to encode a list of strings to a single string.
+The encoded string is then decoded back to the original list of strings.
+
+Example 1:
+Input: ["hello","world"]
+Output: ["hello","world"]
+
+Example 2:
+Input: [""]
+Output: [""]
+
+Constraints:
+- 0 <= strs.length <= 200
+- 0 <= strs[i].length <= 200
+- strs[i] contains any possible characters
+"""
+dependencies = []
