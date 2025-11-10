@@ -79,7 +79,7 @@ fn test_dashboard_loads_with_katas() {
     let repo = setup_repo_with_katas();
 
     // all katas should be due (never reviewed)
-    let dashboard = Dashboard::load(&repo).unwrap();
+    let dashboard = Dashboard::load(&repo, 90).unwrap();
 
     assert_eq!(dashboard.katas_due.len(), 3);
     assert_eq!(dashboard.stats.streak_days, 0);
@@ -114,7 +114,7 @@ fn test_dashboard_filters_katas_by_due_date() {
         .unwrap();
 
     // dashboard should only show 2 katas due
-    let dashboard = Dashboard::load(&repo).unwrap();
+    let dashboard = Dashboard::load(&repo, 90).unwrap();
     assert_eq!(dashboard.katas_due.len(), 2);
 
     // the reviewed kata should not be in due list
@@ -148,7 +148,7 @@ fn test_dashboard_shows_stats_after_reviews() {
         repo.create_session(&session).unwrap();
     }
 
-    let dashboard = Dashboard::load(&repo).unwrap();
+    let dashboard = Dashboard::load(&repo, 90).unwrap();
 
     assert_eq!(dashboard.stats.streak_days, 1);
     assert_eq!(dashboard.stats.total_reviews_today, 3);
@@ -412,7 +412,7 @@ fn test_end_to_end_kata_workflow() {
     let repo = setup_repo_with_katas();
 
     // load dashboard
-    let dashboard = Dashboard::load(&repo).unwrap();
+    let dashboard = Dashboard::load(&repo, 90).unwrap();
     assert_eq!(dashboard.katas_due.len(), 3);
 
     // select first kata
@@ -461,7 +461,7 @@ fn test_end_to_end_kata_workflow() {
             .unwrap();
 
         // verify kata is no longer due
-        let dashboard = Dashboard::load(&repo).unwrap();
+        let dashboard = Dashboard::load(&repo, 90).unwrap();
         assert_eq!(dashboard.katas_due.len(), 2);
         assert_eq!(dashboard.stats.total_reviews_today, 1);
 

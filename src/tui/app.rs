@@ -155,6 +155,8 @@ pub struct App {
     needs_terminal_clear: bool,
     /// Popup message to display to the user
     popup_message: Option<PopupMessage>,
+    /// Screen to restore when closing settings
+    previous_screen_before_settings: Option<Box<Screen>>,
 }
 
 impl App {
@@ -180,8 +182,8 @@ impl App {
     /// ```
     pub fn new(repo: KataRepository, config: AppConfig) -> anyhow::Result<Self> {
         let (tx, rx) = channel();
-        let dashboard = Dashboard::load(&repo)?;
-        let startup_screen = StartupScreen::load(&repo)?;
+        let dashboard = Dashboard::load(&repo, config.display.heatmap_days)?;
+        let startup_screen = StartupScreen::load(&repo, config.display.heatmap_days)?;
 
         let app = Self {
             current_screen: Screen::Startup(startup_screen),
@@ -193,6 +195,7 @@ impl App {
             showing_help: false,
             needs_terminal_clear: false,
             popup_message: None,
+            previous_screen_before_settings: None,
         };
 
         Ok(app)
@@ -421,7 +424,7 @@ impl App {
                             self.repo.flag_kata(kata.id, None)?;
                         }
                         // Reload dashboard to get fresh kata state
-                        self.dashboard = Dashboard::load(&self.repo)?;
+                        self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                         None
                     }
                     DashboardAction::None => None,
@@ -450,7 +453,7 @@ impl App {
                     }
 
                     // Also reload dashboard for consistency
-                    self.dashboard = Dashboard::load(&self.repo)?;
+                    self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                     return Ok(());
                 }
 
@@ -493,6 +496,7 @@ impl App {
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
+                    ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
                     ResultsAction::ToggleFlagWithReason(reason) => {
                         let kata_id = kata.id;
                         let was_problematic = kata.is_problematic;
@@ -516,7 +520,7 @@ impl App {
                         }
 
                         // Also reload dashboard for consistency
-                        self.dashboard = Dashboard::load(&self.repo)?;
+                        self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                         None
                     }
                     ResultsAction::None => None,
@@ -578,7 +582,7 @@ impl App {
                                 self.repo.flag_kata(kata.id, None)?;
                             }
                             // Reload dashboard for consistency
-                            self.dashboard = Dashboard::load(&self.repo)?;
+                            self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                             // Reload library with fresh kata states
                             return self.execute_action(ScreenAction::OpenLibrary);
                         }
@@ -696,7 +700,7 @@ impl App {
         match &self.current_screen {
             Screen::Dashboard | Screen::Done(_) => {
                 // Screen navigated to dashboard, redirect to startup instead
-                self.current_screen = Screen::Startup(StartupScreen::load(&self.repo)?);
+                self.current_screen = Screen::Startup(StartupScreen::load(&self.repo, self.config.display.heatmap_days)?);
             }
             _ => {
                 // Screen handled Esc internally (modal closed, rating submitted, etc.)
@@ -715,24 +719,24 @@ impl App {
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::ReturnToDashboard => {
-                self.dashboard = Dashboard::load(&self.repo)?;
+                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                 self.refresh_dashboard_screen()?;
             }
             ScreenAction::SubmitRating(kata, rating) => {
                 self.handle_rating_submission(kata, rating)?;
-                self.dashboard = Dashboard::load(&self.repo)?;
+                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                 if let Screen::Results(_, results_screen) = &mut self.current_screen {
                     results_screen.mark_rating_submitted(rating, self.dashboard.katas_due.len());
                 }
             }
             ScreenAction::BuryKata(kata) => {
                 self.handle_bury_kata(&kata)?;
-                self.dashboard = Dashboard::load(&self.repo)?;
+                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                 self.refresh_dashboard_screen()?;
             }
             ScreenAction::StartNextDue => {
                 if self.dashboard.katas_due.is_empty() {
-                    self.dashboard = Dashboard::load(&self.repo)?;
+                    self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                 }
                 if let Some(next_kata) = self.dashboard.katas_due.first().cloned() {
                     let practice_screen = PracticeScreen::new(next_kata.clone(), self.config.editor.clone())?;
@@ -780,7 +784,7 @@ impl App {
                     }
 
                     // reload dashboard so counts are updated
-                    self.dashboard = Dashboard::load(&self.repo)?;
+                    self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                 }
             }
             ScreenAction::BackFromLibrary => {
@@ -803,7 +807,7 @@ impl App {
                 self.repo.delete_kata(kata.id)?;
 
                 // Reload dashboard to reflect the change
-                self.dashboard = Dashboard::load(&self.repo)?;
+                self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
 
                 // If on library screen, update library state
                 match &mut self.current_screen {
@@ -1185,11 +1189,23 @@ impl App {
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenSettings => {
+                // Save current screen before opening settings so we can restore it later
+                let previous = std::mem::replace(
+                    &mut self.current_screen,
+                    Screen::Dashboard, // temporary placeholder
+                );
+                self.previous_screen_before_settings = Some(Box::new(previous));
+
                 let settings_screen = SettingsScreen::new(self.config.clone());
                 self.current_screen = Screen::Settings(settings_screen);
             }
             ScreenAction::CloseSettings => {
-                self.refresh_dashboard_screen()?;
+                // Restore previous screen if we have one, otherwise go to dashboard
+                if let Some(previous) = self.previous_screen_before_settings.take() {
+                    self.current_screen = *previous;
+                } else {
+                    self.refresh_dashboard_screen()?;
+                }
             }
             ScreenAction::ViewSessionHistory(kata) => {
                 let session_history = SessionHistoryScreen::new(kata, &self.repo)?;

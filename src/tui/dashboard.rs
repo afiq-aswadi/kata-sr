@@ -63,7 +63,7 @@ pub struct DashboardStats {
 }
 
 impl Dashboard {
-    pub fn load(repo: &KataRepository) -> anyhow::Result<Self> {
+    pub fn load(repo: &KataRepository, heatmap_days: usize) -> anyhow::Result<Self> {
         let now = Utc::now();
         let katas_due = repo.get_katas_due(now)?;
 
@@ -107,8 +107,8 @@ impl Dashboard {
             category_breakdown,
         };
 
-        // Create GitHub-style heatmap calendar
-        let heatmap_calendar = HeatmapCalendar::new(repo)?;
+        // Create heatmap calendar with configured number of days
+        let heatmap_calendar = HeatmapCalendar::new(repo, heatmap_days)?;
 
         Ok(Self {
             katas_due,

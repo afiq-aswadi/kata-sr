@@ -10,26 +10,41 @@ use ratatui::{
 
 pub struct HeatmapCalendar {
     daily_counts: Vec<DailyCount>,
+    days: usize,
+    start_date: NaiveDate,
+    end_date: NaiveDate,
 }
 
 impl HeatmapCalendar {
-    pub fn new(repo: &KataRepository) -> anyhow::Result<Self> {
+    pub fn new(repo: &KataRepository, days: usize) -> anyhow::Result<Self> {
         let end_date = Utc::now().date_naive();
-        let start_date = end_date - Duration::days(364); // 52 weeks
+        // Go back (days - 1) to include today in the count
+        let start_date = end_date - Duration::days((days.saturating_sub(1)) as i64);
 
         let daily_counts = repo.get_daily_review_counts(start_date, end_date)?;
 
-        Ok(Self { daily_counts })
+        Ok(Self {
+            daily_counts,
+            days,
+            start_date,
+            end_date,
+        })
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         let lines = self.build_calendar_lines();
 
+        let title = if self.days == 90 {
+            format!(" Activity (last {} days) ", self.days)
+        } else if self.days >= 365 {
+            " Activity (last 12 months) ".to_string()
+        } else {
+            format!(" Activity (last {} days) ", self.days)
+        };
+
         let paragraph = Paragraph::new(lines)
             .alignment(Alignment::Left)
-            .block(Block::default()
-                .borders(Borders::ALL)
-                .title(" Activity (last 12 months) "));
+            .block(Block::default().borders(Borders::ALL).title(title));
 
         frame.render_widget(paragraph, area);
     }
@@ -62,16 +77,14 @@ impl HeatmapCalendar {
     }
 
     fn build_month_labels(&self) -> Line<'_> {
-        let end_date = Utc::now().date_naive();
-        let start_date = end_date - Duration::days(364);
-
         let mut labels = vec![Span::raw("  ")]; // Offset for day labels
 
-        let mut current_date = start_date;
+        let num_weeks = (self.days + 6) / 7; // Round up to show all days
+        let mut current_date = self.start_date;
         let mut last_month = None;
 
         // Iterate through weeks
-        for _week in 0..52 {
+        for _week in 0..num_weeks {
             let month = current_date.month();
 
             if Some(month) != last_month {
@@ -105,30 +118,32 @@ impl HeatmapCalendar {
     }
 
     fn build_week_row(&self, weekday: usize) -> Vec<Span<'_>> {
-        let end_date = Utc::now().date_naive();
-        let start_date = end_date - Duration::days(364);
-
         let mut spans = Vec::new();
-        let mut current_date = start_date;
+        let num_weeks = (self.days + 6) / 7; // Round up to show all days
 
-        // Find first occurrence of this weekday
-        while current_date.weekday().num_days_from_sunday() as usize != weekday {
-            current_date = current_date + Duration::days(1);
-        }
+        // Calculate the first date for this weekday within our range
+        // Start from start_date and find the first occurrence of this weekday
+        let days_from_sunday = self.start_date.weekday().num_days_from_sunday() as i64;
+        let target_weekday = weekday as i64;
+
+        // Calculate offset: how many days to add to reach the target weekday
+        let offset = (target_weekday - days_from_sunday + 7) % 7;
+        let mut current_date = self.start_date + Duration::days(offset);
 
         // Build cells for each week
-        for _ in 0..52 {
-            if current_date <= end_date {
+        for _ in 0..num_weeks {
+            if current_date <= self.end_date {
                 let count = self.get_count_for_date(current_date);
                 let cell = self.count_to_cell(count);
                 spans.push(Span::styled(
                     format!("{} ", cell),
                     self.count_to_style(count),
                 ));
-                current_date = current_date + Duration::days(7);
             } else {
+                // Future dates (for incomplete current week) show as empty
                 spans.push(Span::raw("  "));
             }
+            current_date = current_date + Duration::days(7);
         }
 
         spans
