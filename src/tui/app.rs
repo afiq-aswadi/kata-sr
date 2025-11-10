@@ -482,6 +482,14 @@ impl App {
             }
             Screen::Done(done_screen) => match done_screen.handle_input(code) {
                 DoneAction::BrowseLibrary => Some(ScreenAction::OpenLibrary),
+                DoneAction::ToggleHideFlagged => {
+                    // Toggle the hide_flagged filter and reload dashboard
+                    self.dashboard_hide_flagged = !self.dashboard_hide_flagged;
+                    self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, self.dashboard_hide_flagged)?;
+                    // Refresh the screen - if there are now katas due, show dashboard; otherwise stay on Done
+                    self.refresh_dashboard_screen()?;
+                    None
+                }
                 DoneAction::None => None,
             },
             Screen::Results(kata, results_screen) => {

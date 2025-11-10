@@ -19,6 +19,7 @@ pub struct DoneScreen {
 pub enum DoneAction {
     None,
     BrowseLibrary,
+    ToggleHideFlagged,
 }
 
 impl DoneScreen {
@@ -57,6 +58,7 @@ impl DoneScreen {
             Line::from(""),
             Line::from("l • Browse library"),
             Line::from("p • Practice any kata (opens library)"),
+            Line::from("x • Toggle hide flagged katas"),
             Line::from("q • Quit"),
         ];
 
@@ -70,6 +72,7 @@ impl DoneScreen {
     pub fn handle_input(&self, code: KeyCode) -> DoneAction {
         match code {
             KeyCode::Char('l') | KeyCode::Char('p') => DoneAction::BrowseLibrary,
+            KeyCode::Char('x') => DoneAction::ToggleHideFlagged,
             _ => DoneAction::None,
         }
     }
