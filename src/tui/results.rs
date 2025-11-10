@@ -752,6 +752,7 @@ pub enum ResultsAction {
     ReviewAnother,
     OpenSettings,
     ToggleFlagWithReason(Option<String>),
+    SolutionViewed, // Signal that external editor was used and terminal needs clearing
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
