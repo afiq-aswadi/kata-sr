@@ -75,6 +75,12 @@ impl ResultsScreen {
         self.remaining_due_after_submit = Some(remaining_due);
     }
 
+    /// Update the kata after it's been modified in the database.
+    /// This ensures the flag popup shows the current flag status.
+    pub fn update_kata(&mut self, kata: Kata) {
+        self.kata = kata;
+    }
+
     pub fn render(&mut self, frame: &mut Frame) {
         let layout = Layout::default()
             .direction(Direction::Vertical)

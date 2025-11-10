@@ -459,7 +459,9 @@ impl App {
                         if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
                             // Extract the results_screen by temporarily replacing current_screen
                             let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
-                            if let Screen::Results(_, rs) = old_screen {
+                            if let Screen::Results(_, mut rs) = old_screen {
+                                // Update the kata inside ResultsScreen so flag popup shows correct status
+                                rs.update_kata(fresh_kata.clone());
                                 self.current_screen = Screen::Results(fresh_kata, rs);
                             }
                         }
