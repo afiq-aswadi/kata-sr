@@ -857,7 +857,17 @@ impl App {
                 let original_kata = self.repo.get_kata_by_id(kata_id)?
                     .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
                 let original_dependencies = self.repo.get_kata_dependencies(kata_id)?;
-                let tags = self.repo.get_kata_tags(kata_id)?;
+                let original_tags = self.repo.get_kata_tags(kata_id)?;
+
+                // Parse category field as comma-separated tags
+                let new_tags: Vec<String> = form_data.category
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+
+                // Use the first tag as the primary category for backward compatibility
+                let primary_category = new_tags.first().cloned().unwrap_or_else(|| form_data.category.clone());
 
                 if name_changed {
                     // 1. Update database first
@@ -865,11 +875,25 @@ impl App {
                         kata_id,
                         &new_slug,
                         &form_data.description,
-                        &form_data.category,
+                        &primary_category,
                         form_data.difficulty as i32,
                     ) {
                         Ok(_) => {
-                            // 2. Update dependencies in DB
+                            // 2. Update tags in DB
+                            if let Err(e) = self.repo.set_kata_tags(kata_id, &new_tags) {
+                                // Rollback metadata changes
+                                let _ = self.repo.update_kata_full_metadata(
+                                    kata_id,
+                                    &original_kata.name,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                eprintln!("Failed to update tags: {}", e);
+                                return Ok(());
+                            }
+
+                            // 3. Update dependencies in DB
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
                             if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
                                 // Rollback ALL database changes
@@ -880,17 +904,18 @@ impl App {
                                     &original_kata.category,
                                     original_kata.base_difficulty,
                                 );
+                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                 eprintln!("Failed to update dependencies: {}", e);
                                 return Ok(());
                             }
 
-                            // 3. Now rename directory (if this fails, rollback DB)
+                            // 4. Now rename directory (if this fails, rollback DB)
                             match rename_kata_directory(exercises_dir, &original_slug, &new_slug) {
                                 Ok(_) => {
-                                    // 4. Update manifest in new location
+                                    // 5. Update manifest in new location
                                     let kata_dir = exercises_dir.join(&new_slug);
                                     if let Err(e) =
-                                        update_manifest(&kata_dir, &form_data, &new_slug, &tags)
+                                        update_manifest(&kata_dir, &form_data, &new_slug, &new_tags)
                                     {
                                         // Rollback: rename directory back and revert ALL database changes
                                         let _ = rename_kata_directory(
@@ -905,12 +930,13 @@ impl App {
                                             &original_kata.category,
                                             original_kata.base_difficulty,
                                         );
+                                        let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                         let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                         eprintln!("Failed to update manifest: {}", e);
                                         return Ok(());
                                     }
 
-                                    // 5. Update all dependent kata manifests to use new slug
+                                    // 6. Update all dependent kata manifests to use new slug
                                     let dependent_kata_ids = self.repo.get_dependent_katas(kata_id)?;
                                     for dep_kata_id in &dependent_kata_ids {
                                         if let Ok(Some(dep_kata)) = self.repo.get_kata_by_id(*dep_kata_id) {
@@ -952,6 +978,7 @@ impl App {
                                                     &original_kata.category,
                                                     original_kata.base_difficulty,
                                                 );
+                                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                                 let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                                 return Ok(());
                                             }
@@ -972,6 +999,7 @@ impl App {
                                         &original_kata.category,
                                         original_kata.base_difficulty,
                                     );
+                                    let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                     let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                     eprintln!("Failed to rename kata directory: {}", e);
                                     // Stay on edit screen
@@ -988,10 +1016,23 @@ impl App {
                     match self.repo.update_kata_metadata(
                         kata_id,
                         &form_data.description,
-                        &form_data.category,
+                        &primary_category,
                         form_data.difficulty as i32,
                     ) {
                         Ok(_) => {
+                            // Update tags in DB
+                            if let Err(e) = self.repo.set_kata_tags(kata_id, &new_tags) {
+                                // Rollback metadata changes
+                                let _ = self.repo.update_kata_metadata(
+                                    kata_id,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                eprintln!("Failed to update tags: {}", e);
+                                return Ok(());
+                            }
+
                             // Update dependencies
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
                             if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
@@ -1002,13 +1043,14 @@ impl App {
                                     &original_kata.category,
                                     original_kata.base_difficulty,
                                 );
+                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                 eprintln!("Failed to update dependencies: {}", e);
                                 return Ok(());
                             }
 
-                            // Update manifest with tags preserved
+                            // Update manifest with new tags
                             let kata_dir = exercises_dir.join(&original_slug);
-                            if let Err(e) = update_manifest(&kata_dir, &form_data, &original_slug, &tags) {
+                            if let Err(e) = update_manifest(&kata_dir, &form_data, &original_slug, &new_tags) {
                                 // Rollback ALL database changes
                                 let _ = self.repo.update_kata_metadata(
                                     kata_id,
@@ -1016,6 +1058,7 @@ impl App {
                                     &original_kata.category,
                                     original_kata.base_difficulty,
                                 );
+                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                 let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                 eprintln!("Failed to update manifest: {}", e);
                                 return Ok(());
