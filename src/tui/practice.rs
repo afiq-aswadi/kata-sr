@@ -86,6 +86,9 @@ impl PracticeScreen {
     /// #     fsrs_lapses: 0,
     /// #     fsrs_state: "New".to_string(),
     /// #     scheduler_type: "FSRS".to_string(),
+    /// #     is_problematic: false,
+    /// #     problematic_notes: None,
+    /// #     flagged_at: None,
     /// #     created_at: chrono::Utc::now(),
     /// # };
     /// let practice_screen = PracticeScreen::new_retry(kata)?;

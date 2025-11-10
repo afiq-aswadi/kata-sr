@@ -191,8 +191,10 @@ impl App {
     /// ```no_run
     /// # use kata_sr::db::repo::KataRepository;
     /// # use kata_sr::tui::app::App;
+    /// # use kata_sr::config::AppConfig;
     /// let repo = KataRepository::new("kata.db")?;
-    /// let mut app = App::new(repo)?;
+    /// let config = AppConfig::default();
+    /// let mut app = App::new(repo, config)?;
     /// app.run()?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
@@ -361,10 +363,47 @@ impl App {
                     DashboardAction::RemoveKata(kata) => {
                         Some(ScreenAction::RemoveKataFromDeck(kata))
                     }
+                    DashboardAction::ToggleFlagKata(kata) => {
+                        // Toggle the problematic flag in database
+                        if kata.is_problematic {
+                            self.repo.unflag_kata(kata.id)?;
+                        } else {
+                            self.repo.flag_kata(kata.id, None)?;
+                        }
+                        // Reload dashboard to get fresh kata state
+                        self.dashboard = Dashboard::load(&self.repo)?;
+                        None
+                    }
                     DashboardAction::None => None,
                 }
             }
-            Screen::Practice(_kata, practice_screen) => {
+            Screen::Practice(kata, practice_screen) => {
+                // Handle 'f' to toggle flag on current kata
+                if code == KeyCode::Char('f') {
+                    let kata_id = kata.id;
+                    let was_problematic = kata.is_problematic;
+
+                    // Toggle the flag in database
+                    if was_problematic {
+                        self.repo.unflag_kata(kata_id)?;
+                    } else {
+                        self.repo.flag_kata(kata_id, None)?;
+                    }
+
+                    // Reload fresh kata state from database and update Screen enum
+                    if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
+                        // Extract the practice_screen by temporarily replacing current_screen
+                        let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
+                        if let Screen::Practice(_, ps) = old_screen {
+                            self.current_screen = Screen::Practice(fresh_kata, ps);
+                        }
+                    }
+
+                    // Also reload dashboard for consistency
+                    self.dashboard = Dashboard::load(&self.repo)?;
+                    return Ok(());
+                }
+
                 let action = practice_screen.handle_input(code, self.event_tx.clone())?;
                 match action {
                     PracticeAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
@@ -380,6 +419,32 @@ impl App {
                 DoneAction::None => None,
             },
             Screen::Results(kata, results_screen) => {
+                // Handle 'f' to toggle flag on current kata
+                if code == KeyCode::Char('f') {
+                    let kata_id = kata.id;
+                    let was_problematic = kata.is_problematic;
+
+                    // Toggle the flag in database
+                    if was_problematic {
+                        self.repo.unflag_kata(kata_id)?;
+                    } else {
+                        self.repo.flag_kata(kata_id, None)?;
+                    }
+
+                    // Reload fresh kata state from database and update Screen enum
+                    if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
+                        // Extract the results_screen by temporarily replacing current_screen
+                        let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
+                        if let Screen::Results(_, rs) = old_screen {
+                            self.current_screen = Screen::Results(fresh_kata, rs);
+                        }
+                    }
+
+                    // Also reload dashboard for consistency
+                    self.dashboard = Dashboard::load(&self.repo)?;
+                    return Ok(());
+                }
+
                 let action = results_screen.handle_input(code);
                 match action {
                     ResultsAction::SubmitRating(rating) => {
@@ -419,6 +484,18 @@ impl App {
                     match action {
                         LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
                         LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
+                        LibraryAction::ToggleFlagKata(kata) => {
+                            // Toggle the problematic flag in database
+                            if kata.is_problematic {
+                                self.repo.unflag_kata(kata.id)?;
+                            } else {
+                                self.repo.flag_kata(kata.id, None)?;
+                            }
+                            // Reload dashboard for consistency
+                            self.dashboard = Dashboard::load(&self.repo)?;
+                            // Reload library with fresh kata states
+                            return self.execute_action(ScreenAction::OpenLibrary);
+                        }
                         LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
                         LibraryAction::ViewDetails(kata) => {
                             let in_deck = library.kata_ids_in_deck.contains(&kata.name);
