@@ -24,6 +24,7 @@ use super::results::{ResultsAction, ResultsScreen};
 use super::session_detail::{SessionDetailAction, SessionDetailScreen};
 use super::session_history::{SessionHistoryAction, SessionHistoryScreen};
 use super::settings::{SettingsAction, SettingsScreen};
+use super::startup::{StartupAction, StartupScreen};
 use crate::config::AppConfig;
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
@@ -65,6 +66,8 @@ pub enum AppEvent {
 ///
 /// Each screen maintains its own state and handles its own rendering.
 pub enum Screen {
+    /// Startup screen with ASCII art
+    Startup(StartupScreen),
     /// Dashboard showing katas due today and stats
     Dashboard,
     /// Celebration screen when no reviews are due
@@ -96,6 +99,7 @@ enum ScreenAction {
     StartPractice(Kata),
     ReturnToDashboard,
     SubmitRating(Kata, u8),
+    BuryKata(Kata),
     StartNextDue,
     OpenLibrary,
     AddKataFromLibrary(String),
@@ -177,8 +181,8 @@ impl App {
         let (tx, rx) = channel();
         let dashboard = Dashboard::load(&repo)?;
 
-        let mut app = Self {
-            current_screen: Screen::Dashboard,
+        let app = Self {
+            current_screen: Screen::Startup(StartupScreen::new()),
             dashboard,
             repo,
             config,
@@ -189,7 +193,6 @@ impl App {
             popup_message: None,
         };
 
-        app.refresh_dashboard_screen()?;
         Ok(app)
     }
 
@@ -297,6 +300,9 @@ impl App {
         }
 
         match &mut self.current_screen {
+            Screen::Startup(startup_screen) => {
+                startup_screen.render(frame);
+            }
             Screen::Dashboard => {
                 self.dashboard.render(frame);
             }
@@ -357,6 +363,15 @@ impl App {
 
         // extract action from current screen to avoid borrow checker issues
         let action_result = match &mut self.current_screen {
+            Screen::Startup(startup_screen) => {
+                let action = startup_screen.handle_input(code);
+                match action {
+                    StartupAction::StartReview => Some(ScreenAction::ReturnToDashboard),
+                    StartupAction::OpenLibrary => Some(ScreenAction::OpenLibrary),
+                    StartupAction::OpenSettings => Some(ScreenAction::OpenSettings),
+                    StartupAction::None => None,
+                }
+            }
             Screen::Dashboard => {
                 // handle library key 'l' in dashboard
                 if code == KeyCode::Char('l') {
@@ -440,7 +455,13 @@ impl App {
                     ResultsAction::SubmitRating(rating) => {
                         Some(ScreenAction::SubmitRating(kata.clone(), rating))
                     }
+                    ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
+                    ResultsAction::GiveUp => {
+                        // Load and show solution. When user closes it (Esc), it auto-submits Rating::Again
+                        results_screen.load_and_show_solution(true);
+                        None
+                    }
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
@@ -624,6 +645,11 @@ impl App {
                 if let Screen::Results(_, results_screen) = &mut self.current_screen {
                     results_screen.mark_rating_submitted(rating, self.dashboard.katas_due.len());
                 }
+            }
+            ScreenAction::BuryKata(kata) => {
+                self.handle_bury_kata(&kata)?;
+                self.dashboard = Dashboard::load(&self.repo)?;
+                self.refresh_dashboard_screen()?;
             }
             ScreenAction::StartNextDue => {
                 if self.dashboard.katas_due.is_empty() {
@@ -1171,6 +1197,20 @@ impl App {
         analytics
             .update_daily_stats()
             .context("Failed to update daily stats")?;
+
+        Ok(())
+    }
+
+    /// Handles burying a kata, postponing it to the next day without affecting FSRS state.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata` - The kata to bury
+    fn handle_bury_kata(&mut self, kata: &Kata) -> anyhow::Result<()> {
+        // Bury the kata by setting next_review_at to tomorrow
+        self.repo
+            .bury_kata(kata.id)
+            .context("Failed to bury kata")?;
 
         Ok(())
     }

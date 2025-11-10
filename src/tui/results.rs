@@ -27,6 +27,10 @@ pub struct ResultsScreen {
     flag_popup_active: bool,
     flag_reason: String,
     flag_cursor_position: usize,
+    solution_mode: bool,
+    solution_scroll: u16,
+    solution_content: Option<String>,
+    gave_up: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -66,6 +70,10 @@ impl ResultsScreen {
             flag_popup_active: false,
             flag_reason: String::new(),
             flag_cursor_position: 0,
+            solution_mode: false,
+            solution_scroll: 0,
+            solution_content: None,
+            gave_up: false,
         }
     }
 
@@ -103,6 +111,10 @@ impl ResultsScreen {
 
         if self.flag_popup_active {
             self.render_flag_popup(frame);
+        }
+
+        if self.solution_mode {
+            self.render_solution_overlay(frame);
         }
     }
 
@@ -186,10 +198,27 @@ impl ResultsScreen {
     }
 
     fn render_actions(&self, frame: &mut Frame, area: Rect) {
-        if !self.results.passed {
-            let text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [Esc] Back to dashboard\n[o] Inspect selected test output";
+        if !self.results.passed && !self.rating_submitted {
+            let text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output";
             let block = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL).title("Next steps"));
+            frame.render_widget(block, area);
+            return;
+        }
+
+        if !self.results.passed && self.rating_submitted {
+            let remaining_msg = match self.remaining_due_after_submit {
+                Some(0) => "No more katas due today.".to_string(),
+                Some(count) => format!("{} kata(s) still due.", count),
+                None => "Loading queue...".to_string(),
+            };
+            let lines = vec![
+                "Gave up and viewed solution. Rating saved: Again".to_string(),
+                remaining_msg,
+                "[Enter/d] Dashboard   [n] Next due   [r] Review picker".to_string(),
+            ];
+            let block = Paragraph::new(lines.join("\n"))
+                .block(Block::default().borders(Borders::ALL).title("What next?"));
             frame.render_widget(block, area);
             return;
         }
@@ -207,7 +236,7 @@ impl ResultsScreen {
             let lines = vec![
                 format!("Saved rating: {}", rating_name),
                 remaining_msg,
-                "[Enter/d] Dashboard   [n] Next due   [r] Review picker   [o] Inspect output"
+                "[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [o] Inspect output"
                     .to_string(),
             ];
             let block = Paragraph::new(lines.join("\n"))
@@ -242,7 +271,7 @@ impl ResultsScreen {
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
-        lines.push(Line::from("Press Enter to submit rating."));
+        lines.push(Line::from("Press Enter to submit rating, or [b] to bury (postpone to tomorrow)."));
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",
@@ -369,6 +398,25 @@ impl ResultsScreen {
         frame.render_widget(instructions_widget, chunks[3]);
     }
 
+    fn render_solution_overlay(&self, frame: &mut Frame) {
+        let area = centered_rect(80, 70, frame.size());
+        frame.render_widget(Clear, area);
+
+        let title = format!(
+            "Reference Solution: {} · [↑↓/jk] scroll · [PgUp/PgDn/Space/b] page · [Home/End] jump · [Esc] close",
+            self.kata.name
+        );
+        let body = self.solution_content.as_ref()
+            .map(|s| s.clone())
+            .unwrap_or_else(|| "Failed to load reference solution.".to_string());
+
+        let solution = Paragraph::new(body)
+            .wrap(Wrap { trim: false })
+            .scroll((self.solution_scroll, 0))
+            .block(Block::default().borders(Borders::ALL).title(title));
+        frame.render_widget(solution, area);
+    }
+
     pub fn handle_input(&mut self, code: KeyCode) -> ResultsAction {
         // Handle flag popup input first
         if self.flag_popup_active {
@@ -481,6 +529,38 @@ impl ResultsScreen {
             return ResultsAction::None;
         }
 
+        if self.solution_mode {
+            match code {
+                KeyCode::Esc => {
+                    self.solution_mode = false;
+                    // If we gave up, auto-submit with Rating::Again after closing solution
+                    if self.gave_up {
+                        return ResultsAction::SubmitRating(1); // Rating::Again
+                    }
+                }
+                KeyCode::Down | KeyCode::Char('j') => {
+                    self.solution_scroll = self.solution_scroll.saturating_add(1);
+                }
+                KeyCode::Up | KeyCode::Char('k') => {
+                    self.solution_scroll = self.solution_scroll.saturating_sub(1);
+                }
+                KeyCode::PageDown | KeyCode::Char(' ') => {
+                    self.solution_scroll = self.solution_scroll.saturating_add(DETAIL_PAGE_SIZE);
+                }
+                KeyCode::PageUp | KeyCode::Char('b') => {
+                    self.solution_scroll = self.solution_scroll.saturating_sub(DETAIL_PAGE_SIZE);
+                }
+                KeyCode::Home | KeyCode::Char('g') => {
+                    self.solution_scroll = 0;
+                }
+                KeyCode::End | KeyCode::Char('G') => {
+                    self.solution_scroll = u16::MAX;
+                }
+                _ => {}
+            }
+            return ResultsAction::None;
+        }
+
         if matches!(code, KeyCode::Char('o')) && self.selected_test_result().is_some() {
             self.detail_mode = true;
             self.detail_scroll = 0;
@@ -520,9 +600,10 @@ impl ResultsScreen {
             }
         }
 
-        if !self.results.passed {
+        if !self.results.passed && !self.rating_submitted {
             return match code {
                 KeyCode::Char('r') => ResultsAction::Retry,
+                KeyCode::Char('g') => ResultsAction::GiveUp,
                 KeyCode::Esc => ResultsAction::BackToDashboard,
                 _ => ResultsAction::None,
             };
@@ -531,7 +612,7 @@ impl ResultsScreen {
         if self.rating_submitted {
             return match code {
                 KeyCode::Char('n') => ResultsAction::StartNextDue,
-                KeyCode::Char('r') => ResultsAction::ReviewAnother,
+                KeyCode::Char('c') | KeyCode::Char('r') => ResultsAction::ReviewAnother,
                 KeyCode::Enter | KeyCode::Char('d') => ResultsAction::BackToDashboard,
                 _ => ResultsAction::None,
             };
@@ -570,6 +651,7 @@ impl ResultsScreen {
                 self.selected_rating = 4; // Easy
                 ResultsAction::None
             }
+            KeyCode::Char('b') => ResultsAction::BuryCard,
             KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8), // Direct FSRS 1-4 rating
             _ => ResultsAction::None,
         }
@@ -604,12 +686,37 @@ impl ResultsScreen {
             .map(|(byte_idx, _)| byte_idx)
             .unwrap_or(s.len())
     }
+
+    pub fn load_and_show_solution(&mut self, is_give_up: bool) {
+        let katas_root = std::env::var("KATA_SR_KATAS_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
+        let reference_path = katas_root
+            .join("exercises")
+            .join(&self.kata.name)
+            .join("reference.py");
+
+        self.solution_content = match std::fs::read_to_string(&reference_path) {
+            Ok(content) => Some(content),
+            Err(e) => Some(format!(
+                "Failed to load reference solution from {}:\n\n{}",
+                reference_path.display(),
+                e
+            )),
+        };
+
+        self.solution_mode = true;
+        self.solution_scroll = 0;
+        self.gave_up = is_give_up;
+    }
 }
 
 pub enum ResultsAction {
     None,
     SubmitRating(u8),
+    BuryCard,
     Retry,
+    GiveUp,
     BackToDashboard,
     StartNextDue,
     ReviewAnother,
