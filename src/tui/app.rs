@@ -601,6 +601,7 @@ impl App {
                                 None
                             }
                         }
+                        LibraryAction::PracticeKata(kata) => Some(ScreenAction::StartPractice(kata)),
                         LibraryAction::None => None,
                     }
                 }

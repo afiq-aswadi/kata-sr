@@ -51,6 +51,8 @@ pub enum LibraryAction {
     /// Edit an existing kata (by kata ID or name to look up)
     EditKataById(i64),
     EditKataByName(String),
+    /// Practice a kata from the deck (on-demand review)
+    PracticeKata(Kata),
 }
 
 /// Sort mode for library view
@@ -638,6 +640,7 @@ impl Library {
                     Line::from(vec![
                         Span::raw("[Tab] Switch tab  "),
                         Span::raw("[j/k] Navigate  "),
+                        Span::raw("[Enter/p] Practice  "),
                         Span::raw("[d] Remove  "),
                         Span::raw("[e] Edit  "),
                         Span::raw("[f] Flag  "),
@@ -792,6 +795,10 @@ impl Library {
             KeyCode::Char('f') => {
                 let kata = self.deck_katas[self.deck_selected].clone();
                 LibraryAction::ToggleFlagKata(kata)
+            }
+            KeyCode::Char('p') | KeyCode::Enter => {
+                let kata = self.deck_katas[self.deck_selected].clone();
+                LibraryAction::PracticeKata(kata)
             }
             _ => LibraryAction::None,
         }
