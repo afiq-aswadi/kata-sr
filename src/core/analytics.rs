@@ -211,6 +211,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -249,6 +250,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -289,7 +291,8 @@ mod tests {
                 num_failed: Some(0),
                 num_skipped: Some(0),
                 duration_ms: Some(100),
-                quality_rating: Some(3), // Good (FSRS)
+                quality_rating: Some(3), // Good (FSRS),
+            code_attempt: None,
             })?;
         }
 
@@ -304,6 +307,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(1), // Again (FSRS)
+            code_attempt: None,
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -348,6 +352,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })?;
 
         let analytics = Analytics::new(&repo);
@@ -396,6 +401,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })?;
 
         repo.create_session(&NewSession {
@@ -408,6 +414,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(100),
             quality_rating: Some(3), // Good (FSRS)
+            code_attempt: None,
         })?;
 
         let analytics = Analytics::new(&repo);
