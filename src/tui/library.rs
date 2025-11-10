@@ -42,6 +42,8 @@ pub enum LibraryAction {
     RemoveKata(Kata),
     /// Toggle flag on a kata as problematic
     ToggleFlagKata(Kata),
+    /// Toggle hiding flagged katas from My Deck view
+    ToggleHideFlagged,
     /// View detailed information about a kata
     ViewDetails(AvailableKata),
     /// Return to dashboard
@@ -131,6 +133,9 @@ pub struct Library {
     pub sort_mode: SortMode,
     /// Sort direction: true = ascending, false = descending
     pub sort_ascending: bool,
+
+    // Filtering flagged katas (for My Deck tab)
+    pub hide_flagged: bool,
 }
 
 impl Library {
@@ -150,8 +155,17 @@ impl Library {
     /// # Ok::<(), anyhow::Error>(())
     /// ```
     pub fn load(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool) -> Result<Self> {
+        Self::load_with_filter(repo, default_sort, default_sort_ascending, false)
+    }
+
+    pub fn load_with_filter(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool, hide_flagged: bool) -> Result<Self> {
         let available_katas = load_available_katas()?;
-        let deck_katas = repo.get_all_katas()?;
+        let mut deck_katas = repo.get_all_katas()?;
+
+        // Apply flagged filter if enabled
+        if hide_flagged {
+            deck_katas.retain(|kata| !kata.is_problematic);
+        }
 
         // Load tags for all katas in deck
         let mut deck_kata_tags = HashMap::new();
@@ -183,6 +197,7 @@ impl Library {
             category_selected_index: 0,
             sort_mode: SortMode::from_str(default_sort),
             sort_ascending: default_sort_ascending,
+            hide_flagged,
         };
 
         library.apply_filters();
@@ -306,10 +321,12 @@ impl Library {
                     .iter()
                     .filter(|k| k.next_review_at.map_or(true, |t| t <= Utc::now()))
                     .count();
+                let filter_status = if self.hide_flagged { " | Hiding flagged ⚠️" } else { "" };
                 format!(
-                    "Due today: {} | Total in deck: {}",
+                    "Due today: {} | Total in deck: {}{}",
                     due_count,
-                    self.deck_katas.len()
+                    self.deck_katas.len(),
+                    filter_status
                 )
             }
             LibraryTab::AllKatas => {
@@ -641,6 +658,7 @@ impl Library {
                         Span::raw("[d] Remove  "),
                         Span::raw("[e] Edit  "),
                         Span::raw("[f] Flag  "),
+                        Span::raw("[x] Toggle hide flagged  "),
                         Span::raw("[n] Create  "),
                         Span::raw("[Esc] Back"),
                     ])
@@ -793,6 +811,7 @@ impl Library {
                 let kata = self.deck_katas[self.deck_selected].clone();
                 LibraryAction::ToggleFlagKata(kata)
             }
+            KeyCode::Char('x') => LibraryAction::ToggleHideFlagged,
             _ => LibraryAction::None,
         }
     }
@@ -1164,6 +1183,7 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
         };
 
         library.handle_input(KeyCode::Tab);
@@ -1179,6 +1199,7 @@ mod tests {
 
         let mut library = Library {
             active_tab: LibraryTab::MyDeck,
+            hide_flagged: false,
             deck_katas: vec![
                 Kata {
                     id: 1,
@@ -1302,6 +1323,7 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
         };
 
         library.handle_input(KeyCode::Char('j'));
@@ -1341,6 +1363,7 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
         };
 
         match library.handle_input(KeyCode::Char('a')) {
@@ -1370,6 +1393,7 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
         };
 
         match library.handle_input(KeyCode::Esc) {
@@ -1399,6 +1423,7 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
         };
 
         library.mark_as_added("test_kata");
@@ -1426,6 +1451,7 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            hide_flagged: false,
         };
 
         library.mark_as_removed("test_kata");

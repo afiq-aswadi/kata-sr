@@ -427,6 +427,12 @@ impl App {
                         self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                         None
                     }
+                    DashboardAction::ToggleHideFlagged => {
+                        // Toggle the hide_flagged filter and reload dashboard
+                        let new_hide_flagged = !self.dashboard.hide_flagged;
+                        self.dashboard = Dashboard::load_with_filter(&self.repo, self.config.display.heatmap_days, new_hide_flagged)?;
+                        None
+                    }
                     DashboardAction::None => None,
                 }
             }
@@ -585,6 +591,13 @@ impl App {
                             self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
                             // Reload library with fresh kata states
                             return self.execute_action(ScreenAction::OpenLibrary);
+                        }
+                        LibraryAction::ToggleHideFlagged => {
+                            // Toggle the hide_flagged filter and reload library
+                            let new_hide_flagged = !library.hide_flagged;
+                            let new_library = Library::load_with_filter(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending, new_hide_flagged)?;
+                            self.current_screen = Screen::Library(new_library);
+                            None
                         }
                         LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
                         LibraryAction::ViewDetails(kata) => {

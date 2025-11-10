@@ -53,6 +53,7 @@ pub struct Dashboard {
     pub stats: DashboardStats,
     pub heatmap_calendar: HeatmapCalendar,
     pub sort_mode: ReviewSortMode,
+    pub hide_flagged: bool,
 }
 
 pub struct DashboardStats {
@@ -64,8 +65,17 @@ pub struct DashboardStats {
 
 impl Dashboard {
     pub fn load(repo: &KataRepository, heatmap_days: usize) -> anyhow::Result<Self> {
+        Self::load_with_filter(repo, heatmap_days, false)
+    }
+
+    pub fn load_with_filter(repo: &KataRepository, heatmap_days: usize, hide_flagged: bool) -> anyhow::Result<Self> {
         let now = Utc::now();
-        let katas_due = repo.get_katas_due(now)?;
+        let mut katas_due = repo.get_katas_due(now)?;
+
+        // Apply flagged filter if enabled
+        if hide_flagged {
+            katas_due.retain(|kata| !kata.is_problematic);
+        }
 
         let dep_graph = repo.load_dependency_graph()?;
         let success_counts = repo.get_success_counts()?;
@@ -117,6 +127,7 @@ impl Dashboard {
             stats,
             heatmap_calendar,
             sort_mode: ReviewSortMode::DueDate, // Default sort mode
+            hide_flagged,
         })
     }
 
@@ -204,10 +215,12 @@ impl Dashboard {
             ])
             .split(frame.size());
 
+        let filter_status = if self.hide_flagged { " | Hiding flagged ⚠️" } else { "" };
         let header = Paragraph::new(format!(
-            "Kata Spaced Repetition - {} katas due today | Sort: {} (press 's' to change)",
+            "Kata Spaced Repetition - {} katas due today | Sort: {} (press 's' to change){}",
             self.katas_due.len(),
-            self.sort_mode.as_str()
+            self.sort_mode.as_str(),
+            filter_status
         ))
         .block(Block::default().borders(Borders::ALL));
         frame.render_widget(header, chunks[0]);
@@ -246,7 +259,7 @@ impl Dashboard {
 
         // stats summary
         let stats_text = format!(
-            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'd' to remove | Press 'e' to edit | Press 'f' to flag | Press 's' to change sort order",
+            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'd' to remove | Press 'e' to edit | Press 'f' to flag | Press 's' to change sort order | Press 'x' to toggle hide flagged",
             self.stats.streak_days,
             self.stats.total_reviews_today,
             self.stats.success_rate_7d * 100.0
@@ -300,6 +313,7 @@ impl Dashboard {
                 self.cycle_sort_mode();
                 DashboardAction::None
             }
+            KeyCode::Char('x') => DashboardAction::ToggleHideFlagged,
             _ => DashboardAction::None,
         }
     }
@@ -311,4 +325,5 @@ pub enum DashboardAction {
     RemoveKata(Kata),
     EditKata(Kata),
     ToggleFlagKata(Kata),
+    ToggleHideFlagged,
 }
