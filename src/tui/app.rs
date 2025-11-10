@@ -191,8 +191,10 @@ impl App {
     /// ```no_run
     /// # use kata_sr::db::repo::KataRepository;
     /// # use kata_sr::tui::app::App;
+    /// # use kata_sr::config::AppConfig;
     /// let repo = KataRepository::new("kata.db")?;
-    /// let mut app = App::new(repo)?;
+    /// let config = AppConfig::default();
+    /// let mut app = App::new(repo, config)?;
     /// app.run()?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
