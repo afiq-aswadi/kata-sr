@@ -452,6 +452,26 @@ impl ResultsScreen {
         // Determine which editor to use (respects EDITOR env var)
         let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
 
+        // Parse editor command to handle arguments (e.g., "code -w")
+        let parts: Vec<&str> = editor.split_whitespace().collect();
+        if parts.is_empty() {
+            anyhow::bail!("EDITOR environment variable is empty");
+        }
+
+        let editor_program = parts[0];
+        let editor_args = &parts[1..];
+
+        // Determine if we should add read-only flag based on editor
+        let editor_basename = std::path::Path::new(editor_program)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or(editor_program);
+
+        let is_vim_like = matches!(
+            editor_basename,
+            "vim" | "nvim" | "vi" | "view" | "gvim" | "nvim-qt"
+        );
+
         // Exit alternate screen and disable raw mode to hand control to editor
         let mut stdout = std::io::stdout();
         crossterm::execute!(
@@ -465,11 +485,20 @@ impl ResultsScreen {
         crossterm::terminal::disable_raw_mode()
             .context("failed to disable raw mode before launching editor")?;
 
-        // Launch editor with reference solution (read-only)
-        let status_result = Command::new(&editor)
-            .arg("-R") // Read-only mode for most editors (nvim, vim, vi)
-            .arg(&reference_path)
-            .status();
+        // Launch editor with reference solution
+        let mut cmd = Command::new(editor_program);
+
+        // Add user's editor arguments
+        cmd.args(editor_args);
+
+        // Add read-only flag only for vim-like editors
+        if is_vim_like {
+            cmd.arg("-R");
+        }
+
+        cmd.arg(&reference_path);
+
+        let status_result = cmd.status();
 
         // Re-enable raw mode and re-enter alternate screen to restore TUI
         crossterm::terminal::enable_raw_mode()
@@ -491,11 +520,11 @@ impl ResultsScreen {
             .context("failed to flush stdout after terminal reset")?;
 
         let editor_status =
-            status_result.with_context(|| format!("failed to launch {}", editor))?;
+            status_result.with_context(|| format!("failed to launch editor: {}", editor))?;
 
         if !editor_status.success() {
             anyhow::bail!(
-                "{} exited with non-zero status (code {:?})",
+                "Editor '{}' exited with non-zero status (code {:?}). Solution not viewed.",
                 editor,
                 editor_status.code()
             );
