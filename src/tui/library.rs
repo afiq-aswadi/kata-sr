@@ -349,6 +349,23 @@ impl Library {
             self.deck_katas.len(),
         );
 
+        // Calculate scroll indicators
+        let has_content_above = self.deck_scroll_offset > 0;
+        let has_content_below = (self.deck_scroll_offset + visible_height) < self.deck_katas.len();
+        let scroll_indicator = match (has_content_above, has_content_below) {
+            (true, true) => " ↑↓",
+            (true, false) => " ↑",
+            (false, true) => " ↓",
+            (false, false) => "",
+        };
+
+        // Position indicator: showing item X of Y total
+        let position_info = if self.deck_katas.len() > 0 {
+            format!(" [{}/{}]{} ", self.deck_selected + 1, self.deck_katas.len(), scroll_indicator)
+        } else {
+            String::new()
+        };
+
         let header = Row::new(vec!["", "Name", "Tags", "Due", "Difficulty"])
             .style(Style::default().add_modifier(Modifier::BOLD))
             .bottom_margin(1);
@@ -420,7 +437,7 @@ impl Library {
             ],
         )
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title(" My Deck "));
+        .block(Block::default().borders(Borders::ALL).title(format!(" My Deck {}", position_info)));
 
         frame.render_widget(table, area);
     }
@@ -449,6 +466,23 @@ impl Library {
             visible_height,
             self.filtered_available_katas.len(),
         );
+
+        // Calculate scroll indicators
+        let has_content_above = self.all_scroll_offset > 0;
+        let has_content_below = (self.all_scroll_offset + visible_height) < self.filtered_available_katas.len();
+        let scroll_indicator = match (has_content_above, has_content_below) {
+            (true, true) => " ↑↓",
+            (true, false) => " ↑",
+            (false, true) => " ↓",
+            (false, false) => "",
+        };
+
+        // Position indicator: showing item X of Y total
+        let position_info = if self.filtered_available_katas.len() > 0 {
+            format!(" [{}/{}]{} ", self.all_selected + 1, self.filtered_available_katas.len(), scroll_indicator)
+        } else {
+            String::new()
+        };
 
         let header = Row::new(vec!["", "Name", "Tags", "Difficulty", "In Deck"])
             .style(Style::default().add_modifier(Modifier::BOLD))
@@ -504,7 +538,7 @@ impl Library {
             ],
         )
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title(" All Katas "));
+        .block(Block::default().borders(Borders::ALL).title(format!(" All Katas {}", position_info)));
 
         frame.render_widget(table, area);
     }
@@ -516,25 +550,55 @@ impl Library {
             .enumerate()
             .map(|(i, category)| {
                 let is_selected = self.selected_categories.contains(category);
-                let checkbox = if is_selected { "[x]" } else { "[ ]" };
-                let mut style = if is_selected {
-                    Style::default().fg(Color::Cyan)
+                let is_cursor = i == self.category_selected_index;
+
+                // Use better checkbox symbols
+                let checkbox = if is_selected { "[✓]" } else { "[ ]" };
+
+                // Create styled line with different colors for checkbox and text
+                let checkbox_style = if is_selected {
+                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default()
+                    Style::default().fg(Color::DarkGray)
                 };
 
-                if i == self.category_selected_index {
-                    style = style.add_modifier(Modifier::BOLD).fg(Color::Yellow);
-                }
+                let text_style = if is_cursor {
+                    // Cursor: highlight the whole line
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                } else if is_selected {
+                    // Selected but not cursor: use cyan
+                    Style::default().fg(Color::Cyan)
+                } else {
+                    // Not selected: use white
+                    Style::default().fg(Color::White)
+                };
 
-                ListItem::new(format!("{} {}", checkbox, category)).style(style)
+                // Build the line with styled spans
+                let line = if is_cursor {
+                    // When cursor is here, highlight entire line
+                    Line::from(vec![
+                        Span::styled(format!("{} {}", checkbox, category), text_style),
+                    ])
+                } else {
+                    // Otherwise, style checkbox and text separately
+                    Line::from(vec![
+                        Span::styled(checkbox, checkbox_style),
+                        Span::raw(" "),
+                        Span::styled(category, text_style),
+                    ])
+                };
+
+                ListItem::new(line)
             })
             .collect();
 
         let list = List::new(items).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Select Categories (j/k to navigate, Space to toggle, Enter/Esc to close)"),
+                .title("Filter by Category · [j/k] Navigate · [Space] Toggle · [Enter/Esc] Done"),
         );
 
         frame.render_widget(list, area);
@@ -561,9 +625,19 @@ impl Library {
             }
             LibraryTab::AllKatas => {
                 if self.search_mode {
-                    Line::from("Type to search | Enter/Esc: Done")
+                    // Show the actual search query with cursor indicator
+                    Line::from(vec![
+                        Span::styled("⚡ SEARCH MODE · ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                        Span::styled("Query: ", Style::default().fg(Color::Cyan)),
+                        Span::raw(&self.search_query),
+                        Span::styled("|", Style::default().fg(Color::Yellow)),
+                        Span::styled("  [Enter/Esc] Done  [Ctrl+U] Clear", Style::default().fg(Color::Gray)),
+                    ])
                 } else if self.category_filter_mode {
-                    Line::from("[j/k] Navigate | [Space] Toggle | [Enter/Esc] Done")
+                    Line::from(vec![
+                        Span::styled("🏷  FILTER MODE · ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                        Span::raw("[j/k] Navigate | [Space] Toggle | [Enter/Esc] Done"),
+                    ])
                 } else if self.filtered_available_katas.is_empty() {
                     Line::from(vec![
                         Span::raw("[Tab] Switch tab  "),
@@ -761,6 +835,12 @@ impl Library {
 
     fn handle_search_input(&mut self, code: KeyCode) -> LibraryAction {
         match code {
+            KeyCode::Char(c) if c == '\u{15}' => {
+                // Ctrl+U - clear input buffer (Unix convention)
+                self.search_query.clear();
+                self.apply_filters();
+                LibraryAction::None
+            }
             KeyCode::Char(c) => {
                 self.search_query.push(c);
                 self.apply_filters();
@@ -771,7 +851,15 @@ impl Library {
                 self.apply_filters();
                 LibraryAction::None
             }
-            KeyCode::Enter | KeyCode::Esc => {
+            KeyCode::Enter => {
+                // Keep the search query, just exit search mode
+                self.search_mode = false;
+                LibraryAction::None
+            }
+            KeyCode::Esc => {
+                // Clear search and exit search mode
+                self.search_query.clear();
+                self.apply_filters();
                 self.search_mode = false;
                 LibraryAction::None
             }

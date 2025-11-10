@@ -9,7 +9,7 @@ A terminal-based spaced repetition system for mastering coding patterns and algo
 ### 🧠 FSRS-5 Spaced Repetition Algorithm
 
 - Modern memory model that tracks **stability**, **difficulty**, and **retrievability**
-- More accurate than traditional SM-2, optimized from millions of reviews
+- Optimized from millions of reviews for maximum retention efficiency
 - 4-point rating scale: Again / Hard / Good / Easy
 - Personalized parameter optimization based on your review history
 
@@ -237,7 +237,6 @@ kata-sr/
 │   ├── core/
 │   │   ├── fsrs.rs            # FSRS-5 algorithm
 │   │   ├── fsrs_optimizer.rs  # Parameter optimization
-│   │   ├── scheduler.rs       # Legacy SM-2 support
 │   │   ├── difficulty.rs      # Adaptive difficulty
 │   │   ├── dependencies.rs    # Dependency graph
 │   │   └── analytics.rs       # Statistics computation
@@ -265,7 +264,7 @@ kata-sr/
 
 ### What is FSRS?
 
-FSRS-5 (Free Spaced Repetition Scheduler) is a modern alternative to the classic SM-2 algorithm. It uses a memory model that more accurately predicts when you'll forget information.
+FSRS-5 (Free Spaced Repetition Scheduler) uses a memory model that accurately predicts when you'll forget information based on research from millions of reviews.
 
 **Key Concepts:**
 - **Stability**: Half-life of memory (how long until 50% retrieval probability)
@@ -515,7 +514,6 @@ cat katas/exercises/<kata_name>/manifest.toml
 
 - [FSRS-5 Algorithm](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm)
 - [FSRS Research Paper](https://www.nature.com/articles/s41562-024-01962-9)
-- [SM-2 Algorithm](https://www.supermemo.com/en/archives1990-2015/english/ol/sm2)
 - [Spaced Repetition Wiki](https://www.gwern.net/Spaced-repetition)
 
 ## License
@@ -526,7 +524,6 @@ MIT
 
 - FSRS algorithm by [Jarrett Ye](https://github.com/open-spaced-repetition/fsrs-rs)
 - Ratatui framework for terminal UI
-- Original SM-2 algorithm by Piotr Woźniak
 
 ---
 
