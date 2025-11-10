@@ -1,0 +1,32 @@
+[kata]
+name = "neetcode_median_finder"
+category = "exercises"
+base_difficulty = 3
+description = """Find Median from Data Stream (LeetCode 295)
+
+The median is the middle value in an ordered integer list. If the size of the list is even,
+there is no middle value, and the median is the mean of the two middle values.
+
+Implement the MedianFinder class:
+- MedianFinder() initializes the MedianFinder object.
+- void addNum(int num) adds the integer num from the data stream to the data structure.
+- double findMedian() returns the median of all elements so far.
+
+Example:
+medianFinder = MedianFinder()
+medianFinder.addNum(1)
+medianFinder.addNum(2)
+medianFinder.findMedian()  # return 1.5
+medianFinder.addNum(3)
+medianFinder.findMedian()  # return 2.0
+
+Constraints:
+- -10^5 <= num <= 10^5
+- There will be at least one element in the data structure before calling findMedian
+- At most 5 * 10^4 calls will be made to addNum and findMedian
+
+Follow up:
+- If all integer numbers from the stream are in the range [0, 100], how would you optimize?
+- If 99% of all integer numbers are in the range [0, 100], how would you optimize?
+"""
+dependencies = []

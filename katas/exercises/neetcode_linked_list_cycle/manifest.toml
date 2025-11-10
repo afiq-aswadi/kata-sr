@@ -1,0 +1,25 @@
+[kata]
+name = "neetcode_linked_list_cycle"
+category = "exercises"
+base_difficulty = 1
+description = """Linked List Cycle (LeetCode 141)
+
+Given head, the head of a linked list, determine if the linked list has a cycle in it.
+
+Example 1:
+Input: head = [3,2,0,-4], pos = 1
+Output: true
+
+Example 2:
+Input: head = [1,2], pos = 0
+Output: true
+
+Example 3:
+Input: head = [1], pos = -1
+Output: false
+
+Constraints:
+- The number of the nodes in the list is in the range [0, 10^4]
+- -10^5 <= Node.val <= 10^5
+"""
+dependencies = []

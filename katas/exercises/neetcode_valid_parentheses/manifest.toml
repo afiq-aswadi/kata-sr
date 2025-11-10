@@ -1,0 +1,26 @@
+[kata]
+name = "neetcode_valid_parentheses"
+category = "exercises"
+base_difficulty = 1
+description = """Valid Parentheses (LeetCode 20)
+
+Given a string s containing just the characters '(', ')', '{', '}', '[' and ']',
+determine if the input string is valid.
+
+Example 1:
+Input: s = "()"
+Output: true
+
+Example 2:
+Input: s = "()[]{}"
+Output: true
+
+Example 3:
+Input: s = "(]"
+Output: false
+
+Constraints:
+- 1 <= s.length <= 10^4
+- s consists of parentheses only '()[]{}'
+"""
+dependencies = []
