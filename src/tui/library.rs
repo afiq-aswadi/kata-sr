@@ -40,6 +40,8 @@ pub enum LibraryAction {
     AddKata(String),
     /// Attempt a kata without adding to deck (preview mode)
     AttemptKata(AvailableKata),
+    /// Practice a kata from deck (normal scheduled review)
+    PracticeKata(Kata),
     /// Remove a kata from the deck
     RemoveKata(Kata),
     /// Toggle flag on a kata as problematic
@@ -640,6 +642,7 @@ impl Library {
                     Line::from(vec![
                         Span::raw("[Tab] Switch tab  "),
                         Span::raw("[j/k] Navigate  "),
+                        Span::raw("[Enter/p] Practice  "),
                         Span::raw("[d] Remove  "),
                         Span::raw("[e] Edit  "),
                         Span::raw("[f] Flag  "),
@@ -783,6 +786,10 @@ impl Library {
                     self.deck_selected -= 1;
                 }
                 LibraryAction::None
+            }
+            KeyCode::Enter | KeyCode::Char('p') => {
+                let kata = self.deck_katas[self.deck_selected].clone();
+                LibraryAction::PracticeKata(kata)
             }
             KeyCode::Char('d') => {
                 let kata = self.deck_katas[self.deck_selected].clone();

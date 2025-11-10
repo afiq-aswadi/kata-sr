@@ -578,6 +578,7 @@ impl App {
                         LibraryAction::AttemptKata(available_kata) => {
                             Some(ScreenAction::AttemptKataWithoutDeck(available_kata))
                         }
+                        LibraryAction::PracticeKata(kata) => Some(ScreenAction::StartPractice(kata)),
                         LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
                         LibraryAction::ToggleFlagKata(kata) => {
                             // Toggle the problematic flag in database
