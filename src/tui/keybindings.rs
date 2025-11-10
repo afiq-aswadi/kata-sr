@@ -74,6 +74,7 @@ pub fn get_keybindings() -> Keybindings {
         global: vec![
             Keybinding::new("q", "Quit application"),
             Keybinding::new("?", "Show this help screen"),
+            Keybinding::new("Esc", "Return to startup screen"),
         ],
         dashboard: vec![
             Keybinding::new("j / ↓", "Move down in kata list"),
@@ -88,7 +89,6 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("e", "Edit kata in nvim and auto-run tests"),
             Keybinding::new("t", "Re-run tests without reopening the editor"),
             Keybinding::new("f", "Flag/unflag kata as problematic (toggle)"),
-            Keybinding::new("Esc", "Return to dashboard"),
         ],
         results: vec![
             Keybinding::new("1", "Rate as Hard (struggled but passed)"),
@@ -114,7 +114,6 @@ pub fn get_keybindings() -> Keybindings {
                 "r",
                 "After rating submission: return to dashboard to pick another kata",
             ),
-            Keybinding::new("Esc", "If tests failed: return to dashboard"),
         ],
         library: vec![
             Keybinding::new("Tab", "Switch between My Deck and All Katas tabs"),
@@ -125,7 +124,6 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("f", "Flag/unflag kata as problematic (My Deck tab)"),
             Keybinding::new("n", "Create a brand new kata"),
             Keybinding::new("Enter", "View kata details (All Katas tab)"),
-            Keybinding::new("Esc", "Return to dashboard"),
         ],
     }
 }
@@ -175,11 +173,11 @@ pub fn render_help_screen(frame: &mut Frame) {
     let sections = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(4),  // Global
-            Constraint::Length(9),  // Dashboard (added one for 'f')
-            Constraint::Length(6),  // Practice
-            Constraint::Length(11), // Results (added one for 'b' bury)
-            Constraint::Length(11), // Library (added some for new keybindings)
+            Constraint::Length(5),  // Global (3 items: q, ?, Esc)
+            Constraint::Length(9),  // Dashboard
+            Constraint::Length(5),  // Practice (3 items)
+            Constraint::Length(10), // Results (9 items)
+            Constraint::Length(10), // Library (8 items)
             Constraint::Min(1),     // Spacer
             Constraint::Length(2),  // Footer
         ])

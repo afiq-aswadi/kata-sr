@@ -271,6 +271,23 @@ impl App {
                             // toggle help screen
                             self.toggle_help();
                         }
+                        KeyCode::Esc => {
+                            // Handle Esc with priority for help/popup dismissal
+                            if self.showing_help {
+                                self.showing_help = false;
+                            } else if self.popup_message.is_some() {
+                                self.popup_message = None;
+                            } else {
+                                // Let screen handle Esc first, then apply global "return to startup" for simple back actions
+                                self.handle_escape_with_redirect()?;
+
+                                // Clear terminal if needed (after external editor)
+                                if self.needs_terminal_clear {
+                                    terminal.clear().context("Failed to clear terminal")?;
+                                    self.needs_terminal_clear = false;
+                                }
+                            }
+                        }
                         code => {
                             self.handle_input(code)?;
 
@@ -654,6 +671,33 @@ impl App {
         // handle the extracted action (no longer borrowing self.current_screen)
         if let Some(action) = action_result {
             self.execute_action(action)?;
+        }
+
+        Ok(())
+    }
+
+    /// Handles Escape key with screen-first priority, then redirects "back" actions to startup.
+    ///
+    /// This allows screens to handle Escape for modal cleanup (e.g., closing solution view,
+    /// submitting give-up rating) while still providing global "return to startup" behavior
+    /// for simple back navigation.
+    fn handle_escape_with_redirect(&mut self) -> anyhow::Result<()> {
+        // Let the current screen handle Escape normally
+        self.handle_input(KeyCode::Esc)?;
+
+        // After screen processes Escape, check if it resulted in "back to dashboard" navigation.
+        // We can't directly intercept the action, but we can observe the screen state.
+        // For screens that use Esc to go back, they've already navigated.
+        // Just check if we're on Dashboard or Done screen and redirect to Startup.
+        match &self.current_screen {
+            Screen::Dashboard | Screen::Done(_) => {
+                // Screen navigated to dashboard, redirect to startup instead
+                self.current_screen = Screen::Startup(StartupScreen::new());
+            }
+            _ => {
+                // Screen handled Esc internally (modal closed, rating submitted, etc.)
+                // or we're already on startup - no additional action needed
+            }
         }
 
         Ok(())
