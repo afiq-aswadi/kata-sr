@@ -182,9 +182,10 @@ impl App {
     pub fn new(repo: KataRepository, config: AppConfig) -> anyhow::Result<Self> {
         let (tx, rx) = channel();
         let dashboard = Dashboard::load(&repo)?;
+        let startup_screen = StartupScreen::load(&repo)?;
 
         let app = Self {
-            current_screen: Screen::Startup(StartupScreen::new()),
+            current_screen: Screen::Startup(startup_screen),
             dashboard,
             repo,
             config,
@@ -272,6 +273,23 @@ impl App {
                         KeyCode::Char('?') => {
                             // toggle help screen
                             self.toggle_help();
+                        }
+                        KeyCode::Esc => {
+                            // Handle Esc with priority for help/popup dismissal
+                            if self.showing_help {
+                                self.showing_help = false;
+                            } else if self.popup_message.is_some() {
+                                self.popup_message = None;
+                            } else {
+                                // Let screen handle Esc first, then apply global "return to startup" for simple back actions
+                                self.handle_escape_with_redirect()?;
+
+                                // Clear terminal if needed (after external editor)
+                                if self.needs_terminal_clear {
+                                    terminal.clear().context("Failed to clear terminal")?;
+                                    self.needs_terminal_clear = false;
+                                }
+                            }
                         }
                         code => {
                             self.handle_input(code)?;
@@ -453,32 +471,6 @@ impl App {
                 DoneAction::None => None,
             },
             Screen::Results(kata, results_screen) => {
-                // Handle 'f' to toggle flag on current kata
-                if code == KeyCode::Char('f') {
-                    let kata_id = kata.id;
-                    let was_problematic = kata.is_problematic;
-
-                    // Toggle the flag in database
-                    if was_problematic {
-                        self.repo.unflag_kata(kata_id)?;
-                    } else {
-                        self.repo.flag_kata(kata_id, None)?;
-                    }
-
-                    // Reload fresh kata state from database and update Screen enum
-                    if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
-                        // Extract the results_screen by temporarily replacing current_screen
-                        let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
-                        if let Screen::Results(_, rs) = old_screen {
-                            self.current_screen = Screen::Results(fresh_kata, rs);
-                        }
-                    }
-
-                    // Also reload dashboard for consistency
-                    self.dashboard = Dashboard::load(&self.repo)?;
-                    return Ok(());
-                }
-
                 let action = results_screen.handle_input(code);
                 match action {
                     ResultsAction::SubmitRating(rating) => {
@@ -487,14 +479,49 @@ impl App {
                     ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
                     ResultsAction::GiveUp => {
-                        // Load and show solution. When user closes it (Esc), it auto-submits Rating::Again
-                        results_screen.load_and_show_solution(true);
-                        None
+                        // Open solution in editor. When user closes editor, auto-submit Rating::Again
+                        match results_screen.open_solution_in_editor(true) {
+                            Ok(()) => {
+                                // Successfully viewed solution, auto-submit Rating::Again (1)
+                                Some(ScreenAction::SubmitRating(kata.clone(), 1))
+                            }
+                            Err(e) => {
+                                // Failed to open editor - stay on results screen
+                                eprintln!("Failed to open solution: {}", e);
+                                None
+                            }
+                        }
                     }
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
+                    ResultsAction::ToggleFlagWithReason(reason) => {
+                        let kata_id = kata.id;
+                        let was_problematic = kata.is_problematic;
+
+                        // Toggle the flag in database with reason
+                        if was_problematic {
+                            self.repo.unflag_kata(kata_id)?;
+                        } else {
+                            self.repo.flag_kata(kata_id, reason)?;
+                        }
+
+                        // Reload fresh kata state from database and update Screen enum
+                        if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
+                            // Extract the results_screen by temporarily replacing current_screen
+                            let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
+                            if let Screen::Results(_, mut rs) = old_screen {
+                                // Update the kata inside ResultsScreen so flag popup shows correct status
+                                rs.update_kata(fresh_kata.clone());
+                                self.current_screen = Screen::Results(fresh_kata, rs);
+                            }
+                        }
+
+                        // Also reload dashboard for consistency
+                        self.dashboard = Dashboard::load(&self.repo)?;
+                        None
+                    }
                     ResultsAction::None => None,
                 }
             }
@@ -503,9 +530,30 @@ impl App {
                 let action = settings_screen.handle_input(code);
                 match action {
                     SettingsAction::Cancel => Some(ScreenAction::CloseSettings),
-                    SettingsAction::Save => {
-                        // TODO: implement save
-                        Some(ScreenAction::CloseSettings)
+                    SettingsAction::Save(config) => {
+                        // Save config to file
+                        match config.save() {
+                            Ok(_) => {
+                                // Update app config
+                                self.config = config;
+                                // Show success popup
+                                self.popup_message = Some(PopupMessage {
+                                    title: "Settings Saved".to_string(),
+                                    message: "Settings have been saved to ~/.config/kata-sr/config.toml".to_string(),
+                                    style: PopupStyle::Success,
+                                });
+                                None
+                            }
+                            Err(e) => {
+                                // Show error popup
+                                self.popup_message = Some(PopupMessage {
+                                    title: "Error Saving Settings".to_string(),
+                                    message: format!("Failed to save settings:\n\n{}", e),
+                                    style: PopupStyle::Error,
+                                });
+                                None
+                            }
+                        }
                     }
                     SettingsAction::None => None,
                 }
@@ -632,11 +680,39 @@ impl App {
         Ok(())
     }
 
+    /// Handles Escape key with screen-first priority, then redirects "back" actions to startup.
+    ///
+    /// This allows screens to handle Escape for modal cleanup (e.g., closing solution view,
+    /// submitting give-up rating) while still providing global "return to startup" behavior
+    /// for simple back navigation.
+    fn handle_escape_with_redirect(&mut self) -> anyhow::Result<()> {
+        // Let the current screen handle Escape normally
+        self.handle_input(KeyCode::Esc)?;
+
+        // After screen processes Escape, check if it resulted in "back to dashboard" navigation.
+        // We can't directly intercept the action, but we can observe the screen state.
+        // For screens that use Esc to go back, they've already navigated.
+        // Just check if we're on Dashboard or Done screen and redirect to Startup.
+        match &self.current_screen {
+            Screen::Dashboard | Screen::Done(_) => {
+                // Screen navigated to dashboard, redirect to startup instead
+                let startup_screen = StartupScreen::load(&self.repo)?;
+                self.current_screen = Screen::Startup(startup_screen);
+            }
+            _ => {
+                // Screen handled Esc internally (modal closed, rating submitted, etc.)
+                // or we're already on startup - no additional action needed
+            }
+        }
+
+        Ok(())
+    }
+
     /// Executes a screen action, handling all state transitions.
     fn execute_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
         match action {
             ScreenAction::StartPractice(kata) => {
-                let practice_screen = PracticeScreen::new(kata.clone())?;
+                let practice_screen = PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::ReturnToDashboard => {
@@ -660,14 +736,14 @@ impl App {
                     self.dashboard = Dashboard::load(&self.repo)?;
                 }
                 if let Some(next_kata) = self.dashboard.katas_due.first().cloned() {
-                    let practice_screen = PracticeScreen::new(next_kata.clone())?;
+                    let practice_screen = PracticeScreen::new(next_kata.clone(), self.config.editor.clone())?;
                     self.current_screen = Screen::Practice(next_kata, practice_screen);
                 } else {
                     self.refresh_dashboard_screen()?;
                 }
             }
             ScreenAction::OpenLibrary => {
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::AddKataFromLibrary(kata_name) => {
@@ -696,7 +772,7 @@ impl App {
                         }
                         Screen::Details(_) => {
                             // navigate back to library with updated state
-                            let library = Library::load(&self.repo)?;
+                            let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                             self.current_screen = Screen::Library(library);
                             // Force terminal clear to prevent display corruption
                             self.needs_terminal_clear = true;
@@ -716,11 +792,11 @@ impl App {
                 self.current_screen = Screen::Details(details);
             }
             ScreenAction::BackFromDetails => {
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::RetryKata(kata) => {
-                let practice_screen = PracticeScreen::new_retry(kata.clone())?;
+                let practice_screen = PracticeScreen::new_retry(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::RemoveKataFromDeck(kata) => {
@@ -759,7 +835,7 @@ impl App {
                 match generate_kata_files(&form_data, exercises_dir) {
                     Ok(created_slug) => {
                         // Success! Return to library and show success popup
-                        let library = Library::load(&self.repo)?;
+                        let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                         self.current_screen = Screen::Library(library);
 
                         self.popup_message = Some(PopupMessage {
@@ -773,7 +849,7 @@ impl App {
                     }
                     Err(e) => {
                         // Error! Return to library and show error popup
-                        let library = Library::load(&self.repo)?;
+                        let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                         self.current_screen = Screen::Library(library);
 
                         self.popup_message = Some(PopupMessage {
@@ -786,7 +862,7 @@ impl App {
             }
             ScreenAction::CancelCreateKata => {
                 // Return to library
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenEditKata(kata_id) => {
@@ -830,7 +906,17 @@ impl App {
                 let original_kata = self.repo.get_kata_by_id(kata_id)?
                     .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
                 let original_dependencies = self.repo.get_kata_dependencies(kata_id)?;
-                let tags = self.repo.get_kata_tags(kata_id)?;
+                let original_tags = self.repo.get_kata_tags(kata_id)?;
+
+                // Parse category field as comma-separated tags
+                let new_tags: Vec<String> = form_data.category
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+
+                // Use the first tag as the primary category for backward compatibility
+                let primary_category = new_tags.first().cloned().unwrap_or_else(|| form_data.category.clone());
 
                 if name_changed {
                     // 1. Update database first
@@ -838,11 +924,25 @@ impl App {
                         kata_id,
                         &new_slug,
                         &form_data.description,
-                        &form_data.category,
+                        &primary_category,
                         form_data.difficulty as i32,
                     ) {
                         Ok(_) => {
-                            // 2. Update dependencies in DB
+                            // 2. Update tags in DB
+                            if let Err(e) = self.repo.set_kata_tags(kata_id, &new_tags) {
+                                // Rollback metadata changes
+                                let _ = self.repo.update_kata_full_metadata(
+                                    kata_id,
+                                    &original_kata.name,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                eprintln!("Failed to update tags: {}", e);
+                                return Ok(());
+                            }
+
+                            // 3. Update dependencies in DB
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
                             if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
                                 // Rollback ALL database changes
@@ -853,17 +953,18 @@ impl App {
                                     &original_kata.category,
                                     original_kata.base_difficulty,
                                 );
+                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                 eprintln!("Failed to update dependencies: {}", e);
                                 return Ok(());
                             }
 
-                            // 3. Now rename directory (if this fails, rollback DB)
+                            // 4. Now rename directory (if this fails, rollback DB)
                             match rename_kata_directory(exercises_dir, &original_slug, &new_slug) {
                                 Ok(_) => {
-                                    // 4. Update manifest in new location
+                                    // 5. Update manifest in new location
                                     let kata_dir = exercises_dir.join(&new_slug);
                                     if let Err(e) =
-                                        update_manifest(&kata_dir, &form_data, &new_slug, &tags)
+                                        update_manifest(&kata_dir, &form_data, &new_slug, &new_tags)
                                     {
                                         // Rollback: rename directory back and revert ALL database changes
                                         let _ = rename_kata_directory(
@@ -878,12 +979,13 @@ impl App {
                                             &original_kata.category,
                                             original_kata.base_difficulty,
                                         );
+                                        let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                         let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                         eprintln!("Failed to update manifest: {}", e);
                                         return Ok(());
                                     }
 
-                                    // 5. Update all dependent kata manifests to use new slug
+                                    // 6. Update all dependent kata manifests to use new slug
                                     let dependent_kata_ids = self.repo.get_dependent_katas(kata_id)?;
                                     for dep_kata_id in &dependent_kata_ids {
                                         if let Ok(Some(dep_kata)) = self.repo.get_kata_by_id(*dep_kata_id) {
@@ -925,6 +1027,7 @@ impl App {
                                                     &original_kata.category,
                                                     original_kata.base_difficulty,
                                                 );
+                                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                                 let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                                 return Ok(());
                                             }
@@ -932,7 +1035,7 @@ impl App {
                                     }
 
                                     // Success! Return to library
-                                    let library = Library::load(&self.repo)?;
+                                    let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                                     self.current_screen = Screen::Library(library);
                                     eprintln!("Kata '{}' updated successfully!", new_slug);
                                 }
@@ -945,6 +1048,7 @@ impl App {
                                         &original_kata.category,
                                         original_kata.base_difficulty,
                                     );
+                                    let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                     let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                     eprintln!("Failed to rename kata directory: {}", e);
                                     // Stay on edit screen
@@ -961,10 +1065,23 @@ impl App {
                     match self.repo.update_kata_metadata(
                         kata_id,
                         &form_data.description,
-                        &form_data.category,
+                        &primary_category,
                         form_data.difficulty as i32,
                     ) {
                         Ok(_) => {
+                            // Update tags in DB
+                            if let Err(e) = self.repo.set_kata_tags(kata_id, &new_tags) {
+                                // Rollback metadata changes
+                                let _ = self.repo.update_kata_metadata(
+                                    kata_id,
+                                    &original_kata.description,
+                                    &original_kata.category,
+                                    original_kata.base_difficulty,
+                                );
+                                eprintln!("Failed to update tags: {}", e);
+                                return Ok(());
+                            }
+
                             // Update dependencies
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
                             if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
@@ -975,13 +1092,14 @@ impl App {
                                     &original_kata.category,
                                     original_kata.base_difficulty,
                                 );
+                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                 eprintln!("Failed to update dependencies: {}", e);
                                 return Ok(());
                             }
 
-                            // Update manifest with tags preserved
+                            // Update manifest with new tags
                             let kata_dir = exercises_dir.join(&original_slug);
-                            if let Err(e) = update_manifest(&kata_dir, &form_data, &original_slug, &tags) {
+                            if let Err(e) = update_manifest(&kata_dir, &form_data, &original_slug, &new_tags) {
                                 // Rollback ALL database changes
                                 let _ = self.repo.update_kata_metadata(
                                     kata_id,
@@ -989,13 +1107,14 @@ impl App {
                                     &original_kata.category,
                                     original_kata.base_difficulty,
                                 );
+                                let _ = self.repo.set_kata_tags(kata_id, &original_tags);
                                 let _ = self.repo.replace_dependencies(kata_id, &original_dependencies);
                                 eprintln!("Failed to update manifest: {}", e);
                                 return Ok(());
                             }
 
                             // Success! Return to library
-                            let library = Library::load(&self.repo)?;
+                            let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                             self.current_screen = Screen::Library(library);
                             eprintln!("Kata '{}' updated successfully!", original_slug);
                         }
@@ -1063,7 +1182,7 @@ impl App {
             }
             ScreenAction::CancelEditKata => {
                 // Return to library
-                let library = Library::load(&self.repo)?;
+                let library = Library::load(&self.repo, &self.config.library.default_sort, self.config.library.default_sort_ascending)?;
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenSettings => {

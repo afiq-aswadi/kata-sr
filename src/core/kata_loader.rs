@@ -85,16 +85,31 @@ pub fn load_available_katas() -> Result<Vec<AvailableKata>> {
 ///
 /// * `katas` - Slice of available katas
 ///
+/// Extracts all unique tags from katas (including both category and tags fields).
+///
 /// # Returns
 ///
-/// Sorted vector of unique category strings
+/// Sorted vector of unique category/tag strings
 pub fn get_unique_categories(katas: &[AvailableKata]) -> Vec<String> {
-    let mut categories: Vec<String> = katas
-        .iter()
-        .map(|k| k.category.clone())
-        .collect::<std::collections::HashSet<_>>()
-        .into_iter()
-        .collect();
+    use std::collections::HashSet;
+
+    let mut all_tags = HashSet::new();
+
+    for kata in katas {
+        // Add the primary category
+        if !kata.category.is_empty() {
+            all_tags.insert(kata.category.clone());
+        }
+
+        // Add all tags
+        for tag in &kata.tags {
+            if !tag.is_empty() {
+                all_tags.insert(tag.clone());
+            }
+        }
+    }
+
+    let mut categories: Vec<String> = all_tags.into_iter().collect();
     categories.sort();
     categories
 }

@@ -1,5 +1,6 @@
 use crate::db::repo::Kata;
 use crate::runner::python_runner::{TestResult, TestResults};
+use anyhow::Context;
 use crossterm::event::KeyCode;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -8,6 +9,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
     Frame,
 };
+use std::process::Command;
 
 const RATING_LABELS: [&str; 4] = ["Again", "Hard", "Good", "Easy"];
 const DETAIL_PAGE_SIZE: u16 = 20; // Lines to scroll per page in detail mode
@@ -24,9 +26,9 @@ pub struct ResultsScreen {
     remaining_due_after_submit: Option<usize>,
     detail_mode: bool,
     detail_scroll: u16,
-    solution_mode: bool,
-    solution_scroll: u16,
-    solution_content: Option<String>,
+    flag_popup_active: bool,
+    flag_reason: String,
+    flag_cursor_position: usize,
     gave_up: bool,
 }
 
@@ -64,9 +66,9 @@ impl ResultsScreen {
             remaining_due_after_submit: None,
             detail_mode: false,
             detail_scroll: 0,
-            solution_mode: false,
-            solution_scroll: 0,
-            solution_content: None,
+            flag_popup_active: false,
+            flag_reason: String::new(),
+            flag_cursor_position: 0,
             gave_up: false,
         }
     }
@@ -75,6 +77,12 @@ impl ResultsScreen {
         self.rating_submitted = true;
         self.submitted_rating = Some(rating);
         self.remaining_due_after_submit = Some(remaining_due);
+    }
+
+    /// Update the kata after it's been modified in the database.
+    /// This ensures the flag popup shows the current flag status.
+    pub fn update_kata(&mut self, kata: Kata) {
+        self.kata = kata;
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
@@ -97,8 +105,8 @@ impl ResultsScreen {
             self.render_detail_overlay(frame);
         }
 
-        if self.solution_mode {
-            self.render_solution_overlay(frame);
+        if self.flag_popup_active {
+            self.render_flag_popup(frame);
         }
     }
 
@@ -296,26 +304,174 @@ impl ResultsScreen {
         frame.render_widget(detail, area);
     }
 
-    fn render_solution_overlay(&self, frame: &mut Frame) {
-        let area = centered_rect(80, 70, frame.size());
+    fn render_flag_popup(&self, frame: &mut Frame) {
+        let area = centered_rect(70, 60, frame.size());
         frame.render_widget(Clear, area);
 
-        let title = format!(
-            "Reference Solution: {} · [↑↓/jk] scroll · [PgUp/PgDn/Space/b] page · [Home/End] jump · [Esc] close",
-            self.kata.name
-        );
-        let body = self.solution_content.as_ref()
-            .map(|s| s.clone())
-            .unwrap_or_else(|| "Failed to load reference solution.".to_string());
+        // Split the popup into sections
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(5), // Kata info
+                Constraint::Length(4), // Current status
+                Constraint::Length(5), // Reason input
+                Constraint::Min(1),     // Instructions
+            ])
+            .split(area);
 
-        let solution = Paragraph::new(body)
+        // Kata info section
+        let description_preview = if self.kata.description.chars().count() > 80 {
+            let truncated: String = self.kata.description.chars().take(80).collect();
+            format!("{}...", truncated)
+        } else {
+            self.kata.description.clone()
+        };
+        let kata_info = format!(
+            "Kata: {}\nCategory: {}\nDescription: {}",
+            self.kata.name,
+            self.kata.category,
+            description_preview
+        );
+        let info_widget = Paragraph::new(kata_info)
             .wrap(Wrap { trim: false })
-            .scroll((self.solution_scroll, 0))
-            .block(Block::default().borders(Borders::ALL).title(title));
-        frame.render_widget(solution, area);
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Flag Kata as Problematic"),
+            );
+        frame.render_widget(info_widget, chunks[0]);
+
+        // Current status section
+        let current_status = if self.kata.is_problematic {
+            let notes = self.kata.problematic_notes.as_deref().unwrap_or("(no reason given)");
+            format!("Current Status: FLAGGED\nReason: {}", notes)
+        } else {
+            "Current Status: NOT FLAGGED".to_string()
+        };
+        let status_widget = Paragraph::new(current_status)
+            .style(Style::default().fg(if self.kata.is_problematic {
+                Color::Red
+            } else {
+                Color::Green
+            }))
+            .block(Block::default().borders(Borders::ALL).title("Status"));
+        frame.render_widget(status_widget, chunks[1]);
+
+        // Reason input section
+        let action = if self.kata.is_problematic {
+            "Unflag"
+        } else {
+            "Flag"
+        };
+        let input_text = if self.flag_reason.is_empty() {
+            Span::styled(
+                "(optional - press Enter to skip)",
+                Style::default().fg(Color::DarkGray),
+            )
+        } else {
+            Span::raw(&self.flag_reason)
+        };
+        let reason_widget = Paragraph::new(Line::from(vec![input_text]))
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(format!("Reason (optional) - Type reason to {} this kata", action.to_lowercase())),
+            );
+        frame.render_widget(reason_widget, chunks[2]);
+
+        // Instructions section
+        let instructions = if self.kata.is_problematic {
+            "[Enter] Unflag kata    [Esc] Cancel"
+        } else {
+            "[Enter] Flag kata    [Esc] Cancel"
+        };
+        let instructions_widget = Paragraph::new(instructions)
+            .style(Style::default().fg(Color::Cyan))
+            .block(Block::default().borders(Borders::ALL).title("Controls"));
+        frame.render_widget(instructions_widget, chunks[3]);
     }
 
     pub fn handle_input(&mut self, code: KeyCode) -> ResultsAction {
+        // Handle flag popup input first
+        if self.flag_popup_active {
+            match code {
+                KeyCode::Esc => {
+                    // Cancel flagging
+                    self.flag_popup_active = false;
+                    self.flag_reason.clear();
+                    self.flag_cursor_position = 0;
+                    return ResultsAction::None;
+                }
+                KeyCode::Enter => {
+                    // Submit flag with reason (or None if empty)
+                    self.flag_popup_active = false;
+                    let reason = if self.flag_reason.is_empty() {
+                        None
+                    } else {
+                        Some(self.flag_reason.clone())
+                    };
+                    self.flag_reason.clear();
+                    self.flag_cursor_position = 0;
+                    return ResultsAction::ToggleFlagWithReason(reason);
+                }
+                KeyCode::Char(c) => {
+                    // Add character to reason
+                    // Convert character position to byte index
+                    let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                    self.flag_reason.insert(byte_idx, c);
+                    self.flag_cursor_position += 1;
+                    return ResultsAction::None;
+                }
+                KeyCode::Backspace => {
+                    // Remove character before cursor
+                    if self.flag_cursor_position > 0 {
+                        self.flag_cursor_position -= 1;
+                        let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                        self.flag_reason.remove(byte_idx);
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Delete => {
+                    // Remove character at cursor
+                    let char_count = self.flag_reason.chars().count();
+                    if self.flag_cursor_position < char_count {
+                        let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                        self.flag_reason.remove(byte_idx);
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Left => {
+                    // Move cursor left
+                    if self.flag_cursor_position > 0 {
+                        self.flag_cursor_position -= 1;
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Right => {
+                    // Move cursor right
+                    let char_count = self.flag_reason.chars().count();
+                    if self.flag_cursor_position < char_count {
+                        self.flag_cursor_position += 1;
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Home => {
+                    // Move cursor to start
+                    self.flag_cursor_position = 0;
+                    return ResultsAction::None;
+                }
+                KeyCode::End => {
+                    // Move cursor to end
+                    self.flag_cursor_position = self.flag_reason.chars().count();
+                    return ResultsAction::None;
+                }
+                _ => {
+                    return ResultsAction::None;
+                }
+            }
+        }
+
         if self.detail_mode {
             match code {
                 KeyCode::Esc | KeyCode::Char('o') => {
@@ -348,41 +504,15 @@ impl ResultsScreen {
             return ResultsAction::None;
         }
 
-        if self.solution_mode {
-            match code {
-                KeyCode::Esc => {
-                    self.solution_mode = false;
-                    // If we gave up, auto-submit with Rating::Again after closing solution
-                    if self.gave_up {
-                        return ResultsAction::SubmitRating(1); // Rating::Again
-                    }
-                }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    self.solution_scroll = self.solution_scroll.saturating_add(1);
-                }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    self.solution_scroll = self.solution_scroll.saturating_sub(1);
-                }
-                KeyCode::PageDown | KeyCode::Char(' ') => {
-                    self.solution_scroll = self.solution_scroll.saturating_add(DETAIL_PAGE_SIZE);
-                }
-                KeyCode::PageUp | KeyCode::Char('b') => {
-                    self.solution_scroll = self.solution_scroll.saturating_sub(DETAIL_PAGE_SIZE);
-                }
-                KeyCode::Home | KeyCode::Char('g') => {
-                    self.solution_scroll = 0;
-                }
-                KeyCode::End | KeyCode::Char('G') => {
-                    self.solution_scroll = u16::MAX;
-                }
-                _ => {}
-            }
-            return ResultsAction::None;
-        }
-
         if matches!(code, KeyCode::Char('o')) && self.selected_test_result().is_some() {
             self.detail_mode = true;
             self.detail_scroll = 0;
+            return ResultsAction::None;
+        }
+
+        if matches!(code, KeyCode::Char('f')) {
+            // Activate flag popup
+            self.flag_popup_active = true;
             return ResultsAction::None;
         }
 
@@ -495,7 +625,16 @@ impl ResultsScreen {
         self.test_state.select(Some(self.selected_test));
     }
 
-    pub fn load_and_show_solution(&mut self, is_give_up: bool) {
+    /// Convert a character position (0-indexed) to a byte index for use with String operations.
+    /// This ensures we always land on valid UTF-8 character boundaries.
+    fn char_pos_to_byte_idx(&self, s: &str, char_pos: usize) -> usize {
+        s.char_indices()
+            .nth(char_pos)
+            .map(|(byte_idx, _)| byte_idx)
+            .unwrap_or(s.len())
+    }
+
+    pub fn open_solution_in_editor(&mut self, is_give_up: bool) -> anyhow::Result<()> {
         let katas_root = std::env::var("KATA_SR_KATAS_DIR")
             .map(std::path::PathBuf::from)
             .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
@@ -504,18 +643,101 @@ impl ResultsScreen {
             .join(&self.kata.name)
             .join("reference.py");
 
-        self.solution_content = match std::fs::read_to_string(&reference_path) {
-            Ok(content) => Some(content),
-            Err(e) => Some(format!(
-                "Failed to load reference solution from {}:\n\n{}",
-                reference_path.display(),
-                e
-            )),
-        };
+        // Check if the reference file exists
+        if !reference_path.exists() {
+            anyhow::bail!(
+                "Reference solution not found at {}",
+                reference_path.display()
+            );
+        }
 
-        self.solution_mode = true;
-        self.solution_scroll = 0;
-        self.gave_up = is_give_up;
+        // Determine which editor to use (respects EDITOR env var)
+        let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
+
+        // Parse editor command to handle arguments (e.g., "code -w")
+        let parts: Vec<&str> = editor.split_whitespace().collect();
+        if parts.is_empty() {
+            anyhow::bail!("EDITOR environment variable is empty");
+        }
+
+        let editor_program = parts[0];
+        let editor_args = &parts[1..];
+
+        // Determine if we should add read-only flag based on editor
+        let editor_basename = std::path::Path::new(editor_program)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or(editor_program);
+
+        let is_vim_like = matches!(
+            editor_basename,
+            "vim" | "nvim" | "vi" | "view" | "gvim" | "nvim-qt"
+        );
+
+        // Exit alternate screen and disable raw mode to hand control to editor
+        let mut stdout = std::io::stdout();
+        crossterm::execute!(
+            stdout,
+            crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+            crossterm::cursor::Show,
+            crossterm::terminal::LeaveAlternateScreen,
+        )
+        .context("failed to leave alternate screen before launching editor")?;
+
+        crossterm::terminal::disable_raw_mode()
+            .context("failed to disable raw mode before launching editor")?;
+
+        // Launch editor with reference solution
+        let mut cmd = Command::new(editor_program);
+
+        // Add user's editor arguments
+        cmd.args(editor_args);
+
+        // Add read-only flag only for vim-like editors
+        if is_vim_like {
+            cmd.arg("-R");
+        }
+
+        cmd.arg(&reference_path);
+
+        let status_result = cmd.status();
+
+        // Re-enable raw mode and re-enter alternate screen to restore TUI
+        crossterm::terminal::enable_raw_mode()
+            .context("failed to re-enable raw mode after exiting editor")?;
+
+        crossterm::execute!(
+            stdout,
+            crossterm::terminal::EnterAlternateScreen,
+            crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+            crossterm::cursor::Hide,
+            crossterm::cursor::MoveTo(0, 0),
+        )
+        .context("failed to re-enter alternate screen after exiting editor")?;
+
+        // Flush to ensure all commands are executed
+        use std::io::Write;
+        stdout
+            .flush()
+            .context("failed to flush stdout after terminal reset")?;
+
+        let editor_status =
+            status_result.with_context(|| format!("failed to launch editor: {}", editor))?;
+
+        if !editor_status.success() {
+            anyhow::bail!(
+                "Editor '{}' exited with non-zero status (code {:?}). Solution not viewed.",
+                editor,
+                editor_status.code()
+            );
+        }
+
+        // Mark that we gave up if that's the case
+        if is_give_up {
+            self.gave_up = true;
+        }
+
+        Ok(())
     }
 }
 
@@ -529,6 +751,7 @@ pub enum ResultsAction {
     StartNextDue,
     ReviewAnother,
     OpenSettings,
+    ToggleFlagWithReason(Option<String>),
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
