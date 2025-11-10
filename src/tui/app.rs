@@ -270,6 +270,21 @@ impl App {
                             // toggle help screen
                             self.toggle_help();
                         }
+                        KeyCode::Esc => {
+                            // global escape - return to startup screen
+                            // Don't navigate if already on startup or if help/popup is showing
+                            if !self.showing_help && self.popup_message.is_none() {
+                                if !matches!(self.current_screen, Screen::Startup(_)) {
+                                    self.current_screen = Screen::Startup(StartupScreen::new());
+                                }
+                            } else if self.showing_help {
+                                // Dismiss help screen
+                                self.showing_help = false;
+                            } else if self.popup_message.is_some() {
+                                // Dismiss popup
+                                self.popup_message = None;
+                            }
+                        }
                         code => {
                             self.handle_input(code)?;
 
