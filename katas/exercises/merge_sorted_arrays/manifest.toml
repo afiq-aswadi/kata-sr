@@ -1,0 +1,13 @@
+[kata]
+name = "merge_sorted_arrays"
+category = "arrays"
+base_difficulty = 1
+description = """
+Merge two sorted arrays into one sorted array.
+
+Given two sorted arrays, merge them into a single sorted array.
+One variant merges into a new array, another merges in-place.
+
+Key concepts: two-pointer technique, merging, sorted arrays
+"""
+dependencies = []

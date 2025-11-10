@@ -1,9 +1,9 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TestResults {
     pub passed: bool,
     pub num_passed: i32,
@@ -13,7 +13,7 @@ pub struct TestResults {
     pub results: Vec<TestResult>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TestResult {
     pub test_name: String,
     pub status: String,

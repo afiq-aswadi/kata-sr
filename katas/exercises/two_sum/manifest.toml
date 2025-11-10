@@ -1,0 +1,13 @@
+[kata]
+name = "two_sum"
+category = "arrays"
+base_difficulty = 1
+description = """
+Find two numbers in an array that add up to a target sum.
+
+Given an array of integers and a target, return indices of two numbers
+that add up to the target. You may assume exactly one solution exists.
+
+Key concepts: hash maps, array traversal, O(n) time complexity
+"""
+dependencies = []

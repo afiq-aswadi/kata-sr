@@ -1,0 +1,13 @@
+[kata]
+name = "string_is_palindrome"
+category = "strings"
+base_difficulty = 1
+description = """
+Check if a string is a palindrome.
+
+Implement a function that determines if a string reads the same forwards and backwards.
+Ignore case and spaces.
+
+Example: "racecar" -> True, "hello" -> False, "A man a plan a canal Panama" -> True
+"""
+dependencies = []

@@ -79,6 +79,11 @@ impl ResultsScreen {
         self.remaining_due_after_submit = Some(remaining_due);
     }
 
+    /// Returns a reference to the test results.
+    pub fn get_results(&self) -> &TestResults {
+        &self.results
+    }
+
     /// Update the kata after it's been modified in the database.
     /// This ensures the flag popup shows the current flag status.
     pub fn update_kata(&mut self, kata: Kata) {
@@ -288,7 +293,7 @@ impl ResultsScreen {
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
-        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), or [s] for Settings."));
+        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings."));
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",
@@ -795,6 +800,7 @@ pub enum ResultsAction {
     ReviewAnother,
     OpenSettings,
     ToggleFlagWithReason(Option<String>),
+    SolutionViewed, // Signal that external editor was used and terminal needs clearing
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {

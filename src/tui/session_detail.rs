@@ -101,6 +101,7 @@ impl SessionDetailScreen {
             .constraints([
                 Constraint::Length(3), // Title
                 Constraint::Length(6), // Summary
+                Constraint::Percentage(40), // Code attempt
                 Constraint::Min(0),    // Test results
                 Constraint::Length(2), // Instructions
             ])
@@ -116,14 +117,30 @@ impl SessionDetailScreen {
         // Summary
         self.render_summary(frame, chunks[1]);
 
+        // Code attempt
+        self.render_code_attempt(frame, chunks[2]);
+
         // Test results
-        self.render_test_results(frame, chunks[2]);
+        self.render_test_results(frame, chunks[3]);
 
         // Instructions
         let instructions = Paragraph::new("↑/↓: Scroll  q/Esc: Back")
             .style(Style::default().fg(Color::Gray))
             .alignment(Alignment::Center);
-        frame.render_widget(instructions, chunks[3]);
+        frame.render_widget(instructions, chunks[4]);
+    }
+
+    fn render_code_attempt(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let code_text = if let Some(ref code) = self.session.code_attempt {
+            code.clone()
+        } else {
+            "(Code attempt not available for this session)".to_string()
+        };
+
+        let code_paragraph = Paragraph::new(code_text)
+            .wrap(Wrap { trim: false })
+            .block(Block::default().borders(Borders::ALL).title("Code Attempt"));
+        frame.render_widget(code_paragraph, area);
     }
 
     fn render_summary(&self, frame: &mut Frame, area: ratatui::layout::Rect) {

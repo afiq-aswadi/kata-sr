@@ -346,6 +346,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: Some(1000),
                 quality_rating: Some(*rating),
+                code_attempt: None,
             })
             .unwrap();
         }

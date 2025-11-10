@@ -150,6 +150,15 @@ ALTER TABLE katas ADD COLUMN problematic_notes TEXT;
 ALTER TABLE katas ADD COLUMN flagged_at INTEGER;
 "#;
 
+/// SQL migration for adding code attempt storage to sessions.
+///
+/// Adds a column to store the user's code attempt for each session.
+/// This enables viewing past solutions in session history.
+const MIGRATION_ADD_CODE_ATTEMPT: &str = r#"
+-- Add code attempt storage
+ALTER TABLE sessions ADD COLUMN code_attempt TEXT;
+"#;
+
 /// Runs all database migrations.
 ///
 /// Creates all tables and indexes if they don't exist. Safe to call
@@ -193,6 +202,9 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
 
     // Add problematic kata tracking columns if they don't exist
     add_problematic_columns_if_needed(conn)?;
+
+    // Add code attempt column if it doesn't exist
+    add_code_attempt_column_if_needed(conn)?;
 
     Ok(())
 }
@@ -278,6 +290,27 @@ fn add_problematic_columns_if_needed(conn: &Connection) -> Result<()> {
     if !column_exists {
         // Add all problematic tracking columns at once
         conn.execute_batch(MIGRATION_ADD_PROBLEMATIC_FLAGS)?;
+    }
+
+    Ok(())
+}
+
+/// Adds code_attempt column to sessions table if it doesn't already exist.
+///
+/// This function checks if the code_attempt column exists before attempting to add it,
+/// making it safe to call on both new and existing databases.
+fn add_code_attempt_column_if_needed(conn: &Connection) -> Result<()> {
+    // Check if code_attempt column exists
+    let column_exists: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name='code_attempt'")?
+        .query_row([], |row| {
+            let count: i64 = row.get(0)?;
+            Ok(count > 0)
+        })?;
+
+    if !column_exists {
+        // Add code attempt column
+        conn.execute_batch(MIGRATION_ADD_CODE_ATTEMPT)?;
     }
 
     Ok(())

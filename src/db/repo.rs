@@ -289,6 +289,7 @@ impl KataRepository {
     ///     num_skipped: Some(0),
     ///     duration_ms: Some(1234),
     ///     quality_rating: Some(2),
+    ///     code_attempt: None,
     /// };
     ///
     /// let session_id = repo.create_session(&session)?;
@@ -297,8 +298,8 @@ impl KataRepository {
     pub fn create_session(&self, session: &NewSession) -> Result<i64> {
         self.conn.execute(
             "INSERT INTO sessions (kata_id, started_at, completed_at, test_results_json,
-                                  num_passed, num_failed, num_skipped, duration_ms, quality_rating)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                                  num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             params![
                 session.kata_id,
                 session.started_at.timestamp(),
@@ -309,6 +310,7 @@ impl KataRepository {
                 session.num_skipped,
                 session.duration_ms,
                 session.quality_rating,
+                session.code_attempt,
             ],
         )?;
 
@@ -333,7 +335,7 @@ impl KataRepository {
     pub fn get_recent_sessions(&self, kata_id: i64, limit: usize) -> Result<Vec<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE kata_id = ?1
              ORDER BY started_at DESC
@@ -364,7 +366,7 @@ impl KataRepository {
     pub fn get_all_sessions_for_kata(&self, kata_id: i64) -> Result<Vec<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE kata_id = ?1
              ORDER BY started_at DESC",
@@ -398,7 +400,7 @@ impl KataRepository {
     pub fn get_session_by_id(&self, session_id: i64) -> Result<Option<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE id = ?1",
         )?;
@@ -419,7 +421,7 @@ impl KataRepository {
     pub fn get_sessions_for_date(&self, date: &str) -> Result<Vec<Session>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating
+                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
              FROM sessions
              WHERE date(completed_at, 'unixepoch') = ?1
              ORDER BY started_at DESC",
@@ -778,6 +780,61 @@ impl KataRepository {
              WHERE completed_at IS NOT NULL
                AND date(completed_at, 'unixepoch') BETWEEN ?1 AND ?2
              GROUP BY date(completed_at, 'unixepoch')
+             ORDER BY date",
+        )?;
+
+        let counts = stmt
+            .query_map(
+                params![start_date.to_string(), end_date.to_string()],
+                |row| {
+                    let date_str: String = row.get(0)?;
+                    let count: i64 = row.get(1)?;
+                    let date = chrono::NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")
+                        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+                    Ok(DailyCount {
+                        date,
+                        count: count as usize,
+                    })
+                },
+            )?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(counts)
+    }
+
+    /// Get future scheduled review counts grouped by date.
+    ///
+    /// Returns the number of katas scheduled for review on each date
+    /// within the specified date range. This provides a forecast of
+    /// upcoming workload.
+    ///
+    /// # Arguments
+    ///
+    /// * `start_date` - Start date (inclusive)
+    /// * `end_date` - End date (inclusive)
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # use chrono::{Duration, Utc};
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let start_date = Utc::now().date_naive();
+    /// let end_date = start_date + Duration::days(14);
+    /// let forecast = repo.get_future_review_counts(start_date, end_date)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_future_review_counts(
+        &self,
+        start_date: chrono::NaiveDate,
+        end_date: chrono::NaiveDate,
+    ) -> Result<Vec<DailyCount>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT date(next_review_at, 'unixepoch') as date, COUNT(*) as count
+             FROM katas
+             WHERE next_review_at IS NOT NULL
+               AND date(next_review_at, 'unixepoch') BETWEEN ?1 AND ?2
+             GROUP BY date(next_review_at, 'unixepoch')
              ORDER BY date",
         )?;
 
@@ -1757,6 +1814,7 @@ pub struct Session {
     pub num_skipped: Option<i32>,
     pub duration_ms: Option<i64>,
     pub quality_rating: Option<i32>,
+    pub code_attempt: Option<String>,
 }
 
 /// New session to be inserted into the database.
@@ -1771,6 +1829,7 @@ pub struct NewSession {
     pub num_skipped: Option<i32>,
     pub duration_ms: Option<i64>,
     pub quality_rating: Option<i32>,
+    pub code_attempt: Option<String>,
 }
 
 /// Daily statistics record.
@@ -1850,6 +1909,7 @@ fn row_to_session(row: &Row) -> Result<Session> {
         num_skipped: row.get(7)?,
         duration_ms: row.get(8)?,
         quality_rating: row.get(9)?,
+        code_attempt: row.get(10)?,
     })
 }
 
@@ -1995,7 +2055,8 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
 
         let session_id = repo.create_session(&session).unwrap();
@@ -2031,6 +2092,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(rating),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2177,7 +2239,8 @@ mod tests {
                 num_failed: None,
                 num_skipped: None,
                 duration_ms: None,
-                quality_rating: Some(3), // Good (FSRS)
+                quality_rating: Some(3), // Good (FSRS),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2215,7 +2278,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2258,7 +2322,8 @@ mod tests {
                 num_failed: None,
                 num_skipped: None,
                 duration_ms: None,
-                quality_rating: Some(3), // Good (FSRS)
+                quality_rating: Some(3), // Good (FSRS),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2274,7 +2339,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2378,6 +2444,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(rating),
+            code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2413,7 +2480,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2428,7 +2496,8 @@ mod tests {
             num_failed: None,
             num_skipped: None,
             duration_ms: None,
-            quality_rating: Some(1), // Again (FSRS)
+            quality_rating: Some(1), // Again (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2482,7 +2551,8 @@ mod tests {
             num_failed: Some(0),
             num_skipped: Some(0),
             duration_ms: Some(1000),
-            quality_rating: Some(3), // Good (FSRS)
+            quality_rating: Some(3), // Good (FSRS),
+        code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
