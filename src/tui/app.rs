@@ -481,11 +481,17 @@ impl App {
                     ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
                     ResultsAction::GiveUp => {
-                        // Open solution in editor. When user closes editor, auto-submit Rating::Again
+                        // Open solution in editor
                         match results_screen.open_solution_in_editor(true) {
                             Ok(()) => {
-                                // Successfully viewed solution, auto-submit Rating::Again (1)
-                                Some(ScreenAction::SubmitRating(kata.clone(), 1))
+                                // Check if this is preview mode (kata not in deck)
+                                if kata.id == -1 {
+                                    // Preview mode: don't save rating, just return to library
+                                    Some(ScreenAction::OpenLibrary)
+                                } else {
+                                    // Normal mode: auto-submit Rating::Again (1)
+                                    Some(ScreenAction::SubmitRating(kata.clone(), 1))
+                                }
                             }
                             Err(e) => {
                                 // Failed to open editor - stay on results screen
