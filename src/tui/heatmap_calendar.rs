@@ -15,7 +15,8 @@ pub struct HeatmapCalendar {
 impl HeatmapCalendar {
     pub fn new(repo: &KataRepository) -> anyhow::Result<Self> {
         let end_date = Utc::now().date_naive();
-        let start_date = end_date - Duration::days(364); // 52 weeks
+        // 52 weeks = 364 days, so go back 363 days to get 364 days total (including today)
+        let start_date = end_date - Duration::days(363);
 
         let daily_counts = repo.get_daily_review_counts(start_date, end_date)?;
 
@@ -63,7 +64,8 @@ impl HeatmapCalendar {
 
     fn build_month_labels(&self) -> Line<'_> {
         let end_date = Utc::now().date_naive();
-        let start_date = end_date - Duration::days(364);
+        // 52 weeks = 364 days, so go back 363 days to get 364 days total (including today)
+        let start_date = end_date - Duration::days(363);
 
         let mut labels = vec![Span::raw("  ")]; // Offset for day labels
 
@@ -106,15 +108,19 @@ impl HeatmapCalendar {
 
     fn build_week_row(&self, weekday: usize) -> Vec<Span<'_>> {
         let end_date = Utc::now().date_naive();
-        let start_date = end_date - Duration::days(364);
+        // 52 weeks = 364 days, so we need to go back 363 days to get 364 days total (including today)
+        let start_date = end_date - Duration::days(363);
 
         let mut spans = Vec::new();
-        let mut current_date = start_date;
 
-        // Find first occurrence of this weekday
-        while current_date.weekday().num_days_from_sunday() as usize != weekday {
-            current_date = current_date + Duration::days(1);
-        }
+        // Calculate the first date for this weekday within our range
+        // Start from start_date and find the first occurrence of this weekday
+        let days_from_sunday = start_date.weekday().num_days_from_sunday() as i64;
+        let target_weekday = weekday as i64;
+
+        // Calculate offset: how many days to add to reach the target weekday
+        let offset = (target_weekday - days_from_sunday + 7) % 7;
+        let mut current_date = start_date + Duration::days(offset);
 
         // Build cells for each week
         for _ in 0..52 {
@@ -125,10 +131,11 @@ impl HeatmapCalendar {
                     format!("{} ", cell),
                     self.count_to_style(count),
                 ));
-                current_date = current_date + Duration::days(7);
             } else {
+                // Future dates (for incomplete current week) show as empty
                 spans.push(Span::raw("  "));
             }
+            current_date = current_date + Duration::days(7);
         }
 
         spans
