@@ -1,5 +1,6 @@
 use crate::db::repo::Kata;
 use crate::runner::python_runner::{TestResult, TestResults};
+use anyhow::Context;
 use crossterm::event::KeyCode;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -8,6 +9,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
     Frame,
 };
+use std::process::Command;
 
 const RATING_LABELS: [&str; 4] = ["Again", "Hard", "Good", "Easy"];
 const DETAIL_PAGE_SIZE: u16 = 20; // Lines to scroll per page in detail mode
@@ -27,9 +29,6 @@ pub struct ResultsScreen {
     flag_popup_active: bool,
     flag_reason: String,
     flag_cursor_position: usize,
-    solution_mode: bool,
-    solution_scroll: u16,
-    solution_content: Option<String>,
     gave_up: bool,
 }
 
@@ -70,9 +69,6 @@ impl ResultsScreen {
             flag_popup_active: false,
             flag_reason: String::new(),
             flag_cursor_position: 0,
-            solution_mode: false,
-            solution_scroll: 0,
-            solution_content: None,
             gave_up: false,
         }
     }
@@ -111,10 +107,6 @@ impl ResultsScreen {
 
         if self.flag_popup_active {
             self.render_flag_popup(frame);
-        }
-
-        if self.solution_mode {
-            self.render_solution_overlay(frame);
         }
     }
 
@@ -400,25 +392,6 @@ impl ResultsScreen {
         frame.render_widget(instructions_widget, chunks[3]);
     }
 
-    fn render_solution_overlay(&self, frame: &mut Frame) {
-        let area = centered_rect(80, 70, frame.size());
-        frame.render_widget(Clear, area);
-
-        let title = format!(
-            "Reference Solution: {} · [↑↓/jk] scroll · [PgUp/PgDn/Space/b] page · [Home/End] jump · [Esc] close",
-            self.kata.name
-        );
-        let body = self.solution_content.as_ref()
-            .map(|s| s.clone())
-            .unwrap_or_else(|| "Failed to load reference solution.".to_string());
-
-        let solution = Paragraph::new(body)
-            .wrap(Wrap { trim: false })
-            .scroll((self.solution_scroll, 0))
-            .block(Block::default().borders(Borders::ALL).title(title));
-        frame.render_widget(solution, area);
-    }
-
     pub fn handle_input(&mut self, code: KeyCode) -> ResultsAction {
         // Handle flag popup input first
         if self.flag_popup_active {
@@ -525,38 +498,6 @@ impl ResultsScreen {
                 KeyCode::End | KeyCode::Char('G') => {
                     // Jump to bottom (use large number, ratatui will clamp)
                     self.detail_scroll = u16::MAX;
-                }
-                _ => {}
-            }
-            return ResultsAction::None;
-        }
-
-        if self.solution_mode {
-            match code {
-                KeyCode::Esc => {
-                    self.solution_mode = false;
-                    // If we gave up, auto-submit with Rating::Again after closing solution
-                    if self.gave_up {
-                        return ResultsAction::SubmitRating(1); // Rating::Again
-                    }
-                }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    self.solution_scroll = self.solution_scroll.saturating_add(1);
-                }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    self.solution_scroll = self.solution_scroll.saturating_sub(1);
-                }
-                KeyCode::PageDown | KeyCode::Char(' ') => {
-                    self.solution_scroll = self.solution_scroll.saturating_add(DETAIL_PAGE_SIZE);
-                }
-                KeyCode::PageUp | KeyCode::Char('b') => {
-                    self.solution_scroll = self.solution_scroll.saturating_sub(DETAIL_PAGE_SIZE);
-                }
-                KeyCode::Home | KeyCode::Char('g') => {
-                    self.solution_scroll = 0;
-                }
-                KeyCode::End | KeyCode::Char('G') => {
-                    self.solution_scroll = u16::MAX;
                 }
                 _ => {}
             }
@@ -689,7 +630,7 @@ impl ResultsScreen {
             .unwrap_or(s.len())
     }
 
-    pub fn load_and_show_solution(&mut self, is_give_up: bool) {
+    pub fn open_solution_in_editor(&mut self, is_give_up: bool) -> anyhow::Result<()> {
         let katas_root = std::env::var("KATA_SR_KATAS_DIR")
             .map(std::path::PathBuf::from)
             .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
@@ -698,18 +639,101 @@ impl ResultsScreen {
             .join(&self.kata.name)
             .join("reference.py");
 
-        self.solution_content = match std::fs::read_to_string(&reference_path) {
-            Ok(content) => Some(content),
-            Err(e) => Some(format!(
-                "Failed to load reference solution from {}:\n\n{}",
-                reference_path.display(),
-                e
-            )),
-        };
+        // Check if the reference file exists
+        if !reference_path.exists() {
+            anyhow::bail!(
+                "Reference solution not found at {}",
+                reference_path.display()
+            );
+        }
 
-        self.solution_mode = true;
-        self.solution_scroll = 0;
-        self.gave_up = is_give_up;
+        // Determine which editor to use (respects EDITOR env var)
+        let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
+
+        // Parse editor command to handle arguments (e.g., "code -w")
+        let parts: Vec<&str> = editor.split_whitespace().collect();
+        if parts.is_empty() {
+            anyhow::bail!("EDITOR environment variable is empty");
+        }
+
+        let editor_program = parts[0];
+        let editor_args = &parts[1..];
+
+        // Determine if we should add read-only flag based on editor
+        let editor_basename = std::path::Path::new(editor_program)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or(editor_program);
+
+        let is_vim_like = matches!(
+            editor_basename,
+            "vim" | "nvim" | "vi" | "view" | "gvim" | "nvim-qt"
+        );
+
+        // Exit alternate screen and disable raw mode to hand control to editor
+        let mut stdout = std::io::stdout();
+        crossterm::execute!(
+            stdout,
+            crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+            crossterm::cursor::Show,
+            crossterm::terminal::LeaveAlternateScreen,
+        )
+        .context("failed to leave alternate screen before launching editor")?;
+
+        crossterm::terminal::disable_raw_mode()
+            .context("failed to disable raw mode before launching editor")?;
+
+        // Launch editor with reference solution
+        let mut cmd = Command::new(editor_program);
+
+        // Add user's editor arguments
+        cmd.args(editor_args);
+
+        // Add read-only flag only for vim-like editors
+        if is_vim_like {
+            cmd.arg("-R");
+        }
+
+        cmd.arg(&reference_path);
+
+        let status_result = cmd.status();
+
+        // Re-enable raw mode and re-enter alternate screen to restore TUI
+        crossterm::terminal::enable_raw_mode()
+            .context("failed to re-enable raw mode after exiting editor")?;
+
+        crossterm::execute!(
+            stdout,
+            crossterm::terminal::EnterAlternateScreen,
+            crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+            crossterm::cursor::Hide,
+            crossterm::cursor::MoveTo(0, 0),
+        )
+        .context("failed to re-enter alternate screen after exiting editor")?;
+
+        // Flush to ensure all commands are executed
+        use std::io::Write;
+        stdout
+            .flush()
+            .context("failed to flush stdout after terminal reset")?;
+
+        let editor_status =
+            status_result.with_context(|| format!("failed to launch editor: {}", editor))?;
+
+        if !editor_status.success() {
+            anyhow::bail!(
+                "Editor '{}' exited with non-zero status (code {:?}). Solution not viewed.",
+                editor,
+                editor_status.code()
+            );
+        }
+
+        // Mark that we gave up if that's the case
+        if is_give_up {
+            self.gave_up = true;
+        }
+
+        Ok(())
     }
 }
 
