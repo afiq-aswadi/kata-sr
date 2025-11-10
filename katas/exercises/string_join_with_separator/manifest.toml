@@ -1,0 +1,13 @@
+[kata]
+name = "string_join_with_separator"
+category = "strings"
+base_difficulty = 1
+description = """
+Join a list of strings with a separator.
+
+Implement a function that takes a list of strings and a separator,
+and returns them joined together with the separator between each string.
+
+Example: ["hello", "world"], " " -> "hello world"
+"""
+dependencies = []

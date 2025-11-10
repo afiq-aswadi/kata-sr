@@ -1,0 +1,12 @@
+[kata]
+name = "string_reverse"
+category = "strings"
+base_difficulty = 1
+description = """
+Reverse a string.
+
+Implement a function that takes a string and returns it reversed.
+
+Example: "hello" -> "olleh"
+"""
+dependencies = []
