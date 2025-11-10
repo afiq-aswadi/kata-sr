@@ -226,7 +226,7 @@ impl ResultsScreen {
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
-        lines.push(Line::from("Press Enter to submit rating."));
+        lines.push(Line::from("Press Enter to submit rating, or [b] to bury (postpone to tomorrow)."));
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",
@@ -383,6 +383,7 @@ impl ResultsScreen {
                 self.selected_rating = 4; // Easy
                 ResultsAction::None
             }
+            KeyCode::Char('b') => ResultsAction::BuryCard,
             KeyCode::Enter => ResultsAction::SubmitRating(self.selected_rating as u8), // Direct FSRS 1-4 rating
             _ => ResultsAction::None,
         }
@@ -413,6 +414,7 @@ impl ResultsScreen {
 pub enum ResultsAction {
     None,
     SubmitRating(u8),
+    BuryCard,
     Retry,
     BackToDashboard,
     StartNextDue,

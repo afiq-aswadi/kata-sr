@@ -99,6 +99,7 @@ enum ScreenAction {
     StartPractice(Kata),
     ReturnToDashboard,
     SubmitRating(Kata, u8),
+    BuryKata(Kata),
     StartNextDue,
     OpenLibrary,
     AddKataFromLibrary(String),
@@ -480,6 +481,7 @@ impl App {
                     ResultsAction::SubmitRating(rating) => {
                         Some(ScreenAction::SubmitRating(kata.clone(), rating))
                     }
+                    ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
                     ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
                     ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
                     ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
@@ -638,6 +640,11 @@ impl App {
                 if let Screen::Results(_, results_screen) = &mut self.current_screen {
                     results_screen.mark_rating_submitted(rating, self.dashboard.katas_due.len());
                 }
+            }
+            ScreenAction::BuryKata(kata) => {
+                self.handle_bury_kata(&kata)?;
+                self.dashboard = Dashboard::load(&self.repo)?;
+                self.refresh_dashboard_screen()?;
             }
             ScreenAction::StartNextDue => {
                 if self.dashboard.katas_due.is_empty() {
@@ -1185,6 +1192,20 @@ impl App {
         analytics
             .update_daily_stats()
             .context("Failed to update daily stats")?;
+
+        Ok(())
+    }
+
+    /// Handles burying a kata, postponing it to the next day without affecting FSRS state.
+    ///
+    /// # Arguments
+    ///
+    /// * `kata` - The kata to bury
+    fn handle_bury_kata(&mut self, kata: &Kata) -> anyhow::Result<()> {
+        // Bury the kata by setting next_review_at to tomorrow
+        self.repo
+            .bury_kata(kata.id)
+            .context("Failed to bury kata")?;
 
         Ok(())
     }
