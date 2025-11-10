@@ -692,7 +692,7 @@ impl App {
         match &self.current_screen {
             Screen::Dashboard | Screen::Done(_) => {
                 // Screen navigated to dashboard, redirect to startup instead
-                self.current_screen = Screen::Startup(StartupScreen::new());
+                self.current_screen = Screen::Startup(StartupScreen::load(&self.repo)?);
             }
             _ => {
                 // Screen handled Esc internally (modal closed, rating submitted, etc.)

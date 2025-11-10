@@ -800,6 +800,61 @@ impl KataRepository {
         Ok(counts)
     }
 
+    /// Get future scheduled review counts grouped by date.
+    ///
+    /// Returns the number of katas scheduled for review on each date
+    /// within the specified date range. This provides a forecast of
+    /// upcoming workload.
+    ///
+    /// # Arguments
+    ///
+    /// * `start_date` - Start date (inclusive)
+    /// * `end_date` - End date (inclusive)
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # use chrono::{Duration, Utc};
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let start_date = Utc::now().date_naive();
+    /// let end_date = start_date + Duration::days(14);
+    /// let forecast = repo.get_future_review_counts(start_date, end_date)?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_future_review_counts(
+        &self,
+        start_date: chrono::NaiveDate,
+        end_date: chrono::NaiveDate,
+    ) -> Result<Vec<DailyCount>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT date(next_review_at, 'unixepoch') as date, COUNT(*) as count
+             FROM katas
+             WHERE next_review_at IS NOT NULL
+               AND date(next_review_at, 'unixepoch') BETWEEN ?1 AND ?2
+             GROUP BY date(next_review_at, 'unixepoch')
+             ORDER BY date",
+        )?;
+
+        let counts = stmt
+            .query_map(
+                params![start_date.to_string(), end_date.to_string()],
+                |row| {
+                    let date_str: String = row.get(0)?;
+                    let count: i64 = row.get(1)?;
+                    let date = chrono::NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")
+                        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+                    Ok(DailyCount {
+                        date,
+                        count: count as usize,
+                    })
+                },
+            )?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(counts)
+    }
+
     // ===== Debug/Management Methods =====
 
     /// Resets a specific kata's SM-2 state to initial values.
