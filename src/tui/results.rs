@@ -24,6 +24,9 @@ pub struct ResultsScreen {
     remaining_due_after_submit: Option<usize>,
     detail_mode: bool,
     detail_scroll: u16,
+    flag_popup_active: bool,
+    flag_reason: String,
+    flag_cursor_position: usize,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -60,6 +63,9 @@ impl ResultsScreen {
             remaining_due_after_submit: None,
             detail_mode: false,
             detail_scroll: 0,
+            flag_popup_active: false,
+            flag_reason: String::new(),
+            flag_cursor_position: 0,
         }
     }
 
@@ -87,6 +93,10 @@ impl ResultsScreen {
 
         if self.detail_mode {
             self.render_detail_overlay(frame);
+        }
+
+        if self.flag_popup_active {
+            self.render_flag_popup(frame);
         }
     }
 
@@ -267,7 +277,166 @@ impl ResultsScreen {
         frame.render_widget(detail, area);
     }
 
+    fn render_flag_popup(&self, frame: &mut Frame) {
+        let area = centered_rect(70, 60, frame.size());
+        frame.render_widget(Clear, area);
+
+        // Split the popup into sections
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(5), // Kata info
+                Constraint::Length(4), // Current status
+                Constraint::Length(5), // Reason input
+                Constraint::Min(1),     // Instructions
+            ])
+            .split(area);
+
+        // Kata info section
+        let kata_info = format!(
+            "Kata: {}\nCategory: {}\nDescription: {}",
+            self.kata.name,
+            self.kata.category,
+            if self.kata.description.len() > 80 {
+                format!("{}...", &self.kata.description[..80])
+            } else {
+                self.kata.description.clone()
+            }
+        );
+        let info_widget = Paragraph::new(kata_info)
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Flag Kata as Problematic"),
+            );
+        frame.render_widget(info_widget, chunks[0]);
+
+        // Current status section
+        let current_status = if self.kata.is_problematic {
+            let notes = self.kata.problematic_notes.as_deref().unwrap_or("(no reason given)");
+            format!("Current Status: FLAGGED\nReason: {}", notes)
+        } else {
+            "Current Status: NOT FLAGGED".to_string()
+        };
+        let status_widget = Paragraph::new(current_status)
+            .style(Style::default().fg(if self.kata.is_problematic {
+                Color::Red
+            } else {
+                Color::Green
+            }))
+            .block(Block::default().borders(Borders::ALL).title("Status"));
+        frame.render_widget(status_widget, chunks[1]);
+
+        // Reason input section
+        let action = if self.kata.is_problematic {
+            "Unflag"
+        } else {
+            "Flag"
+        };
+        let input_text = if self.flag_reason.is_empty() {
+            Span::styled(
+                "(optional - press Enter to skip)",
+                Style::default().fg(Color::DarkGray),
+            )
+        } else {
+            Span::raw(&self.flag_reason)
+        };
+        let reason_widget = Paragraph::new(Line::from(vec![input_text]))
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(format!("Reason (optional) - Type reason to {} this kata", action.to_lowercase())),
+            );
+        frame.render_widget(reason_widget, chunks[2]);
+
+        // Instructions section
+        let instructions = if self.kata.is_problematic {
+            "[Enter] Unflag kata    [Esc] Cancel"
+        } else {
+            "[Enter] Flag kata    [Esc] Cancel"
+        };
+        let instructions_widget = Paragraph::new(instructions)
+            .style(Style::default().fg(Color::Cyan))
+            .block(Block::default().borders(Borders::ALL).title("Controls"));
+        frame.render_widget(instructions_widget, chunks[3]);
+    }
+
     pub fn handle_input(&mut self, code: KeyCode) -> ResultsAction {
+        // Handle flag popup input first
+        if self.flag_popup_active {
+            match code {
+                KeyCode::Esc => {
+                    // Cancel flagging
+                    self.flag_popup_active = false;
+                    self.flag_reason.clear();
+                    self.flag_cursor_position = 0;
+                    return ResultsAction::None;
+                }
+                KeyCode::Enter => {
+                    // Submit flag with reason (or None if empty)
+                    self.flag_popup_active = false;
+                    let reason = if self.flag_reason.is_empty() {
+                        None
+                    } else {
+                        Some(self.flag_reason.clone())
+                    };
+                    self.flag_reason.clear();
+                    self.flag_cursor_position = 0;
+                    return ResultsAction::ToggleFlagWithReason(reason);
+                }
+                KeyCode::Char(c) => {
+                    // Add character to reason
+                    self.flag_reason.insert(self.flag_cursor_position, c);
+                    self.flag_cursor_position += 1;
+                    return ResultsAction::None;
+                }
+                KeyCode::Backspace => {
+                    // Remove character before cursor
+                    if self.flag_cursor_position > 0 {
+                        self.flag_cursor_position -= 1;
+                        self.flag_reason.remove(self.flag_cursor_position);
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Delete => {
+                    // Remove character at cursor
+                    if self.flag_cursor_position < self.flag_reason.len() {
+                        self.flag_reason.remove(self.flag_cursor_position);
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Left => {
+                    // Move cursor left
+                    if self.flag_cursor_position > 0 {
+                        self.flag_cursor_position -= 1;
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Right => {
+                    // Move cursor right
+                    if self.flag_cursor_position < self.flag_reason.len() {
+                        self.flag_cursor_position += 1;
+                    }
+                    return ResultsAction::None;
+                }
+                KeyCode::Home => {
+                    // Move cursor to start
+                    self.flag_cursor_position = 0;
+                    return ResultsAction::None;
+                }
+                KeyCode::End => {
+                    // Move cursor to end
+                    self.flag_cursor_position = self.flag_reason.len();
+                    return ResultsAction::None;
+                }
+                _ => {
+                    return ResultsAction::None;
+                }
+            }
+        }
+
         if self.detail_mode {
             match code {
                 KeyCode::Esc | KeyCode::Char('o') => {
@@ -303,6 +472,12 @@ impl ResultsScreen {
         if matches!(code, KeyCode::Char('o')) && self.selected_test_result().is_some() {
             self.detail_mode = true;
             self.detail_scroll = 0;
+            return ResultsAction::None;
+        }
+
+        if matches!(code, KeyCode::Char('f')) {
+            // Activate flag popup
+            self.flag_popup_active = true;
             return ResultsAction::None;
         }
 
@@ -417,6 +592,7 @@ pub enum ResultsAction {
     BackToDashboard,
     StartNextDue,
     ReviewAnother,
+    ToggleFlagWithReason(Option<String>),
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
