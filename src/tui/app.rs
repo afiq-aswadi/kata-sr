@@ -575,11 +575,23 @@ impl App {
                         LibraryAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
                         LibraryAction::RemoveKata(kata) => Some(ScreenAction::RemoveKataFromDeck(kata)),
                         LibraryAction::ToggleFlagKata(kata) => {
-                            // Toggle the problematic flag in database
+                            // Toggle the problematic flag in database (deprecated - kept for backward compatibility)
                             if kata.is_problematic {
                                 self.repo.unflag_kata(kata.id)?;
                             } else {
                                 self.repo.flag_kata(kata.id, None)?;
+                            }
+                            // Reload dashboard for consistency
+                            self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;
+                            // Reload library with fresh kata states
+                            return self.execute_action(ScreenAction::OpenLibrary);
+                        }
+                        LibraryAction::ToggleFlagWithReason(kata, reason) => {
+                            // Toggle the problematic flag in database with reason
+                            if kata.is_problematic {
+                                self.repo.unflag_kata(kata.id)?;
+                            } else {
+                                self.repo.flag_kata(kata.id, reason)?;
                             }
                             // Reload dashboard for consistency
                             self.dashboard = Dashboard::load(&self.repo, self.config.display.heatmap_days)?;

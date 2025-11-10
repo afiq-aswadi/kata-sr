@@ -263,7 +263,7 @@ impl ResultsScreen {
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
-        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), or [s] for Settings."));
+        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings."));
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",

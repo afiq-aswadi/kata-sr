@@ -15,7 +15,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, List, ListItem, Paragraph, Row, Table},
+    widgets::{Block, Borders, Cell, Clear, List, ListItem, Paragraph, Row, Table, Wrap},
     Frame,
 };
 
@@ -42,6 +42,8 @@ pub enum LibraryAction {
     RemoveKata(Kata),
     /// Toggle flag on a kata as problematic
     ToggleFlagKata(Kata),
+    /// Toggle flag with a reason (from popup)
+    ToggleFlagWithReason(Kata, Option<String>),
     /// View detailed information about a kata
     ViewDetails(AvailableKata),
     /// Return to dashboard
@@ -131,6 +133,10 @@ pub struct Library {
     pub sort_mode: SortMode,
     /// Sort direction: true = ascending, false = descending
     pub sort_ascending: bool,
+
+    // Flag popup (for My Deck tab)
+    pub flag_popup_active: bool,
+    pub flag_reason: String,
 }
 
 impl Library {
@@ -183,6 +189,8 @@ impl Library {
             category_selected_index: 0,
             sort_mode: SortMode::from_str(default_sort),
             sort_ascending: default_sort_ascending,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         library.apply_filters();
@@ -257,6 +265,11 @@ impl Library {
         }
 
         self.render_footer(frame, chunks[3]);
+
+        // Render flag popup on top if active
+        if self.flag_popup_active {
+            self.render_flag_popup(frame);
+        }
     }
 
     fn render_tabs(&self, frame: &mut Frame, area: Rect) {
@@ -711,6 +724,99 @@ impl Library {
         frame.render_widget(footer, area);
     }
 
+    fn render_flag_popup(&self, frame: &mut Frame) {
+        if self.deck_katas.is_empty() {
+            return;
+        }
+
+        let kata = &self.deck_katas[self.deck_selected];
+        let area = centered_rect(70, 60, frame.size());
+        frame.render_widget(Clear, area);
+
+        // Split the popup into sections
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(5), // Kata info
+                Constraint::Length(4), // Current status
+                Constraint::Length(5), // Reason input
+                Constraint::Min(1),     // Instructions
+            ])
+            .split(area);
+
+        // Kata info section
+        let description_preview = if kata.description.chars().count() > 80 {
+            let truncated: String = kata.description.chars().take(80).collect();
+            format!("{}...", truncated)
+        } else {
+            kata.description.clone()
+        };
+        let kata_info = format!(
+            "Kata: {}\nCategory: {}\nDescription: {}",
+            kata.name,
+            kata.category,
+            description_preview
+        );
+        let info_widget = Paragraph::new(kata_info)
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Flag Kata as Problematic"),
+            );
+        frame.render_widget(info_widget, chunks[0]);
+
+        // Current status section
+        let current_status = if kata.is_problematic {
+            let notes = kata.problematic_notes.as_deref().unwrap_or("(no reason given)");
+            format!("Current Status: FLAGGED\nReason: {}", notes)
+        } else {
+            "Current Status: NOT FLAGGED".to_string()
+        };
+        let status_widget = Paragraph::new(current_status)
+            .style(Style::default().fg(if kata.is_problematic {
+                Color::Red
+            } else {
+                Color::Green
+            }))
+            .block(Block::default().borders(Borders::ALL).title("Status"));
+        frame.render_widget(status_widget, chunks[1]);
+
+        // Reason input section
+        let action = if kata.is_problematic {
+            "Unflag"
+        } else {
+            "Flag"
+        };
+        let input_text = if self.flag_reason.is_empty() {
+            Span::styled(
+                "(optional - press Enter to skip)",
+                Style::default().fg(Color::DarkGray),
+            )
+        } else {
+            Span::raw(&self.flag_reason)
+        };
+        let reason_widget = Paragraph::new(Line::from(vec![input_text]))
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(format!("Reason (optional) - Type reason to {} this kata", action.to_lowercase())),
+            );
+        frame.render_widget(reason_widget, chunks[2]);
+
+        // Instructions section
+        let instructions = if kata.is_problematic {
+            "[Enter] Unflag kata    [Esc] Cancel"
+        } else {
+            "[Enter] Flag kata    [Esc] Cancel"
+        };
+        let instructions_widget = Paragraph::new(instructions)
+            .style(Style::default().fg(Color::Cyan))
+            .block(Block::default().borders(Borders::ALL).title("Controls"));
+        frame.render_widget(instructions_widget, chunks[3]);
+    }
+
     /// Handles keyboard input and returns the appropriate action.
     ///
     /// # Arguments
@@ -732,6 +838,11 @@ impl Library {
     /// - `Enter`: View details of selected kata (All Katas tab only)
     /// - `Esc`: Return to dashboard or exit current mode
     pub fn handle_input(&mut self, code: KeyCode) -> LibraryAction {
+        // Handle flag popup input first (My Deck tab)
+        if self.flag_popup_active {
+            return self.handle_flag_popup_input(code);
+        }
+
         // Handle search mode (All Katas tab)
         if self.active_tab == LibraryTab::AllKatas && self.search_mode {
             return self.handle_search_input(code);
@@ -790,8 +901,43 @@ impl Library {
                 LibraryAction::EditKataById(kata.id)
             }
             KeyCode::Char('f') => {
+                // Activate flag popup instead of immediately toggling
+                self.flag_popup_active = true;
+                LibraryAction::None
+            }
+            _ => LibraryAction::None,
+        }
+    }
+
+    fn handle_flag_popup_input(&mut self, code: KeyCode) -> LibraryAction {
+        match code {
+            KeyCode::Esc => {
+                // Cancel flagging
+                self.flag_popup_active = false;
+                self.flag_reason.clear();
+                LibraryAction::None
+            }
+            KeyCode::Enter => {
+                // Submit flag with reason (or None if empty)
+                self.flag_popup_active = false;
+                let reason = if self.flag_reason.is_empty() {
+                    None
+                } else {
+                    Some(self.flag_reason.clone())
+                };
+                self.flag_reason.clear();
                 let kata = self.deck_katas[self.deck_selected].clone();
-                LibraryAction::ToggleFlagKata(kata)
+                LibraryAction::ToggleFlagWithReason(kata, reason)
+            }
+            KeyCode::Char(c) => {
+                // Add character to reason
+                self.flag_reason.push(c);
+                LibraryAction::None
+            }
+            KeyCode::Backspace => {
+                // Remove character before cursor
+                self.flag_reason.pop();
+                LibraryAction::None
             }
             _ => LibraryAction::None,
         }
@@ -1164,6 +1310,8 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         library.handle_input(KeyCode::Tab);
@@ -1253,6 +1401,8 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         library.handle_input(KeyCode::Char('j'));
@@ -1302,6 +1452,8 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         library.handle_input(KeyCode::Char('j'));
@@ -1341,6 +1493,8 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         match library.handle_input(KeyCode::Char('a')) {
@@ -1370,6 +1524,8 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         match library.handle_input(KeyCode::Esc) {
@@ -1399,6 +1555,8 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         library.mark_as_added("test_kata");
@@ -1426,6 +1584,8 @@ mod tests {
             category_selected_index: 0,
             sort_mode: SortMode::Name,
             sort_ascending: true,
+            flag_popup_active: false,
+            flag_reason: String::new(),
         };
 
         library.mark_as_removed("test_kata");
@@ -1464,4 +1624,25 @@ mod tests {
             result
         );
     }
+}
+
+/// Helper function to create a centered rectangle for popups
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1]
 }
