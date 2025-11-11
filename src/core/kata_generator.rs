@@ -329,8 +329,8 @@ pub fn update_dependency_in_manifest(
     }
 
     // Write back to file
-    let updated_content = toml::to_string_pretty(&manifest)
-        .context("Failed to serialize updated manifest")?;
+    let updated_content =
+        toml::to_string_pretty(&manifest).context("Failed to serialize updated manifest")?;
 
     fs::write(&manifest_path, updated_content)
         .with_context(|| format!("Failed to write updated manifest at {:?}", manifest_path))?;
@@ -358,11 +358,7 @@ pub fn update_dependency_in_manifest(
 /// This operation should be called AFTER database updates are validated but
 /// BEFORE committing the database transaction. If this fails, the database
 /// update should be rolled back.
-pub fn rename_kata_directory(
-    exercises_dir: &Path,
-    old_slug: &str,
-    new_slug: &str,
-) -> Result<()> {
+pub fn rename_kata_directory(exercises_dir: &Path, old_slug: &str, new_slug: &str) -> Result<()> {
     let old_path = exercises_dir.join(old_slug);
     let new_path = exercises_dir.join(new_slug);
 
@@ -377,8 +373,12 @@ pub fn rename_kata_directory(
     }
 
     // Perform the rename
-    fs::rename(&old_path, &new_path)
-        .with_context(|| format!("Failed to rename directory '{}' to '{}'", old_slug, new_slug))?;
+    fs::rename(&old_path, &new_path).with_context(|| {
+        format!(
+            "Failed to rename directory '{}' to '{}'",
+            old_slug, new_slug
+        )
+    })?;
 
     Ok(())
 }

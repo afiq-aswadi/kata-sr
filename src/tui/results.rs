@@ -271,7 +271,10 @@ impl ResultsScreen {
         for (idx, label) in RATING_LABELS.iter().enumerate() {
             let rating_value = idx + 1; // Convert 0-3 array index to 1-4 FSRS rating
             let mut spans = vec![
-                Span::styled(format!("[{}] ", rating_value), Style::default().fg(Color::Gray)),
+                Span::styled(
+                    format!("[{}] ", rating_value),
+                    Style::default().fg(Color::Gray),
+                ),
                 Span::raw(label.to_string()),
             ];
 
@@ -345,7 +348,7 @@ impl ResultsScreen {
                 Constraint::Length(5), // Kata info
                 Constraint::Length(4), // Current status
                 Constraint::Length(5), // Reason input
-                Constraint::Min(1),     // Instructions
+                Constraint::Min(1),    // Instructions
             ])
             .split(area);
 
@@ -358,22 +361,22 @@ impl ResultsScreen {
         };
         let kata_info = format!(
             "Kata: {}\nCategory: {}\nDescription: {}",
-            self.kata.name,
-            self.kata.category,
-            description_preview
+            self.kata.name, self.kata.category, description_preview
         );
-        let info_widget = Paragraph::new(kata_info)
-            .wrap(Wrap { trim: false })
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Flag Kata as Problematic"),
-            );
+        let info_widget = Paragraph::new(kata_info).wrap(Wrap { trim: false }).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Flag Kata as Problematic"),
+        );
         frame.render_widget(info_widget, chunks[0]);
 
         // Current status section
         let current_status = if self.kata.is_problematic {
-            let notes = self.kata.problematic_notes.as_deref().unwrap_or("(no reason given)");
+            let notes = self
+                .kata
+                .problematic_notes
+                .as_deref()
+                .unwrap_or("(no reason given)");
             format!("Current Status: FLAGGED\nReason: {}", notes)
         } else {
             "Current Status: NOT FLAGGED".to_string()
@@ -403,11 +406,10 @@ impl ResultsScreen {
         };
         let reason_widget = Paragraph::new(Line::from(vec![input_text]))
             .wrap(Wrap { trim: false })
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(format!("Reason (optional) - Type reason to {} this kata", action.to_lowercase())),
-            );
+            .block(Block::default().borders(Borders::ALL).title(format!(
+                "Reason (optional) - Type reason to {} this kata",
+                action.to_lowercase()
+            )));
         frame.render_widget(reason_widget, chunks[2]);
 
         // Instructions section
@@ -448,7 +450,8 @@ impl ResultsScreen {
                 KeyCode::Char(c) => {
                     // Add character to reason
                     // Convert character position to byte index
-                    let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                    let byte_idx =
+                        self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
                     self.flag_reason.insert(byte_idx, c);
                     self.flag_cursor_position += 1;
                     return ResultsAction::None;
@@ -457,7 +460,8 @@ impl ResultsScreen {
                     // Remove character before cursor
                     if self.flag_cursor_position > 0 {
                         self.flag_cursor_position -= 1;
-                        let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                        let byte_idx =
+                            self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
                         self.flag_reason.remove(byte_idx);
                     }
                     return ResultsAction::None;
@@ -466,7 +470,8 @@ impl ResultsScreen {
                     // Remove character at cursor
                     let char_count = self.flag_reason.chars().count();
                     if self.flag_cursor_position < char_count {
-                        let byte_idx = self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
+                        let byte_idx =
+                            self.char_pos_to_byte_idx(&self.flag_reason, self.flag_cursor_position);
                         self.flag_reason.remove(byte_idx);
                     }
                     return ResultsAction::None;

@@ -164,17 +164,27 @@ impl Library {
     /// let library = Library::load(&repo, "Name", true)?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn load(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool) -> Result<Self> {
+    pub fn load(
+        repo: &KataRepository,
+        default_sort: &str,
+        default_sort_ascending: bool,
+    ) -> Result<Self> {
         Self::load_with_filter(repo, default_sort, default_sort_ascending, false)
     }
 
-    pub fn load_with_filter(repo: &KataRepository, default_sort: &str, default_sort_ascending: bool, hide_flagged: bool) -> Result<Self> {
+    pub fn load_with_filter(
+        repo: &KataRepository,
+        default_sort: &str,
+        default_sort_ascending: bool,
+        hide_flagged: bool,
+    ) -> Result<Self> {
         let available_katas = load_available_katas()?;
         let all_deck_katas = repo.get_all_katas()?;
 
         // Build kata_ids_in_deck from ALL katas (before filtering)
         // This ensures the "In Deck" indicator is accurate regardless of filter
-        let kata_ids_in_deck: HashSet<String> = all_deck_katas.iter().map(|k| k.name.clone()).collect();
+        let kata_ids_in_deck: HashSet<String> =
+            all_deck_katas.iter().map(|k| k.name.clone()).collect();
 
         // Apply flagged filter for display only
         let mut deck_katas = all_deck_katas;
@@ -343,7 +353,11 @@ impl Library {
                     .iter()
                     .filter(|k| k.next_review_at.map_or(true, |t| t <= Utc::now()))
                     .count();
-                let filter_status = if self.hide_flagged { " | Hiding flagged ⚠️" } else { "" };
+                let filter_status = if self.hide_flagged {
+                    " | Hiding flagged ⚠️"
+                } else {
+                    ""
+                };
                 format!(
                     "Due today: {} | Total in deck: {}{}",
                     due_count,
@@ -412,7 +426,12 @@ impl Library {
 
         // Position indicator: showing item X of Y total
         let position_info = if self.deck_katas.len() > 0 {
-            format!(" [{}/{}]{} ", self.deck_selected + 1, self.deck_katas.len(), scroll_indicator)
+            format!(
+                " [{}/{}]{} ",
+                self.deck_selected + 1,
+                self.deck_katas.len(),
+                scroll_indicator
+            )
         } else {
             String::new()
         };
@@ -488,7 +507,11 @@ impl Library {
             ],
         )
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title(format!(" My Deck {}", position_info)));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" My Deck {}", position_info)),
+        );
 
         frame.render_widget(table, area);
     }
@@ -520,7 +543,8 @@ impl Library {
 
         // Calculate scroll indicators
         let has_content_above = self.all_scroll_offset > 0;
-        let has_content_below = (self.all_scroll_offset + visible_height) < self.filtered_available_katas.len();
+        let has_content_below =
+            (self.all_scroll_offset + visible_height) < self.filtered_available_katas.len();
         let scroll_indicator = match (has_content_above, has_content_below) {
             (true, true) => " ↑↓",
             (true, false) => " ↑",
@@ -530,7 +554,12 @@ impl Library {
 
         // Position indicator: showing item X of Y total
         let position_info = if self.filtered_available_katas.len() > 0 {
-            format!(" [{}/{}]{} ", self.all_selected + 1, self.filtered_available_katas.len(), scroll_indicator)
+            format!(
+                " [{}/{}]{} ",
+                self.all_selected + 1,
+                self.filtered_available_katas.len(),
+                scroll_indicator
+            )
         } else {
             String::new()
         };
@@ -540,7 +569,8 @@ impl Library {
             .bottom_margin(1);
 
         // Only render visible rows
-        let end_index = (self.all_scroll_offset + visible_height).min(self.filtered_available_katas.len());
+        let end_index =
+            (self.all_scroll_offset + visible_height).min(self.filtered_available_katas.len());
         let visible_katas = &self.filtered_available_katas[self.all_scroll_offset..end_index];
 
         let rows: Vec<Row> = visible_katas
@@ -598,7 +628,11 @@ impl Library {
             ],
         )
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title(format!(" All Katas {}", position_info)));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" All Katas {}", position_info)),
+        );
 
         frame.render_widget(table, area);
     }
@@ -617,7 +651,8 @@ impl Library {
 
         // Calculate scroll indicators
         let has_content_above = self.category_scroll_offset > 0;
-        let has_content_below = (self.category_scroll_offset + visible_height) < self.available_categories.len();
+        let has_content_below =
+            (self.category_scroll_offset + visible_height) < self.available_categories.len();
         let scroll_indicator = match (has_content_above, has_content_below) {
             (true, true) => " ↑↓",
             (true, false) => " ↑",
@@ -627,13 +662,19 @@ impl Library {
 
         // Position indicator: showing item X of Y total
         let position_info = if self.available_categories.len() > 0 {
-            format!(" [{}/{}]{} ", self.category_selected_index + 1, self.available_categories.len(), scroll_indicator)
+            format!(
+                " [{}/{}]{} ",
+                self.category_selected_index + 1,
+                self.available_categories.len(),
+                scroll_indicator
+            )
         } else {
             String::new()
         };
 
         // Only render visible items
-        let end_index = (self.category_scroll_offset + visible_height).min(self.available_categories.len());
+        let end_index =
+            (self.category_scroll_offset + visible_height).min(self.available_categories.len());
         let visible_categories = &self.available_categories[self.category_scroll_offset..end_index];
 
         let items: Vec<ListItem> = visible_categories
@@ -649,7 +690,9 @@ impl Library {
 
                 // Create styled line with different colors for checkbox and text
                 let checkbox_style = if is_selected {
-                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD)
                 } else {
                     Style::default().fg(Color::DarkGray)
                 };
@@ -671,9 +714,10 @@ impl Library {
                 // Build the line with styled spans
                 let line = if is_cursor {
                     // When cursor is here, highlight entire line
-                    Line::from(vec![
-                        Span::styled(format!("{} {}", checkbox, category), text_style),
-                    ])
+                    Line::from(vec![Span::styled(
+                        format!("{} {}", checkbox, category),
+                        text_style,
+                    )])
                 } else {
                     // Otherwise, style checkbox and text separately
                     Line::from(vec![
@@ -687,12 +731,11 @@ impl Library {
             })
             .collect();
 
-        let title = format!("Filter by Category{} · [j/k] Navigate · [Space] Toggle · [Enter/Esc] Done", position_info);
-        let list = List::new(items).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(title),
+        let title = format!(
+            "Filter by Category{} · [j/k] Navigate · [Space] Toggle · [Enter/Esc] Done",
+            position_info
         );
+        let list = List::new(items).block(Block::default().borders(Borders::ALL).title(title));
 
         frame.render_widget(list, area);
     }
@@ -724,15 +767,28 @@ impl Library {
                 if self.search_mode {
                     // Show the actual search query with cursor indicator
                     Line::from(vec![
-                        Span::styled("⚡ SEARCH MODE · ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                        Span::styled(
+                            "⚡ SEARCH MODE · ",
+                            Style::default()
+                                .fg(Color::Yellow)
+                                .add_modifier(Modifier::BOLD),
+                        ),
                         Span::styled("Query: ", Style::default().fg(Color::Cyan)),
                         Span::raw(&self.search_query),
                         Span::styled("|", Style::default().fg(Color::Yellow)),
-                        Span::styled("  [Enter/Esc] Done  [Ctrl+U] Clear", Style::default().fg(Color::Gray)),
+                        Span::styled(
+                            "  [Enter/Esc] Done  [Ctrl+U] Clear",
+                            Style::default().fg(Color::Gray),
+                        ),
                     ])
                 } else if self.category_filter_mode {
                     Line::from(vec![
-                        Span::styled("🏷  FILTER MODE · ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                        Span::styled(
+                            "🏷  FILTER MODE · ",
+                            Style::default()
+                                .fg(Color::Yellow)
+                                .add_modifier(Modifier::BOLD),
+                        ),
                         Span::raw("[j/k] Navigate | [Space] Toggle | [Enter/Esc] Done"),
                     ])
                 } else if self.filtered_available_katas.is_empty() {
@@ -802,7 +858,7 @@ impl Library {
                 Constraint::Length(5), // Kata info
                 Constraint::Length(4), // Current status
                 Constraint::Length(5), // Reason input
-                Constraint::Min(1),     // Instructions
+                Constraint::Min(1),    // Instructions
             ])
             .split(area);
 
@@ -815,22 +871,21 @@ impl Library {
         };
         let kata_info = format!(
             "Kata: {}\nCategory: {}\nDescription: {}",
-            kata.name,
-            kata.category,
-            description_preview
+            kata.name, kata.category, description_preview
         );
-        let info_widget = Paragraph::new(kata_info)
-            .wrap(Wrap { trim: false })
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Flag Kata as Problematic"),
-            );
+        let info_widget = Paragraph::new(kata_info).wrap(Wrap { trim: false }).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Flag Kata as Problematic"),
+        );
         frame.render_widget(info_widget, chunks[0]);
 
         // Current status section
         let current_status = if kata.is_problematic {
-            let notes = kata.problematic_notes.as_deref().unwrap_or("(no reason given)");
+            let notes = kata
+                .problematic_notes
+                .as_deref()
+                .unwrap_or("(no reason given)");
             format!("Current Status: FLAGGED\nReason: {}", notes)
         } else {
             "Current Status: NOT FLAGGED".to_string()
@@ -860,11 +915,10 @@ impl Library {
         };
         let reason_widget = Paragraph::new(Line::from(vec![input_text]))
             .wrap(Wrap { trim: false })
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(format!("Reason (optional) - Type reason to {} this kata", action.to_lowercase())),
-            );
+            .block(Block::default().borders(Borders::ALL).title(format!(
+                "Reason (optional) - Type reason to {} this kata",
+                action.to_lowercase()
+            )));
         frame.render_widget(reason_widget, chunks[2]);
 
         // Instructions section

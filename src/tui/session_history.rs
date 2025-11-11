@@ -147,7 +147,11 @@ impl SessionHistoryScreen {
             self.kata.name,
             self.sessions.len()
         ))
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+        .style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
         frame.render_widget(title, chunks[0]);
@@ -213,8 +217,12 @@ impl SessionHistoryScreen {
                     session.started_at.format("%Y-%m-%d %H:%M").to_string()
                 };
 
-                let passed = session.num_passed.map_or("-".to_string(), |n| n.to_string());
-                let failed = session.num_failed.map_or("-".to_string(), |n| n.to_string());
+                let passed = session
+                    .num_passed
+                    .map_or("-".to_string(), |n| n.to_string());
+                let failed = session
+                    .num_failed
+                    .map_or("-".to_string(), |n| n.to_string());
 
                 let duration = session.duration_ms.map_or("-".to_string(), |ms| {
                     if ms < 1000 {
@@ -224,14 +232,12 @@ impl SessionHistoryScreen {
                     }
                 });
 
-                let rating_str = session.quality_rating.map_or("-".to_string(), |r| {
-                    match r {
-                        1 => "Again".to_string(),
-                        2 => "Hard".to_string(),
-                        3 => "Good".to_string(),
-                        4 => "Easy".to_string(),
-                        _ => format!("{}", r),
-                    }
+                let rating_str = session.quality_rating.map_or("-".to_string(), |r| match r {
+                    1 => "Again".to_string(),
+                    2 => "Hard".to_string(),
+                    3 => "Good".to_string(),
+                    4 => "Easy".to_string(),
+                    _ => format!("{}", r),
                 });
 
                 // Note: ease factor would need to be tracked per session

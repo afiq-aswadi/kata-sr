@@ -99,17 +99,21 @@ impl SessionDetailScreen {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3), // Title
-                Constraint::Length(6), // Summary
+                Constraint::Length(3),      // Title
+                Constraint::Length(6),      // Summary
                 Constraint::Percentage(40), // Code attempt
-                Constraint::Min(0),    // Test results
-                Constraint::Length(2), // Instructions
+                Constraint::Min(0),         // Test results
+                Constraint::Length(2),      // Instructions
             ])
             .split(area);
 
         // Title
         let title = Paragraph::new(format!("Session Details: {}", self.kata_name))
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(title, chunks[0]);
@@ -147,7 +151,10 @@ impl SessionDetailScreen {
         let date = if let Some(completed_at) = self.session.completed_at {
             completed_at.format("%Y-%m-%d %H:%M:%S").to_string()
         } else {
-            self.session.started_at.format("%Y-%m-%d %H:%M:%S").to_string()
+            self.session
+                .started_at
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string()
         };
 
         let duration = self.session.duration_ms.map_or("-".to_string(), |ms| {
@@ -158,15 +165,16 @@ impl SessionDetailScreen {
             }
         });
 
-        let rating = self.session.quality_rating.map_or("-".to_string(), |r| {
-            match r {
+        let rating = self
+            .session
+            .quality_rating
+            .map_or("-".to_string(), |r| match r {
                 1 => "Again (1)".to_string(),
                 2 => "Hard (2)".to_string(),
                 3 => "Good (3)".to_string(),
                 4 => "Easy (4)".to_string(),
                 _ => format!("{}", r),
-            }
-        });
+            });
 
         let passed = self.session.num_passed.unwrap_or(0);
         let failed = self.session.num_failed.unwrap_or(0);
@@ -200,8 +208,8 @@ impl SessionDetailScreen {
             ]),
         ];
 
-        let summary = Paragraph::new(lines)
-            .block(Block::default().borders(Borders::ALL).title("Summary"));
+        let summary =
+            Paragraph::new(lines).block(Block::default().borders(Borders::ALL).title("Summary"));
         frame.render_widget(summary, area);
     }
 

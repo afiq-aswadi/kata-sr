@@ -292,7 +292,7 @@ mod tests {
                 num_skipped: Some(0),
                 duration_ms: Some(100),
                 quality_rating: Some(3), // Good (FSRS),
-            code_attempt: None,
+                code_attempt: None,
             })?;
         }
 

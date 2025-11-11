@@ -149,10 +149,7 @@ impl FsrsOptimizer {
             }
         }
 
-        println!(
-            "Optimization complete. Final loss: {:.6}",
-            best_loss
-        );
+        println!("Optimization complete. Final loss: {:.6}", best_loss);
 
         Ok(best_params)
     }
@@ -274,8 +271,7 @@ impl FsrsOptimizer {
             return 0.5; // Default prediction for unstable cases
         }
 
-        let retrievability =
-            (1.0 + case.elapsed_days as f64 / (9.0 * case.stability)).powf(-1.0);
+        let retrievability = (1.0 + case.elapsed_days as f64 / (9.0 * case.stability)).powf(-1.0);
         retrievability.clamp(0.0, 1.0)
     }
 

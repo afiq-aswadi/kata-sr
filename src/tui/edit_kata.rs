@@ -524,21 +524,30 @@ impl EditKataScreen {
         match code {
             KeyCode::F(2) => {
                 // Open template.py in external editor
-                let template_path = self.exercises_dir.join(&self.original_slug).join("template.py");
+                let template_path = self
+                    .exercises_dir
+                    .join(&self.original_slug)
+                    .join("template.py");
                 EditKataAction::OpenEditor {
                     file_path: template_path,
                 }
             }
             KeyCode::F(3) => {
                 // Open reference.py in external editor
-                let reference_path = self.exercises_dir.join(&self.original_slug).join("reference.py");
+                let reference_path = self
+                    .exercises_dir
+                    .join(&self.original_slug)
+                    .join("reference.py");
                 EditKataAction::OpenEditor {
                     file_path: reference_path,
                 }
             }
             KeyCode::F(4) => {
                 // Open test_kata.py in external editor
-                let test_path = self.exercises_dir.join(&self.original_slug).join("test_kata.py");
+                let test_path = self
+                    .exercises_dir
+                    .join(&self.original_slug)
+                    .join("test_kata.py");
                 EditKataAction::OpenEditor {
                     file_path: test_path,
                 }

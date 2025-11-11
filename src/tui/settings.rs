@@ -90,13 +90,18 @@ impl SettingsScreen {
                 EditableField::Theme => self.config.display.theme.clone(),
                 EditableField::HeatmapDays => self.config.display.heatmap_days.to_string(),
                 EditableField::DateFormat => self.config.display.date_format.clone(),
-                EditableField::DailyLimit => self.config.review.daily_limit
+                EditableField::DailyLimit => self
+                    .config
+                    .review
+                    .daily_limit
                     .map(|l| l.to_string())
                     .unwrap_or_else(|| "".to_string()),
                 EditableField::DefaultRating => self.config.review.default_rating.to_string(),
                 EditableField::PersistSortMode => self.config.review.persist_sort_mode.to_string(),
                 EditableField::DefaultSort => self.config.library.default_sort.clone(),
-                EditableField::DefaultSortAscending => self.config.library.default_sort_ascending.to_string(),
+                EditableField::DefaultSortAscending => {
+                    self.config.library.default_sort_ascending.to_string()
+                }
             };
         }
     }
@@ -114,7 +119,8 @@ impl SettingsScreen {
                     }
                 }
                 EditableField::EditorArgs => {
-                    self.config.editor.args = self.input_buffer
+                    self.config.editor.args = self
+                        .input_buffer
                         .split_whitespace()
                         .map(|s| s.to_string())
                         .collect();
@@ -210,7 +216,9 @@ impl SettingsScreen {
                     let trimmed = self.input_buffer.trim();
                     // Valid sort modes (case-insensitive)
                     let valid_sorts = ["Name", "Difficulty", "Category", "Recent"];
-                    if let Some(valid) = valid_sorts.iter().find(|s| s.eq_ignore_ascii_case(trimmed)) {
+                    if let Some(valid) =
+                        valid_sorts.iter().find(|s| s.eq_ignore_ascii_case(trimmed))
+                    {
                         self.config.library.default_sort = valid.to_string();
                         true
                     } else {
@@ -274,7 +282,11 @@ impl SettingsScreen {
         let header = Paragraph::new(vec![Line::from(vec![Span::styled(
             header_text,
             Style::default()
-                .fg(if self.has_unsaved_changes { Color::Red } else { Color::Yellow })
+                .fg(if self.has_unsaved_changes {
+                    Color::Red
+                } else {
+                    Color::Yellow
+                })
                 .add_modifier(Modifier::BOLD),
         )])])
         .block(Block::default().borders(Borders::ALL))
@@ -318,30 +330,31 @@ impl SettingsScreen {
             };
 
             let footer_text = vec![
-                Line::from(vec![
-                    Span::styled(
-                        format!("Editing: {}", field_name),
-                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-                    ),
-                ]),
+                Line::from(vec![Span::styled(
+                    format!("Editing: {}", field_name),
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                )]),
                 Line::from(vec![
                     Span::raw("> "),
-                    Span::styled(
-                        &self.input_buffer,
-                        Style::default().fg(Color::White),
-                    ),
+                    Span::styled(&self.input_buffer, Style::default().fg(Color::White)),
                     Span::styled("█", Style::default().fg(Color::Green)),
                 ]),
                 Line::from(""),
                 Line::from("Enter • Save  |  Esc • Cancel"),
             ];
-            let footer = Paragraph::new(footer_text)
-                .block(Block::default().borders(Borders::ALL));
+            let footer = Paragraph::new(footer_text).block(Block::default().borders(Borders::ALL));
             frame.render_widget(footer, chunks[2]);
         } else {
             let save_text = if self.has_unsaved_changes {
                 vec![
-                    Span::styled("s", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "s",
+                        Style::default()
+                            .fg(Color::Green)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" • Save  |  "),
                 ]
             } else {
@@ -352,15 +365,15 @@ impl SettingsScreen {
             footer_spans.extend(save_text);
             footer_spans.push(Span::raw("Esc/q • "));
             footer_spans.push(if self.has_unsaved_changes {
-                Span::styled("Cancel (unsaved changes will be lost)", Style::default().fg(Color::Red))
+                Span::styled(
+                    "Cancel (unsaved changes will be lost)",
+                    Style::default().fg(Color::Red),
+                )
             } else {
                 Span::raw("Back")
             });
 
-            let footer_text = vec![
-                Line::from(""),
-                Line::from(footer_spans),
-            ];
+            let footer_text = vec![Line::from(""), Line::from(footer_spans)];
             let footer = Paragraph::new(footer_text)
                 .block(Block::default().borders(Borders::ALL))
                 .alignment(Alignment::Center);
@@ -401,7 +414,9 @@ impl SettingsScreen {
                     SettingsAction::None
                 }
                 KeyCode::Down => {
-                    let max_index = Self::build_setting_items(&self.config).len().saturating_sub(1);
+                    let max_index = Self::build_setting_items(&self.config)
+                        .len()
+                        .saturating_sub(1);
                     if self.selected_index < max_index {
                         self.selected_index += 1;
                         self.list_state.select(Some(self.selected_index));
@@ -428,13 +443,11 @@ impl SettingsScreen {
 
     fn build_setting_items(config: &AppConfig) -> Vec<ListItem<'_>> {
         vec![
-            ListItem::new(Line::from(vec![
-                Span::styled("[Editor]", Style::default().fg(Color::Cyan)),
-            ])),
-            ListItem::new(Line::from(format!(
-                "  Command: {}",
-                config.editor.command
-            ))),
+            ListItem::new(Line::from(vec![Span::styled(
+                "[Editor]",
+                Style::default().fg(Color::Cyan),
+            )])),
+            ListItem::new(Line::from(format!("  Command: {}", config.editor.command))),
             ListItem::new(Line::from(format!(
                 "  Args: {}",
                 if config.editor.args.is_empty() {
@@ -444,25 +457,21 @@ impl SettingsScreen {
                 }
             ))),
             ListItem::new(Line::from("")),
-            ListItem::new(Line::from(vec![
-                Span::styled("[Paths]", Style::default().fg(Color::Cyan)),
-            ])),
-            ListItem::new(Line::from(format!(
-                "  Database: {}",
-                config.paths.database
-            ))),
+            ListItem::new(Line::from(vec![Span::styled(
+                "[Paths]",
+                Style::default().fg(Color::Cyan),
+            )])),
+            ListItem::new(Line::from(format!("  Database: {}", config.paths.database))),
             ListItem::new(Line::from(format!(
                 "  Templates: {}",
                 config.paths.templates
             ))),
             ListItem::new(Line::from("")),
-            ListItem::new(Line::from(vec![
-                Span::styled("[Display]", Style::default().fg(Color::Cyan)),
-            ])),
-            ListItem::new(Line::from(format!(
-                "  Theme: {}",
-                config.display.theme
-            ))),
+            ListItem::new(Line::from(vec![Span::styled(
+                "[Display]",
+                Style::default().fg(Color::Cyan),
+            )])),
+            ListItem::new(Line::from(format!("  Theme: {}", config.display.theme))),
             ListItem::new(Line::from(format!(
                 "  Heatmap Days: {}",
                 config.display.heatmap_days
@@ -472,9 +481,10 @@ impl SettingsScreen {
                 config.display.date_format
             ))),
             ListItem::new(Line::from("")),
-            ListItem::new(Line::from(vec![
-                Span::styled("[Review]", Style::default().fg(Color::Cyan)),
-            ])),
+            ListItem::new(Line::from(vec![Span::styled(
+                "[Review]",
+                Style::default().fg(Color::Cyan),
+            )])),
             ListItem::new(Line::from(format!(
                 "  Daily Limit: {}",
                 config
@@ -499,9 +509,10 @@ impl SettingsScreen {
                 config.review.persist_sort_mode
             ))),
             ListItem::new(Line::from("")),
-            ListItem::new(Line::from(vec![
-                Span::styled("[Library]", Style::default().fg(Color::Cyan)),
-            ])),
+            ListItem::new(Line::from(vec![Span::styled(
+                "[Library]",
+                Style::default().fg(Color::Cyan),
+            )])),
             ListItem::new(Line::from(format!(
                 "  Default Sort: {}",
                 config.library.default_sort

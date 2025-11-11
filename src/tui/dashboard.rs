@@ -14,12 +14,12 @@ use ratatui::{
 /// Sort mode for review dashboard
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ReviewSortMode {
-    DueDate,         // Default: prioritize most overdue
-    EasiestFirst,    // Sort by difficulty ascending
-    HardestFirst,    // Sort by difficulty descending
-    Category,        // Group by category
-    LeastReviewed,   // Sort by last_reviewed_at (oldest first)
-    Shuffle,         // Random order
+    DueDate,       // Default: prioritize most overdue
+    EasiestFirst,  // Sort by difficulty ascending
+    HardestFirst,  // Sort by difficulty descending
+    Category,      // Group by category
+    LeastReviewed, // Sort by last_reviewed_at (oldest first)
+    Shuffle,       // Random order
 }
 
 impl ReviewSortMode {
@@ -69,7 +69,11 @@ impl Dashboard {
         Self::load_with_filter(repo, heatmap_days, false)
     }
 
-    pub fn load_with_filter(repo: &KataRepository, heatmap_days: usize, hide_flagged: bool) -> anyhow::Result<Self> {
+    pub fn load_with_filter(
+        repo: &KataRepository,
+        heatmap_days: usize,
+        hide_flagged: bool,
+    ) -> anyhow::Result<Self> {
         let now = Utc::now();
         let mut katas_due = repo.get_katas_due(now)?;
 
@@ -196,14 +200,13 @@ impl Dashboard {
             ReviewSortMode::DueDate => {
                 // Sort by next_review_at (most overdue first)
                 // NULL values (never reviewed) should come first
-                self.katas_due.sort_by(|a, b| {
-                    match (a.next_review_at, b.next_review_at) {
+                self.katas_due
+                    .sort_by(|a, b| match (a.next_review_at, b.next_review_at) {
                         (None, None) => std::cmp::Ordering::Equal,
                         (None, Some(_)) => std::cmp::Ordering::Less,
                         (Some(_), None) => std::cmp::Ordering::Greater,
                         (Some(a_time), Some(b_time)) => a_time.cmp(&b_time),
-                    }
-                });
+                    });
             }
             ReviewSortMode::EasiestFirst => {
                 // Sort by current_difficulty ascending
@@ -231,14 +234,13 @@ impl Dashboard {
             }
             ReviewSortMode::LeastReviewed => {
                 // Sort by last_reviewed_at (oldest first, never reviewed last)
-                self.katas_due.sort_by(|a, b| {
-                    match (a.last_reviewed_at, b.last_reviewed_at) {
+                self.katas_due
+                    .sort_by(|a, b| match (a.last_reviewed_at, b.last_reviewed_at) {
                         (None, None) => std::cmp::Ordering::Equal,
                         (None, Some(_)) => std::cmp::Ordering::Greater,
                         (Some(_), None) => std::cmp::Ordering::Less,
                         (Some(a_time), Some(b_time)) => a_time.cmp(&b_time),
-                    }
-                });
+                    });
             }
             ReviewSortMode::Shuffle => {
                 // Randomly shuffle the list
@@ -261,19 +263,23 @@ impl Dashboard {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3), // Header
-                Constraint::Min(8),    // Main kata list
-                Constraint::Length(6), // Future forecast (compact)
+                Constraint::Length(3),  // Header
+                Constraint::Min(8),     // Main kata list
+                Constraint::Length(6),  // Future forecast (compact)
                 Constraint::Length(12), // GitHub-style heatmap calendar (7 days + header + legend + borders)
                 Constraint::Length(std::cmp::max(
                     3,
                     self.stats.category_breakdown.len() as u16 + 2,
                 )), // Category breakdown (dynamic)
-                Constraint::Length(4), // Stats summary
+                Constraint::Length(4),  // Stats summary
             ])
             .split(frame.size());
 
-        let filter_status = if self.hide_flagged { " | Hiding flagged ⚠️" } else { "" };
+        let filter_status = if self.hide_flagged {
+            " | Hiding flagged ⚠️"
+        } else {
+            ""
+        };
         let header = Paragraph::new(format!(
             "Kata Spaced Repetition - {} katas due today | Sort: {} (press 's' to change){}",
             self.katas_due.len(),
@@ -304,8 +310,11 @@ impl Dashboard {
 
         // Future forecast section
         let forecast_text = self.render_forecast();
-        let forecast = Paragraph::new(forecast_text)
-            .block(Block::default().borders(Borders::ALL).title("Upcoming Reviews (Next 14 Days)"));
+        let forecast = Paragraph::new(forecast_text).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Upcoming Reviews (Next 14 Days)"),
+        );
         frame.render_widget(forecast, chunks[2]);
 
         // GitHub-style heatmap calendar

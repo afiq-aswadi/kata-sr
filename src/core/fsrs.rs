@@ -283,8 +283,12 @@ impl FsrsCard {
                 self.state = CardState::Relearning;
                 self.lapses += 1;
                 self.scheduled_days = 0;
-                self.stability =
-                    self.forgetting_stability(self.stability, self.difficulty, retrievability, params);
+                self.stability = self.forgetting_stability(
+                    self.stability,
+                    self.difficulty,
+                    retrievability,
+                    params,
+                );
             }
             Rating::Hard => {
                 self.reps += 1;
@@ -363,14 +367,7 @@ impl FsrsCard {
     ///
     /// Formula: S_new = S * (1 + exp(w[8]) * (11 - D) * S^(-w[9]) *
     ///                      (exp((1 - R) * w[10]) - 1) * hard_penalty * easy_bonus)
-    fn recall_stability(
-        &self,
-        s: f64,
-        d: f64,
-        r: f64,
-        rating: Rating,
-        params: &FsrsParams,
-    ) -> f64 {
+    fn recall_stability(&self, s: f64, d: f64, r: f64, rating: Rating, params: &FsrsParams) -> f64 {
         let hard_penalty = if rating == Rating::Hard {
             params.w[15]
         } else {
@@ -387,7 +384,7 @@ impl FsrsCard {
                 * (11.0 - d)
                 * s.powf(-params.w[9])
                 * ((f64::exp((1.0 - r) * params.w[10]) - 1.0) * hard_penalty * easy_bonus)))
-        .max(0.1)
+            .max(0.1)
     }
 
     /// Calculates new stability after forgetting (lapse).
@@ -426,7 +423,10 @@ mod tests {
         assert_eq!(CardState::from_str("New"), Some(CardState::New));
         assert_eq!(CardState::from_str("Learning"), Some(CardState::Learning));
         assert_eq!(CardState::from_str("Review"), Some(CardState::Review));
-        assert_eq!(CardState::from_str("Relearning"), Some(CardState::Relearning));
+        assert_eq!(
+            CardState::from_str("Relearning"),
+            Some(CardState::Relearning)
+        );
         assert_eq!(CardState::from_str("Invalid"), None);
 
         assert_eq!(CardState::New.to_str(), "New");

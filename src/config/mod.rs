@@ -209,8 +209,8 @@ impl AppConfig {
                 .with_context(|| format!("Failed to create config directory: {:?}", parent))?;
         }
 
-        let contents = toml::to_string_pretty(self)
-            .context("Failed to serialize config to TOML")?;
+        let contents =
+            toml::to_string_pretty(self).context("Failed to serialize config to TOML")?;
 
         fs::write(&config_path, contents)
             .with_context(|| format!("Failed to write config file: {:?}", config_path))?;

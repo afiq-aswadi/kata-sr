@@ -697,42 +697,62 @@ impl CreateKataScreen {
                 Style::default().add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
             )),
             Line::from(""),
-            Line::from(Span::styled("Size:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled(
+                "Size:",
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
             Line::from("  • <20 lines of implementation code"),
             Line::from("  • Single function or concept"),
             Line::from("  • No multi-step workflows"),
             Line::from(""),
-            Line::from(Span::styled("Tests:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled(
+                "Tests:",
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
             Line::from("  • 3-7 focused tests"),
             Line::from("  • Cover: shape, correctness, edge cases"),
             Line::from("  • Fast execution (<100ms total)"),
             Line::from(""),
-            Line::from(Span::styled("Examples:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled(
+                "Examples:",
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
             Line::from(Span::styled("  Good:", Style::default().fg(Color::Green))),
             Line::from("    - attention_qk_similarity (15 lines)"),
             Line::from("    - softmax (8 lines)"),
             Line::from("    - layer_norm (12 lines)"),
-            Line::from(Span::styled("  Too large:", Style::default().fg(Color::Red))),
+            Line::from(Span::styled(
+                "  Too large:",
+                Style::default().fg(Color::Red),
+            )),
             Line::from("    - multihead_attention (112 lines)"),
             Line::from("    - transformerlens_hooks (87 lines)"),
             Line::from(""),
-            Line::from(Span::styled("Structure:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled(
+                "Structure:",
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
             Line::from("  • Type annotations (jaxtyping)"),
             Line::from("  • Clear TODO comments"),
             Line::from("  • Minimal imports"),
             Line::from("  • Descriptive function name"),
             Line::from(""),
-            Line::from(Span::styled("Dependencies:", Style::default().add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled(
+                "Dependencies:",
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
             Line::from("  • Build learning paths"),
             Line::from("  • Simple → Complex"),
             Line::from("  • Each kata teaches ONE thing"),
         ];
 
         let paragraph = Paragraph::new(guidelines)
-            .block(Block::default()
-                .borders(Borders::ALL)
-                .title(" Guidelines (?) ")
-                .border_style(Style::default().fg(Color::Yellow)))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Guidelines (?) ")
+                    .border_style(Style::default().fg(Color::Yellow)),
+            )
             .wrap(Wrap { trim: false });
 
         frame.render_widget(paragraph, area);
@@ -770,10 +790,12 @@ impl CreateKataScreen {
         ];
 
         let paragraph = Paragraph::new(example)
-            .block(Block::default()
-                .borders(Borders::ALL)
-                .title(" Example (F1) ")
-                .border_style(Style::default().fg(Color::Green)))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Example (F1) ")
+                    .border_style(Style::default().fg(Color::Green)),
+            )
             .wrap(Wrap { trim: false });
 
         frame.render_widget(paragraph, area);

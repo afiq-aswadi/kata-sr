@@ -59,9 +59,7 @@ impl HeatmapCalendar {
         let weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 
         for (day_idx, day_label) in weekdays.iter().enumerate() {
-            let mut spans = vec![
-                Span::raw(format!("{} ", day_label)),
-            ];
+            let mut spans = vec![Span::raw(format!("{} ", day_label))];
 
             // Add cells for this weekday across all weeks
             spans.extend(self.build_week_row(day_idx));
@@ -169,9 +167,9 @@ impl HeatmapCalendar {
     fn count_to_style(&self, count: usize) -> Style {
         let color = match count {
             0 => Color::DarkGray,
-            1..=2 => Color::Rgb(64, 196, 99),   // Light green
-            3..=5 => Color::Rgb(48, 161, 78),   // Medium green
-            _ => Color::Rgb(33, 110, 57),       // Dark green
+            1..=2 => Color::Rgb(64, 196, 99), // Light green
+            3..=5 => Color::Rgb(48, 161, 78), // Medium green
+            _ => Color::Rgb(33, 110, 57),     // Dark green
         };
         Style::default().fg(color)
     }

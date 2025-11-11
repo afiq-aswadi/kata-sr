@@ -218,8 +218,8 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
 ///
 /// Safe to run multiple times (uses INSERT OR IGNORE).
 pub fn migrate_categories_to_tags(conn: &Connection) -> Result<()> {
-    let mut stmt =
-        conn.prepare("SELECT id, category FROM katas WHERE category IS NOT NULL AND category != ''")?;
+    let mut stmt = conn
+        .prepare("SELECT id, category FROM katas WHERE category IS NOT NULL AND category != ''")?;
 
     let katas: Vec<(i64, String)> = stmt
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?

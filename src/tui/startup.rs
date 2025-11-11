@@ -46,8 +46,8 @@ impl StartupScreen {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage(10),
-                Constraint::Min(15),      // ASCII art and menu
-                Constraint::Min(12),      // Heatmap
+                Constraint::Min(15), // ASCII art and menu
+                Constraint::Min(12), // Heatmap
                 Constraint::Percentage(10),
             ])
             .split(area);
@@ -81,7 +81,11 @@ impl StartupScreen {
 
         // Add menu items
         for (i, &item) in MENU_ITEMS.iter().enumerate() {
-            let prefix = if i == self.selected_index { "▶ " } else { "  " };
+            let prefix = if i == self.selected_index {
+                "▶ "
+            } else {
+                "  "
+            };
             let style = if i == self.selected_index {
                 Style::default()
                     .fg(Color::Green)
@@ -129,14 +133,12 @@ impl StartupScreen {
                 }
                 StartupAction::None
             }
-            KeyCode::Enter => {
-                match self.selected_index {
-                    0 => StartupAction::StartReview,
-                    1 => StartupAction::OpenLibrary,
-                    2 => StartupAction::OpenSettings,
-                    _ => StartupAction::None,
-                }
-            }
+            KeyCode::Enter => match self.selected_index {
+                0 => StartupAction::StartReview,
+                1 => StartupAction::OpenLibrary,
+                2 => StartupAction::OpenSettings,
+                _ => StartupAction::None,
+            },
             _ => StartupAction::None,
         }
     }

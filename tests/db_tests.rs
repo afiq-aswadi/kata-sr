@@ -677,36 +677,50 @@ fn test_get_future_review_counts() {
     let mut card1 = FsrsCard::new();
     card1.schedule(Rating::Good, &params, Utc::now());
     let next_review1 = Utc::now() + Duration::days(1);
-    repo.update_kata_after_fsrs_review(id1, &card1, next_review1, Utc::now()).unwrap();
+    repo.update_kata_after_fsrs_review(id1, &card1, next_review1, Utc::now())
+        .unwrap();
 
     // Schedule kata2 for next week
     let mut card2 = FsrsCard::new();
     card2.schedule(Rating::Good, &params, Utc::now());
     let next_review2 = Utc::now() + Duration::days(7);
-    repo.update_kata_after_fsrs_review(id2, &card2, next_review2, Utc::now()).unwrap();
+    repo.update_kata_after_fsrs_review(id2, &card2, next_review2, Utc::now())
+        .unwrap();
 
     // Schedule kata3 for next week (same day as kata2)
     let mut card3 = FsrsCard::new();
     card3.schedule(Rating::Good, &params, Utc::now());
     let next_review3 = Utc::now() + Duration::days(7);
-    repo.update_kata_after_fsrs_review(id3, &card3, next_review3, Utc::now()).unwrap();
+    repo.update_kata_after_fsrs_review(id3, &card3, next_review3, Utc::now())
+        .unwrap();
 
     // Query future review counts
     let end_date = today + Duration::days(14);
     let counts = repo.get_future_review_counts(today, end_date).unwrap();
 
     // Should have 2 entries: one for tomorrow (1 kata) and one for next week (2 katas)
-    assert!(counts.len() >= 2, "Expected at least 2 dates with scheduled reviews");
+    assert!(
+        counts.len() >= 2,
+        "Expected at least 2 dates with scheduled reviews"
+    );
 
     // Find the count for tomorrow
     let tomorrow_count = counts.iter().find(|dc| dc.date == tomorrow);
     assert!(tomorrow_count.is_some(), "Should have count for tomorrow");
-    assert_eq!(tomorrow_count.unwrap().count, 1, "Should have 1 kata due tomorrow");
+    assert_eq!(
+        tomorrow_count.unwrap().count,
+        1,
+        "Should have 1 kata due tomorrow"
+    );
 
     // Find the count for next week
     let next_week_count = counts.iter().find(|dc| dc.date == next_week);
     assert!(next_week_count.is_some(), "Should have count for next week");
-    assert_eq!(next_week_count.unwrap().count, 2, "Should have 2 katas due next week");
+    assert_eq!(
+        next_week_count.unwrap().count,
+        2,
+        "Should have 2 katas due next week"
+    );
 }
 
 #[test]
@@ -717,5 +731,9 @@ fn test_get_future_review_counts_empty() {
 
     // Empty database should return empty vector
     let counts = repo.get_future_review_counts(today, end_date).unwrap();
-    assert_eq!(counts.len(), 0, "Empty database should have no scheduled reviews");
+    assert_eq!(
+        counts.len(),
+        0,
+        "Empty database should have no scheduled reviews"
+    );
 }

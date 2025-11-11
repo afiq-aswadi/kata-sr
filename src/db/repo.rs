@@ -256,7 +256,6 @@ impl KataRepository {
         Ok(self.conn.last_insert_rowid())
     }
 
-
     /// Updates a kata's current difficulty.
     ///
     /// Used by the adaptive difficulty tracker to adjust kata difficulty
@@ -1609,7 +1608,6 @@ impl KataRepository {
         Ok(())
     }
 
-
     /// Stores optimized FSRS parameters in the database.
     ///
     /// # Arguments
@@ -1631,10 +1629,25 @@ impl KataRepository {
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
                      ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)",
             params![
-                params.w[0], params.w[1], params.w[2], params.w[3], params.w[4],
-                params.w[5], params.w[6], params.w[7], params.w[8], params.w[9],
-                params.w[10], params.w[11], params.w[12], params.w[13], params.w[14],
-                params.w[15], params.w[16], params.w[17], params.w[18],
+                params.w[0],
+                params.w[1],
+                params.w[2],
+                params.w[3],
+                params.w[4],
+                params.w[5],
+                params.w[6],
+                params.w[7],
+                params.w[8],
+                params.w[9],
+                params.w[10],
+                params.w[11],
+                params.w[12],
+                params.w[13],
+                params.w[14],
+                params.w[15],
+                params.w[16],
+                params.w[17],
+                params.w[18],
                 created_at.timestamp(),
             ],
         )?;
@@ -1656,10 +1669,25 @@ impl KataRepository {
             |row| {
                 Ok(crate::core::fsrs::FsrsParams {
                     w: [
-                        row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?,
-                        row.get(5)?, row.get(6)?, row.get(7)?, row.get(8)?, row.get(9)?,
-                        row.get(10)?, row.get(11)?, row.get(12)?, row.get(13)?, row.get(14)?,
-                        row.get(15)?, row.get(16)?, row.get(17)?, row.get(18)?,
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                        row.get(5)?,
+                        row.get(6)?,
+                        row.get(7)?,
+                        row.get(8)?,
+                        row.get(9)?,
+                        row.get(10)?,
+                        row.get(11)?,
+                        row.get(12)?,
+                        row.get(13)?,
+                        row.get(14)?,
+                        row.get(15)?,
+                        row.get(16)?,
+                        row.get(17)?,
+                        row.get(18)?,
                     ],
                 })
             },
@@ -2056,7 +2084,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(1000),
             quality_rating: Some(3), // Good (FSRS),
-        code_attempt: None,
+            code_attempt: None,
         };
 
         let session_id = repo.create_session(&session).unwrap();
@@ -2081,7 +2109,8 @@ mod tests {
 
         let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
-        for rating in [3, 2, 1, 3] { // FSRS: Good, Hard, Again, Good
+        for rating in [3, 2, 1, 3] {
+            // FSRS: Good, Hard, Again, Good
             let session = NewSession {
                 kata_id,
                 started_at: Utc::now(),
@@ -2092,7 +2121,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(rating),
-            code_attempt: None,
+                code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2240,7 +2269,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(3), // Good (FSRS),
-            code_attempt: None,
+                code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2279,7 +2308,7 @@ mod tests {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(3), // Good (FSRS),
-        code_attempt: None,
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2323,7 +2352,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(3), // Good (FSRS),
-            code_attempt: None,
+                code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2340,7 +2369,7 @@ mod tests {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(3), // Good (FSRS),
-        code_attempt: None,
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2433,7 +2462,8 @@ mod tests {
 
         // create sessions with different quality ratings
         // 3 successful (rating >= 2: Hard/Good/Easy), 1 failed (rating < 2: Again) in FSRS
-        for rating in [3, 4, 1, 2] { // FSRS: Good, Easy, Again, Hard
+        for rating in [3, 4, 1, 2] {
+            // FSRS: Good, Easy, Again, Hard
             let session = NewSession {
                 kata_id,
                 started_at: Utc::now(),
@@ -2444,7 +2474,7 @@ mod tests {
                 num_skipped: None,
                 duration_ms: None,
                 quality_rating: Some(rating),
-            code_attempt: None,
+                code_attempt: None,
             };
             repo.create_session(&session).unwrap();
         }
@@ -2481,7 +2511,7 @@ mod tests {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(3), // Good (FSRS),
-        code_attempt: None,
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2497,7 +2527,7 @@ mod tests {
             num_skipped: None,
             duration_ms: None,
             quality_rating: Some(1), // Again (FSRS),
-        code_attempt: None,
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 
@@ -2552,7 +2582,7 @@ mod tests {
             num_skipped: Some(0),
             duration_ms: Some(1000),
             quality_rating: Some(3), // Good (FSRS),
-        code_attempt: None,
+            code_attempt: None,
         };
         repo.create_session(&session).unwrap();
 

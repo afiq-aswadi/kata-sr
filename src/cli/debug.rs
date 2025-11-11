@@ -299,12 +299,14 @@ fn unflag_kata(repo: &KataRepository, kata_id: i64) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("Kata with ID {} not found", kata_id))?;
 
     if !kata.is_problematic {
-        println!("⚠ Kata '{}' (ID {}) is not currently flagged as problematic", kata.name, kata_id);
+        println!(
+            "⚠ Kata '{}' (ID {}) is not currently flagged as problematic",
+            kata.name, kata_id
+        );
         return Ok(());
     }
 
-    repo.unflag_kata(kata_id)
-        .context("Failed to unflag kata")?;
+    repo.unflag_kata(kata_id).context("Failed to unflag kata")?;
 
     println!("✓ Unflagged kata: {} (ID {})", kata.name, kata_id);
     Ok(())
@@ -336,7 +338,12 @@ fn export_sessions(
     let output = match format.to_lowercase().as_str() {
         "json" => export_sessions_json(&kata, &sessions)?,
         "csv" => export_sessions_csv(&kata, &sessions)?,
-        _ => return Err(anyhow::anyhow!("Unsupported format: {}. Use 'json' or 'csv'", format)),
+        _ => {
+            return Err(anyhow::anyhow!(
+                "Unsupported format: {}. Use 'json' or 'csv'",
+                format
+            ))
+        }
     };
 
     // Write to file or stdout
@@ -387,7 +394,9 @@ fn export_sessions_json(
                 kata_id: kata.id,
                 kata_name: kata.name.clone(),
                 started_at: s.started_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                completed_at: s.completed_at.map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+                completed_at: s
+                    .completed_at
+                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
                 duration_ms: s.duration_ms,
                 num_passed: s.num_passed,
                 num_failed: s.num_failed,
@@ -418,11 +427,21 @@ fn export_sessions_csv(
             session.started_at.format("%Y-%m-%d %H:%M:%S").to_string()
         };
 
-        let passed = session.num_passed.map_or("-".to_string(), |n| n.to_string());
-        let failed = session.num_failed.map_or("-".to_string(), |n| n.to_string());
-        let skipped = session.num_skipped.map_or("-".to_string(), |n| n.to_string());
-        let duration = session.duration_ms.map_or("-".to_string(), |ms| ms.to_string());
-        let rating = session.quality_rating.map_or("-".to_string(), |r| r.to_string());
+        let passed = session
+            .num_passed
+            .map_or("-".to_string(), |n| n.to_string());
+        let failed = session
+            .num_failed
+            .map_or("-".to_string(), |n| n.to_string());
+        let skipped = session
+            .num_skipped
+            .map_or("-".to_string(), |n| n.to_string());
+        let duration = session
+            .duration_ms
+            .map_or("-".to_string(), |ms| ms.to_string());
+        let rating = session
+            .quality_rating
+            .map_or("-".to_string(), |r| r.to_string());
         let rating_label = session.quality_rating.map_or("-".to_string(), |r| match r {
             1 => "Again".to_string(),
             2 => "Hard".to_string(),

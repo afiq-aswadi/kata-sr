@@ -99,11 +99,11 @@ fn test_fsrs_progression_through_multiple_reviews() {
     let kata_id = repo.create_kata(&new_kata, Utc::now()).unwrap();
 
     let ratings = [
-        Rating::Good,   // 3
-        Rating::Good,   // 3
-        Rating::Good,   // 3
-        Rating::Hard,   // 2
-        Rating::Again,  // 1
+        Rating::Good,  // 3
+        Rating::Good,  // 3
+        Rating::Good,  // 3
+        Rating::Hard,  // 2
+        Rating::Again, // 1
     ];
 
     let mut current_time = Utc::now();
