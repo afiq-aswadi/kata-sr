@@ -1,7 +1,12 @@
 """Tests for Design Add and Search Words Data Structure kata."""
 
+try:
+    from user_kata import WordDictionary
+except ImportError:
+    from .reference import WordDictionary
+
+
 def test_word_dictionary_basic():
-    from template import WordDictionary
 
     wd = WordDictionary()
     wd.add_word("bad")
@@ -13,7 +18,6 @@ def test_word_dictionary_basic():
     assert wd.search("b..") == True
 
 def test_word_dictionary_complex_patterns():
-    from template import WordDictionary
 
     wd = WordDictionary()
     wd.add_word("at")
@@ -29,7 +33,6 @@ def test_word_dictionary_complex_patterns():
     assert wd.search("a..") == True
 
 def test_word_dictionary_no_match():
-    from template import WordDictionary
 
     wd = WordDictionary()
     wd.add_word("hello")

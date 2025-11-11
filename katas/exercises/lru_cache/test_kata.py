@@ -2,8 +2,13 @@
 
 
 
+try:
+    from user_kata import LRUCache
+except ImportError:
+    from .reference import LRUCache
+
+
 def test_lru_basic():
-    from template import LRUCache
 
     cache = LRUCache(2)
     cache.put(1, 1)
@@ -18,7 +23,6 @@ def test_lru_basic():
 
 
 def test_lru_update():
-    from template import LRUCache
 
     cache = LRUCache(2)
     cache.put(1, 1)
@@ -28,7 +32,6 @@ def test_lru_update():
 
 
 def test_lru_access_order():
-    from template import LRUCache
 
     cache = LRUCache(2)
     cache.put(1, 1)
@@ -41,7 +44,6 @@ def test_lru_access_order():
 
 
 def test_lru_capacity_one():
-    from template import LRUCache
 
     cache = LRUCache(1)
     cache.put(1, 1)
@@ -52,14 +54,12 @@ def test_lru_capacity_one():
 
 
 def test_lru_not_found():
-    from template import LRUCache
 
     cache = LRUCache(2)
     assert cache.get(1) == -1
 
 
 def test_lru_multiple_operations():
-    from template import LRUCache
 
     cache = LRUCache(3)
     cache.put(1, 1)

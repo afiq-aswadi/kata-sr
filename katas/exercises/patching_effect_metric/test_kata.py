@@ -6,9 +6,14 @@ import pytest
 import torch
 
 try:
-    from template import compute_patching_effect
 except ImportError:
     from reference import compute_patching_effect
+
+
+try:
+    from user_kata import compute_patching_effect
+except ImportError:
+    from .reference import compute_patching_effect
 
 
 class TestPatchingEffectMetric:

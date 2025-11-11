@@ -1,8 +1,15 @@
 """Tests for Clone Graph kata."""
 
+try:
+    from user_kata import Node
+    from user_kata import clone_graph
+except ImportError:
+    from .reference import Node
+    from .reference import clone_graph
+
+
 def build_graph(adj_list: list[list[int]]):
     """Helper to build graph from adjacency list."""
-    from template import Node
 
     if not adj_list:
         return None
@@ -43,27 +50,23 @@ def graph_to_adj_list(node):
     return result
 
 def test_clone_graph_example1():
-    from template import clone_graph
     node = build_graph([[2,4],[1,3],[2,4],[1,3]])
     cloned = clone_graph(node)
     assert graph_to_adj_list(cloned) == [[2,4],[1,3],[2,4],[1,3]]
     assert cloned is not node
 
 def test_clone_graph_example2():
-    from template import clone_graph
     node = build_graph([[]])
     cloned = clone_graph(node)
     assert graph_to_adj_list(cloned) == [[]]
     assert cloned is not node
 
 def test_clone_graph_example3():
-    from template import clone_graph
     node = build_graph([])
     cloned = clone_graph(node)
     assert cloned is None
 
 def test_clone_graph_simple():
-    from template import clone_graph
     node = build_graph([[2],[1]])
     cloned = clone_graph(node)
     assert graph_to_adj_list(cloned) == [[2],[1]]

@@ -1,7 +1,12 @@
 """Tests for Permutations kata."""
 
+try:
+    from user_kata import permute
+except ImportError:
+    from .reference import permute
+
+
 def test_permute_example1():
-    from template import permute
     result = permute([1,2,3])
     result = [sorted(perm) for perm in result]
     result = sorted(result)
@@ -11,7 +16,6 @@ def test_permute_example1():
     assert result == expected
 
 def test_permute_example2():
-    from template import permute
     result = permute([0,1])
     result = sorted([sorted(perm) for perm in result])
     expected = [[0,1],[1,0]]
@@ -19,11 +23,9 @@ def test_permute_example2():
     assert result == expected
 
 def test_permute_example3():
-    from template import permute
     assert permute([1]) == [[1]]
 
 def test_permute_two_elements():
-    from template import permute
     result = permute([1,2])
     result = sorted([sorted(perm) for perm in result])
     expected = [[1,2],[2,1]]

@@ -1,5 +1,11 @@
 """Tests for Construct Binary Tree from Preorder and Inorder Traversal kata."""
 
+try:
+    from user_kata import build_tree
+except ImportError:
+    from .reference import build_tree
+
+
 def tree_to_list(root):
     """Helper to convert tree to level-order list."""
     if not root:
@@ -20,7 +26,6 @@ def tree_to_list(root):
     return result
 
 def test_build_tree_example1():
-    from template import build_tree
 
     preorder = [3, 9, 20, 15, 7]
     inorder = [9, 3, 15, 20, 7]
@@ -29,7 +34,6 @@ def test_build_tree_example1():
     assert tree_to_list(root) == [3, 9, 20, None, None, 15, 7]
 
 def test_build_tree_example2():
-    from template import build_tree
 
     preorder = [-1]
     inorder = [-1]
@@ -38,7 +42,6 @@ def test_build_tree_example2():
     assert tree_to_list(root) == [-1]
 
 def test_build_tree_left_skewed():
-    from template import build_tree
 
     preorder = [1, 2, 3]
     inorder = [3, 2, 1]
@@ -47,7 +50,6 @@ def test_build_tree_left_skewed():
     assert tree_to_list(root) == [1, 2, None, 3]
 
 def test_build_tree_right_skewed():
-    from template import build_tree
 
     preorder = [1, 2, 3]
     inorder = [1, 2, 3]
@@ -56,7 +58,6 @@ def test_build_tree_right_skewed():
     assert tree_to_list(root) == [1, None, 2, None, 3]
 
 def test_build_tree_balanced():
-    from template import build_tree
 
     preorder = [1, 2, 4, 5, 3, 6, 7]
     inorder = [4, 2, 5, 1, 6, 3, 7]

@@ -4,9 +4,14 @@ import dash
 import plotly.graph_objects as go
 
 
+try:
+    from user_kata import create_app_with_callback
+except ImportError:
+    from .reference import create_app_with_callback
+
+
 def test_creates_dash_app():
     """Test that function returns a Dash app."""
-    from template import create_app_with_callback
 
     app = create_app_with_callback()
     assert isinstance(app, dash.Dash)
@@ -14,7 +19,6 @@ def test_creates_dash_app():
 
 def test_callback_registered():
     """Test that at least one callback is registered."""
-    from template import create_app_with_callback
 
     app = create_app_with_callback()
     assert len(app.callback_map) > 0
@@ -22,7 +26,6 @@ def test_callback_registered():
 
 def test_callback_returns_figure():
     """Test that callback returns a Plotly figure."""
-    from template import create_app_with_callback
 
     app = create_app_with_callback()
 
@@ -36,7 +39,6 @@ def test_callback_returns_figure():
 
 def test_callback_handles_line_chart():
     """Test callback creates line chart correctly."""
-    from template import create_app_with_callback
 
     app = create_app_with_callback()
 
@@ -51,7 +53,6 @@ def test_callback_handles_line_chart():
 
 def test_callback_handles_bar_chart():
     """Test callback creates bar chart correctly."""
-    from template import create_app_with_callback
 
     app = create_app_with_callback()
 

@@ -6,6 +6,12 @@ from transformer_lens import HookedTransformer
 
 
 @pytest.fixture
+try:
+    from user_kata import extract_position
+except ImportError:
+    from .reference import extract_position
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")
@@ -13,7 +19,6 @@ def model():
 
 def test_extract_position_returns_tensor(model):
     """Test that function returns a tensor."""
-    from template import extract_position
 
     vec = extract_position(model, "Hello", layer=0, position=0)
     assert isinstance(vec, torch.Tensor)
@@ -21,7 +26,6 @@ def test_extract_position_returns_tensor(model):
 
 def test_position_vector_shape(model):
     """Test that position vector has correct shape."""
-    from template import extract_position
 
     vec = extract_position(model, "Test", layer=0, position=0)
 
@@ -32,7 +36,6 @@ def test_position_vector_shape(model):
 
 def test_different_positions_different_vectors(model):
     """Test that different positions have different activations."""
-    from template import extract_position
 
     prompt = "The quick brown fox"
     pos0 = extract_position(model, prompt, layer=0, position=0)
@@ -46,7 +49,6 @@ def test_different_positions_different_vectors(model):
 
 def test_last_position_negative_indexing(model):
     """Test that -1 index extracts last token."""
-    from template import extract_position
 
     prompt = "Test input here"
     last = extract_position(model, prompt, layer=0, position=-1)
@@ -56,7 +58,6 @@ def test_last_position_negative_indexing(model):
 
 def test_different_layers_different_values(model):
     """Test that same position in different layers differs."""
-    from template import extract_position
 
     prompt = "Test"
     layer0_pos0 = extract_position(model, prompt, layer=0, position=0)
@@ -67,7 +68,6 @@ def test_different_layers_different_values(model):
 
 def test_position_values_finite(model):
     """Test that extracted values are finite."""
-    from template import extract_position
 
     vec = extract_position(model, "Test", layer=0, position=0)
     assert torch.isfinite(vec).all()
@@ -75,7 +75,6 @@ def test_position_values_finite(model):
 
 def test_first_position_accessible(model):
     """Test that first position (0) can be extracted."""
-    from template import extract_position
 
     vec = extract_position(model, "Hello world", layer=0, position=0)
     assert vec.shape[0] == model.cfg.d_model
@@ -83,7 +82,6 @@ def test_first_position_accessible(model):
 
 def test_middle_position_accessible(model):
     """Test that middle positions can be extracted."""
-    from template import extract_position
 
     prompt = "The quick brown fox jumps"
     mid_pos = 2
@@ -93,7 +91,6 @@ def test_middle_position_accessible(model):
 
 def test_different_prompts_different_positions(model):
     """Test that same position index in different prompts differs."""
-    from template import extract_position
 
     pos1 = extract_position(model, "Hello world", layer=0, position=0)
     pos2 = extract_position(model, "Goodbye world", layer=0, position=0)

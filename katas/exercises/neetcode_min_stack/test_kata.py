@@ -1,7 +1,12 @@
 """Tests for Min Stack kata."""
 
+try:
+    from user_kata import MinStack
+except ImportError:
+    from .reference import MinStack
+
+
 def test_min_stack():
-    from template import MinStack
 
     stack = MinStack()
     stack.push(-2)

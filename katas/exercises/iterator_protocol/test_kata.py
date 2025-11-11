@@ -2,8 +2,21 @@
 
 
 
+try:
+    from user_kata import Countdown
+    from user_kata import InfiniteSequence, take
+    from user_kata import BatchIterator
+    from user_kata import fibonacci_generator, take
+    from user_kata import take
+except ImportError:
+    from .reference import Countdown
+    from .reference import InfiniteSequence, take
+    from .reference import BatchIterator
+    from .reference import fibonacci_generator, take
+    from .reference import take
+
+
 def test_countdown():
-    from template import Countdown
 
     cd = Countdown(5)
     result = list(cd)
@@ -11,7 +24,6 @@ def test_countdown():
 
 
 def test_countdown_zero():
-    from template import Countdown
 
     cd = Countdown(0)
     result = list(cd)
@@ -19,7 +31,6 @@ def test_countdown_zero():
 
 
 def test_infinite_sequence():
-    from template import InfiniteSequence, take
 
     seq = InfiniteSequence(0, 1)
     result = take(seq, 5)
@@ -27,7 +38,6 @@ def test_infinite_sequence():
 
 
 def test_infinite_sequence_custom_start():
-    from template import InfiniteSequence, take
 
     seq = InfiniteSequence(10, 2)
     result = take(seq, 5)
@@ -35,7 +45,6 @@ def test_infinite_sequence_custom_start():
 
 
 def test_batch_iterator():
-    from template import BatchIterator
 
     items = [1, 2, 3, 4, 5, 6, 7]
     batches = list(BatchIterator(items, 3))
@@ -44,7 +53,6 @@ def test_batch_iterator():
 
 
 def test_batch_iterator_exact_size():
-    from template import BatchIterator
 
     items = [1, 2, 3, 4]
     batches = list(BatchIterator(items, 2))
@@ -53,7 +61,6 @@ def test_batch_iterator_exact_size():
 
 
 def test_fibonacci_generator():
-    from template import fibonacci_generator, take
 
     fib = fibonacci_generator()
     result = take(fib, 10)
@@ -62,7 +69,6 @@ def test_fibonacci_generator():
 
 
 def test_take_exhausted():
-    from template import take
 
     it = iter([1, 2, 3])
     result = take(it, 10)
@@ -71,7 +77,6 @@ def test_take_exhausted():
 
 
 def test_countdown_reusable():
-    from template import Countdown
 
     cd = Countdown(3)
     first = list(cd)

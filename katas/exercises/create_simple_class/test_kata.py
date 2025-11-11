@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import create_simple_class
+except ImportError:
+    from .reference import create_simple_class
+
+
 def test_basic_class_creation():
     """Test creating a simple class with attributes."""
-    from template import create_simple_class
 
     MyClass = create_simple_class('MyClass', {'value': 42, 'name': 'test'})
 
@@ -16,7 +21,6 @@ def test_basic_class_creation():
 
 def test_class_instantiation():
     """Test that dynamically created class can be instantiated."""
-    from template import create_simple_class
 
     MyClass = create_simple_class('MyClass', {'default': 100})
 
@@ -26,7 +30,6 @@ def test_class_instantiation():
 
 def test_empty_attributes():
     """Test creating class with no attributes."""
-    from template import create_simple_class
 
     EmptyClass = create_simple_class('EmptyClass', {})
 
@@ -37,7 +40,6 @@ def test_empty_attributes():
 
 def test_multiple_attributes():
     """Test creating class with many attributes."""
-    from template import create_simple_class
 
     attrs = {
         'x': 1,
@@ -55,7 +57,6 @@ def test_multiple_attributes():
 
 def test_class_is_type():
     """Test that created class is actually a type object."""
-    from template import create_simple_class
 
     MyClass = create_simple_class('MyClass', {})
 
@@ -65,7 +66,6 @@ def test_class_is_type():
 
 def test_multiple_instances():
     """Test creating multiple instances."""
-    from template import create_simple_class
 
     Counter = create_simple_class('Counter', {'initial': 0})
 
@@ -79,7 +79,6 @@ def test_multiple_instances():
 
 def test_class_with_string_attributes():
     """Test class with string attribute values."""
-    from template import create_simple_class
 
     Config = create_simple_class('Config', {
         'host': 'localhost',

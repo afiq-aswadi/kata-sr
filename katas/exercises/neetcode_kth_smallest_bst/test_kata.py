@@ -1,7 +1,12 @@
 """Tests for Kth Smallest Element in a BST kata."""
 
+try:
+    from user_kata import TreeNode, kth_smallest
+except ImportError:
+    from .reference import TreeNode, kth_smallest
+
+
 def test_kth_smallest_example1():
-    from template import TreeNode, kth_smallest
 
     # Create BST [3,1,4,null,2]
     root = TreeNode(3)
@@ -11,7 +16,6 @@ def test_kth_smallest_example1():
     assert kth_smallest(root, 1) == 1
 
 def test_kth_smallest_example2():
-    from template import TreeNode, kth_smallest
 
     # Create BST [5,3,6,2,4,null,null,1]
     root = TreeNode(5)
@@ -21,7 +25,6 @@ def test_kth_smallest_example2():
     assert kth_smallest(root, 3) == 3
 
 def test_kth_smallest_first():
-    from template import TreeNode, kth_smallest
 
     # Create BST [2,1,3]
     root = TreeNode(2, TreeNode(1), TreeNode(3))
@@ -29,7 +32,6 @@ def test_kth_smallest_first():
     assert kth_smallest(root, 1) == 1
 
 def test_kth_smallest_last():
-    from template import TreeNode, kth_smallest
 
     # Create BST [2,1,3]
     root = TreeNode(2, TreeNode(1), TreeNode(3))
@@ -37,7 +39,6 @@ def test_kth_smallest_last():
     assert kth_smallest(root, 3) == 3
 
 def test_kth_smallest_middle():
-    from template import TreeNode, kth_smallest
 
     # Create BST [4,2,6,1,3,5,7]
     root = TreeNode(4)

@@ -3,9 +3,16 @@
 import pytest
 
 
+try:
+    from user_kata import AutoPropertyMeta
+    from user_kata import make_auto_property
+except ImportError:
+    from .reference import AutoPropertyMeta
+    from .reference import make_auto_property
+
+
 def test_auto_property_basic():
     """Test AutoPropertyMeta creates basic properties."""
-    from template import AutoPropertyMeta
 
     class Person(metaclass=AutoPropertyMeta):
         _auto_properties = ['name']
@@ -19,7 +26,6 @@ def test_auto_property_basic():
 
 def test_auto_property_get_set():
     """Test property getter and setter work."""
-    from template import AutoPropertyMeta
 
     class Person(metaclass=AutoPropertyMeta):
         _auto_properties = ['name', 'age']
@@ -40,7 +46,6 @@ def test_auto_property_get_set():
 
 def test_auto_property_storage():
     """Test AutoPropertyMeta stores values with underscore prefix."""
-    from template import AutoPropertyMeta
 
     class Config(metaclass=AutoPropertyMeta):
         _auto_properties = ['host', 'port']
@@ -58,7 +63,6 @@ def test_auto_property_storage():
 
 def test_auto_property_none_default():
     """Test properties return None when not set."""
-    from template import AutoPropertyMeta
 
     class Model(metaclass=AutoPropertyMeta):
         _auto_properties = ['value']
@@ -69,7 +73,6 @@ def test_auto_property_none_default():
 
 def test_auto_property_multiple():
     """Test multiple properties work independently."""
-    from template import AutoPropertyMeta
 
     class Point(metaclass=AutoPropertyMeta):
         _auto_properties = ['x', 'y', 'z']
@@ -91,7 +94,6 @@ def test_auto_property_multiple():
 
 def test_auto_property_no_properties():
     """Test AutoPropertyMeta works without _auto_properties."""
-    from template import AutoPropertyMeta
 
     class Basic(metaclass=AutoPropertyMeta):
         value = 42
@@ -102,7 +104,6 @@ def test_auto_property_no_properties():
 
 def test_auto_property_empty_list():
     """Test AutoPropertyMeta works with empty _auto_properties."""
-    from template import AutoPropertyMeta
 
     class Empty(metaclass=AutoPropertyMeta):
         _auto_properties = []
@@ -114,7 +115,6 @@ def test_auto_property_empty_list():
 
 def test_auto_property_multiple_instances():
     """Test properties maintain separate state per instance."""
-    from template import AutoPropertyMeta
 
     class Counter(metaclass=AutoPropertyMeta):
         _auto_properties = ['count']
@@ -134,7 +134,6 @@ def test_auto_property_multiple_instances():
 
 def test_auto_property_with_methods():
     """Test properties work alongside regular methods."""
-    from template import AutoPropertyMeta
 
     class Rectangle(metaclass=AutoPropertyMeta):
         _auto_properties = ['width', 'height']
@@ -155,7 +154,6 @@ def test_auto_property_with_methods():
 
 def test_auto_property_string_values():
     """Test properties work with string values."""
-    from template import AutoPropertyMeta
 
     class User(metaclass=AutoPropertyMeta):
         _auto_properties = ['username', 'email']
@@ -170,7 +168,6 @@ def test_auto_property_string_values():
 
 def test_auto_property_list_values():
     """Test properties work with list values."""
-    from template import AutoPropertyMeta
 
     class Container(metaclass=AutoPropertyMeta):
         _auto_properties = ['items']
@@ -186,7 +183,6 @@ def test_auto_property_list_values():
 
 def test_auto_property_update_value():
     """Test properties can be updated multiple times."""
-    from template import AutoPropertyMeta
 
     class Settings(metaclass=AutoPropertyMeta):
         _auto_properties = ['theme']
@@ -204,7 +200,6 @@ def test_auto_property_update_value():
 
 def test_auto_property_is_property():
     """Test that created attributes are actual property objects."""
-    from template import AutoPropertyMeta
 
     class Model(metaclass=AutoPropertyMeta):
         _auto_properties = ['value']
@@ -215,7 +210,6 @@ def test_auto_property_is_property():
 
 def test_make_auto_property_helper():
     """Test the helper function creates properties correctly."""
-    from template import make_auto_property
 
     prop = make_auto_property('test_attr')
 
@@ -234,7 +228,6 @@ def test_make_auto_property_helper():
 
 def test_auto_property_bool_values():
     """Test properties work with boolean values."""
-    from template import AutoPropertyMeta
 
     class Flags(metaclass=AutoPropertyMeta):
         _auto_properties = ['enabled', 'debug']

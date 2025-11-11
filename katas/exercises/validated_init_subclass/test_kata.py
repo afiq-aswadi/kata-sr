@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import ValidatedBase
+except ImportError:
+    from .reference import ValidatedBase
+
+
 def test_success_with_required_attrs():
     """Test ValidatedBase allows class with required attributes."""
-    from template import ValidatedBase
 
     class User(ValidatedBase, required_attrs=['name', 'email']):
         name = "John"
@@ -18,7 +23,6 @@ def test_success_with_required_attrs():
 
 def test_missing_attribute_raises_error():
     """Test ValidatedBase raises error for missing attribute."""
-    from template import ValidatedBase
 
     with pytest.raises(TypeError, match="missing required attribute: email"):
         class BadUser(ValidatedBase, required_attrs=['name', 'email']):
@@ -28,7 +32,6 @@ def test_missing_attribute_raises_error():
 
 def test_no_validation():
     """Test ValidatedBase works without required_attrs."""
-    from template import ValidatedBase
 
     class Simple(ValidatedBase):
         value = 42
@@ -39,7 +42,6 @@ def test_no_validation():
 
 def test_multiple_required_attrs():
     """Test ValidatedBase validates multiple attributes."""
-    from template import ValidatedBase
 
     class Model(ValidatedBase, required_attrs=['a', 'b', 'c']):
         a = 1
@@ -54,7 +56,6 @@ def test_multiple_required_attrs():
 
 def test_empty_required_attrs():
     """Test ValidatedBase with empty required_attrs list."""
-    from template import ValidatedBase
 
     class Empty(ValidatedBase, required_attrs=[]):
         value = 100
@@ -65,7 +66,6 @@ def test_empty_required_attrs():
 
 def test_with_methods():
     """Test ValidatedBase works with methods."""
-    from template import ValidatedBase
 
     class Calculator(ValidatedBase, required_attrs=['name']):
         name = "BasicCalc"
@@ -79,7 +79,6 @@ def test_with_methods():
 
 def test_none_value():
     """Test required attribute can be None."""
-    from template import ValidatedBase
 
     class Config(ValidatedBase, required_attrs=['setting']):
         setting = None
@@ -90,7 +89,6 @@ def test_none_value():
 
 def test_inherited_attributes():
     """Test ValidatedBase accepts inherited attributes."""
-    from template import ValidatedBase
 
     class Base(ValidatedBase):
         name = "base"

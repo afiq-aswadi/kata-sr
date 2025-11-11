@@ -7,12 +7,17 @@ import torch
 from transformer_lens import HookedTransformer
 
 try:
-    from template import patch_activation
 except ImportError:
     from reference import patch_activation
 
 
 @pytest.fixture(scope="module")
+try:
+    from user_kata import patch_activation
+except ImportError:
+    from .reference import patch_activation
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")

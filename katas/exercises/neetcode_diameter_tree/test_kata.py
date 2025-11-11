@@ -1,7 +1,12 @@
 """Tests for Diameter of Binary Tree kata."""
 
+try:
+    from user_kata import TreeNode, diameter_of_binary_tree
+except ImportError:
+    from .reference import TreeNode, diameter_of_binary_tree
+
+
 def test_diameter_example1():
-    from template import TreeNode, diameter_of_binary_tree
 
     # Create tree [1,2,3,4,5]
     root = TreeNode(1)
@@ -11,7 +16,6 @@ def test_diameter_example1():
     assert diameter_of_binary_tree(root) == 3
 
 def test_diameter_example2():
-    from template import TreeNode, diameter_of_binary_tree
 
     # Create tree [1,2]
     root = TreeNode(1, TreeNode(2))
@@ -19,12 +23,10 @@ def test_diameter_example2():
     assert diameter_of_binary_tree(root) == 1
 
 def test_diameter_single():
-    from template import TreeNode, diameter_of_binary_tree
     root = TreeNode(1)
     assert diameter_of_binary_tree(root) == 0
 
 def test_diameter_skewed():
-    from template import TreeNode, diameter_of_binary_tree
 
     # Create left-skewed tree [1,2,null,3]
     root = TreeNode(1)
@@ -34,7 +36,6 @@ def test_diameter_skewed():
     assert diameter_of_binary_tree(root) == 2
 
 def test_diameter_balanced():
-    from template import TreeNode, diameter_of_binary_tree
 
     # Create balanced tree
     root = TreeNode(1)

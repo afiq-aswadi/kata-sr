@@ -3,8 +3,17 @@
 import pytest
 
 
+try:
+    from user_kata import Vector
+    from user_kata import Money
+    from user_kata import Matrix
+except ImportError:
+    from .reference import Vector
+    from .reference import Money
+    from .reference import Matrix
+
+
 def test_vector_add():
-    from template import Vector
 
     v1 = Vector(1, 2)
     v2 = Vector(3, 4)
@@ -15,7 +24,6 @@ def test_vector_add():
 
 
 def test_vector_sub():
-    from template import Vector
 
     v1 = Vector(5, 7)
     v2 = Vector(2, 3)
@@ -26,7 +34,6 @@ def test_vector_sub():
 
 
 def test_vector_mul():
-    from template import Vector
 
     v = Vector(2, 3)
     result = v * 3
@@ -36,7 +43,6 @@ def test_vector_mul():
 
 
 def test_vector_eq():
-    from template import Vector
 
     v1 = Vector(1, 2)
     v2 = Vector(1, 2)
@@ -47,7 +53,6 @@ def test_vector_eq():
 
 
 def test_money_add():
-    from template import Money
 
     m1 = Money(10.50, "USD")
     m2 = Money(5.25, "USD")
@@ -58,7 +63,6 @@ def test_money_add():
 
 
 def test_money_add_different_currency():
-    from template import Money
 
     m1 = Money(10, "USD")
     m2 = Money(10, "EUR")
@@ -68,7 +72,6 @@ def test_money_add_different_currency():
 
 
 def test_money_comparison():
-    from template import Money
 
     m1 = Money(10, "USD")
     m2 = Money(20, "USD")
@@ -78,7 +81,6 @@ def test_money_comparison():
 
 
 def test_money_eq():
-    from template import Money
 
     m1 = Money(10.50, "USD")
     m2 = Money(10.50, "USD")
@@ -89,7 +91,6 @@ def test_money_eq():
 
 
 def test_matrix_getitem():
-    from template import Matrix
 
     m = Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
@@ -99,7 +100,6 @@ def test_matrix_getitem():
 
 
 def test_matrix_setitem():
-    from template import Matrix
 
     m = Matrix([[1, 2], [3, 4]])
     m[0, 1] = 10
@@ -108,7 +108,6 @@ def test_matrix_setitem():
 
 
 def test_matrix_len():
-    from template import Matrix
 
     m = Matrix([[1, 2], [3, 4], [5, 6]])
     assert len(m) == 3

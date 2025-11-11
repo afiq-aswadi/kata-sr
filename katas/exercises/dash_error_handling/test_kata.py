@@ -4,9 +4,14 @@ import dash
 import plotly.graph_objects as go
 
 
+try:
+    from user_kata import create_validated_app
+except ImportError:
+    from .reference import create_validated_app
+
+
 def test_creates_dash_app():
     """Test that function returns a Dash app."""
-    from template import create_validated_app
 
     app = create_validated_app()
     assert isinstance(app, dash.Dash)
@@ -14,7 +19,6 @@ def test_creates_dash_app():
 
 def test_callback_registered():
     """Test that callback is registered."""
-    from template import create_validated_app
 
     app = create_validated_app()
     assert len(app.callback_map) > 0
@@ -22,7 +26,6 @@ def test_callback_registered():
 
 def test_callback_handles_none_input():
     """Test that callback returns error for None input."""
-    from template import create_validated_app
 
     app = create_validated_app()
 
@@ -38,7 +41,6 @@ def test_callback_handles_none_input():
 
 def test_callback_handles_invalid_range():
     """Test that callback returns error for n < 1."""
-    from template import create_validated_app
 
     app = create_validated_app()
 
@@ -54,7 +56,6 @@ def test_callback_handles_invalid_range():
 
 def test_callback_handles_too_many_points():
     """Test that callback returns error for n > 100."""
-    from template import create_validated_app
 
     app = create_validated_app()
 
@@ -70,7 +71,6 @@ def test_callback_handles_too_many_points():
 
 def test_callback_handles_valid_input():
     """Test that callback returns chart for valid input."""
-    from template import create_validated_app
 
     app = create_validated_app()
 

@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import ValidatedMeta
+except ImportError:
+    from .reference import ValidatedMeta
+
+
 def test_success_with_all_attributes():
     """Test ValidatedMeta allows class with all required attributes."""
-    from template import ValidatedMeta
 
     class User(metaclass=ValidatedMeta):
         required_attributes = ['name', 'email']
@@ -19,7 +24,6 @@ def test_success_with_all_attributes():
 
 def test_missing_one_attribute():
     """Test ValidatedMeta raises error for missing attribute."""
-    from template import ValidatedMeta
 
     with pytest.raises(TypeError, match="missing required attribute: email"):
         class InvalidUser(metaclass=ValidatedMeta):
@@ -30,7 +34,6 @@ def test_missing_one_attribute():
 
 def test_missing_multiple_attributes():
     """Test ValidatedMeta detects first missing attribute."""
-    from template import ValidatedMeta
 
     with pytest.raises(TypeError, match="missing required attribute"):
         class Config(metaclass=ValidatedMeta):
@@ -41,7 +44,6 @@ def test_missing_multiple_attributes():
 
 def test_no_requirements():
     """Test ValidatedMeta works without required_attributes."""
-    from template import ValidatedMeta
 
     class Product(metaclass=ValidatedMeta):
         price = 100
@@ -52,7 +54,6 @@ def test_no_requirements():
 
 def test_empty_requirements():
     """Test ValidatedMeta works with empty required_attributes."""
-    from template import ValidatedMeta
 
     class Service(metaclass=ValidatedMeta):
         required_attributes = []
@@ -64,7 +65,6 @@ def test_empty_requirements():
 
 def test_many_required_attributes():
     """Test ValidatedMeta accepts class with many required attributes."""
-    from template import ValidatedMeta
 
     class Model(metaclass=ValidatedMeta):
         required_attributes = ['a', 'b', 'c', 'd']
@@ -80,7 +80,6 @@ def test_many_required_attributes():
 
 def test_with_methods():
     """Test ValidatedMeta works with methods."""
-    from template import ValidatedMeta
 
     class Calculator(metaclass=ValidatedMeta):
         required_attributes = ['name']
@@ -95,7 +94,6 @@ def test_with_methods():
 
 def test_none_value_accepted():
     """Test ValidatedMeta accepts None as a valid value."""
-    from template import ValidatedMeta
 
     class Config(metaclass=ValidatedMeta):
         required_attributes = ['setting']
@@ -107,7 +105,6 @@ def test_none_value_accepted():
 
 def test_inherited_attributes():
     """Test ValidatedMeta accepts inherited attributes."""
-    from template import ValidatedMeta
 
     class Base(metaclass=ValidatedMeta):
         name = "base"

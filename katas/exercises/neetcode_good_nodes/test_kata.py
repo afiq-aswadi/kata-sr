@@ -1,7 +1,12 @@
 """Tests for Count Good Nodes in Binary Tree kata."""
 
+try:
+    from user_kata import TreeNode, good_nodes
+except ImportError:
+    from .reference import TreeNode, good_nodes
+
+
 def test_good_nodes_example1():
-    from template import TreeNode, good_nodes
 
     # Create tree [3,1,4,3,null,1,5]
     root = TreeNode(3)
@@ -11,7 +16,6 @@ def test_good_nodes_example1():
     assert good_nodes(root) == 4
 
 def test_good_nodes_example2():
-    from template import TreeNode, good_nodes
 
     # Create tree [3,3,null,4,2]
     root = TreeNode(3)
@@ -20,14 +24,12 @@ def test_good_nodes_example2():
     assert good_nodes(root) == 3
 
 def test_good_nodes_example3():
-    from template import TreeNode, good_nodes
 
     root = TreeNode(1)
 
     assert good_nodes(root) == 1
 
 def test_good_nodes_all_increasing():
-    from template import TreeNode, good_nodes
 
     # All nodes are good
     root = TreeNode(1)
@@ -37,7 +39,6 @@ def test_good_nodes_all_increasing():
     assert good_nodes(root) == 3
 
 def test_good_nodes_all_same():
-    from template import TreeNode, good_nodes
 
     # All nodes have same value
     root = TreeNode(5)

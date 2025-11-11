@@ -4,8 +4,17 @@ import torch
 import torch.nn.functional as F
 
 
+try:
+    from user_kata import cross_entropy_loss
+    from user_kata import binary_cross_entropy
+    from user_kata import cross_entropy_with_label_smoothing
+except ImportError:
+    from .reference import cross_entropy_loss
+    from .reference import binary_cross_entropy
+    from .reference import cross_entropy_with_label_smoothing
+
+
 def test_cross_entropy_basic():
-    from template import cross_entropy_loss
 
     logits = torch.randn(10, 5)
     targets = torch.randint(0, 5, (10,))
@@ -17,7 +26,6 @@ def test_cross_entropy_basic():
 
 
 def test_cross_entropy_perfect_prediction():
-    from template import cross_entropy_loss
 
     logits = torch.tensor([[10.0, 0.0, 0.0], [0.0, 10.0, 0.0]])
     targets = torch.tensor([0, 1])
@@ -27,7 +35,6 @@ def test_cross_entropy_perfect_prediction():
 
 
 def test_binary_cross_entropy_basic():
-    from template import binary_cross_entropy
 
     predictions = torch.sigmoid(torch.randn(20))
     targets = torch.randint(0, 2, (20,)).float()
@@ -39,7 +46,6 @@ def test_binary_cross_entropy_basic():
 
 
 def test_binary_cross_entropy_perfect():
-    from template import binary_cross_entropy
 
     predictions = torch.tensor([1.0, 0.0, 1.0, 0.0])
     targets = torch.tensor([1.0, 0.0, 1.0, 0.0])
@@ -49,7 +55,6 @@ def test_binary_cross_entropy_perfect():
 
 
 def test_label_smoothing():
-    from template import cross_entropy_with_label_smoothing
 
     logits = torch.randn(8, 10)
     targets = torch.randint(0, 10, (8,))
@@ -63,7 +68,6 @@ def test_label_smoothing():
 
 
 def test_label_smoothing_no_smoothing():
-    from template import cross_entropy_with_label_smoothing
 
     logits = torch.randn(8, 10)
     targets = torch.randint(0, 10, (8,))

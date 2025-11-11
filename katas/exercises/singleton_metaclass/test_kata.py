@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import SingletonMeta
+except ImportError:
+    from .reference import SingletonMeta
+
+
 def test_singleton_basic():
     """Test singleton metaclass creates only one instance."""
-    from template import SingletonMeta
 
     class Database(metaclass=SingletonMeta):
         def __init__(self):
@@ -20,7 +25,6 @@ def test_singleton_basic():
 
 def test_singleton_multiple_instantiations():
     """Test multiple calls return same instance."""
-    from template import SingletonMeta
 
     class Service(metaclass=SingletonMeta):
         pass
@@ -34,7 +38,6 @@ def test_singleton_multiple_instantiations():
 
 def test_singleton_different_classes():
     """Test singleton works independently for different classes."""
-    from template import SingletonMeta
 
     class ServiceA(metaclass=SingletonMeta):
         pass
@@ -57,7 +60,6 @@ def test_singleton_different_classes():
 
 def test_singleton_with_constructor_args():
     """Test singleton handles constructor arguments."""
-    from template import SingletonMeta
 
     class Config(metaclass=SingletonMeta):
         def __init__(self, value=None):
@@ -75,7 +77,6 @@ def test_singleton_with_constructor_args():
 
 def test_singleton_state_shared():
     """Test that singleton instances share state."""
-    from template import SingletonMeta
 
     class Counter(metaclass=SingletonMeta):
         def __init__(self):
@@ -97,7 +98,6 @@ def test_singleton_state_shared():
 
 def test_singleton_with_inheritance():
     """Test singleton works with class inheritance."""
-    from template import SingletonMeta
 
     class BaseService(metaclass=SingletonMeta):
         pass
@@ -121,7 +121,6 @@ def test_singleton_with_inheritance():
 
 def test_singleton_preserves_class_name():
     """Test that singleton preserves class metadata."""
-    from template import SingletonMeta
 
     class MyService(metaclass=SingletonMeta):
         """Service documentation."""
@@ -136,7 +135,6 @@ def test_singleton_preserves_class_name():
 
 def test_singleton_isinstance_check():
     """Test that singleton instances pass isinstance checks."""
-    from template import SingletonMeta
 
     class AppConfig(metaclass=SingletonMeta):
         pass
@@ -149,7 +147,6 @@ def test_singleton_isinstance_check():
 
 def test_singleton_with_methods():
     """Test singleton class with methods."""
-    from template import SingletonMeta
 
     class Logger(metaclass=SingletonMeta):
         def __init__(self):

@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import create_class_with_inheritance
+except ImportError:
+    from .reference import create_class_with_inheritance
+
+
 def test_basic_inheritance():
     """Test creating a class that inherits from a base class."""
-    from template import create_class_with_inheritance
 
     class Animal:
         kingdom = "Animalia"
@@ -20,7 +25,6 @@ def test_basic_inheritance():
 
 def test_inherits_methods():
     """Test that child class inherits parent methods."""
-    from template import create_class_with_inheritance
 
     class Base:
         def greet(self):
@@ -35,7 +39,6 @@ def test_inherits_methods():
 
 def test_override_attribute():
     """Test that child class can override parent attributes."""
-    from template import create_class_with_inheritance
 
     class Base:
         value = 10
@@ -48,7 +51,6 @@ def test_override_attribute():
 
 def test_multiple_attributes():
     """Test child class with multiple new attributes."""
-    from template import create_class_with_inheritance
 
     class Vehicle:
         wheels = 4
@@ -65,7 +67,6 @@ def test_multiple_attributes():
 
 def test_isinstance_check():
     """Test isinstance works with dynamically created class."""
-    from template import create_class_with_inheritance
 
     class Parent:
         pass
@@ -79,7 +80,6 @@ def test_isinstance_check():
 
 def test_empty_attributes():
     """Test creating child class with no new attributes."""
-    from template import create_class_with_inheritance
 
     class Base:
         value = 100
@@ -93,7 +93,6 @@ def test_empty_attributes():
 
 def test_method_override():
     """Test overriding parent method."""
-    from template import create_class_with_inheritance
 
     class Base:
         def say(self):

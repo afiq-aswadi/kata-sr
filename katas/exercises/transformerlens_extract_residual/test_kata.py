@@ -6,6 +6,12 @@ from transformer_lens import HookedTransformer
 
 
 @pytest.fixture
+try:
+    from user_kata import extract_residual_stream
+except ImportError:
+    from .reference import extract_residual_stream
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")
@@ -13,7 +19,6 @@ def model():
 
 def test_extract_residual_returns_tensor(model):
     """Test that function returns a tensor."""
-    from template import extract_residual_stream
 
     residual = extract_residual_stream(model, "Hello", layer=0)
     assert isinstance(residual, torch.Tensor)
@@ -21,7 +26,6 @@ def test_extract_residual_returns_tensor(model):
 
 def test_residual_shape(model):
     """Test that residual has correct shape."""
-    from template import extract_residual_stream
 
     prompt = "The quick brown fox"
     residual = extract_residual_stream(model, prompt, layer=0)
@@ -34,7 +38,6 @@ def test_residual_shape(model):
 
 def test_different_layers_different_activations(model):
     """Test that different layers have different activations."""
-    from template import extract_residual_stream
 
     prompt = "Test"
     layer0 = extract_residual_stream(model, prompt, layer=0)
@@ -49,7 +52,6 @@ def test_different_layers_different_activations(model):
 
 def test_all_layers_accessible(model):
     """Test that all layers can be extracted."""
-    from template import extract_residual_stream
 
     prompt = "Test"
     n_layers = model.cfg.n_layers
@@ -61,7 +63,6 @@ def test_all_layers_accessible(model):
 
 def test_prompt_length_affects_sequence_dimension(model):
     """Test that prompt length affects sequence dimension."""
-    from template import extract_residual_stream
 
     short = extract_residual_stream(model, "Hi", layer=0)
     long = extract_residual_stream(model, "The quick brown fox jumps", layer=0)
@@ -72,7 +73,6 @@ def test_prompt_length_affects_sequence_dimension(model):
 
 def test_different_prompts_different_activations(model):
     """Test that different prompts produce different activations."""
-    from template import extract_residual_stream
 
     resid1 = extract_residual_stream(model, "Hello", layer=0)
     resid2 = extract_residual_stream(model, "Goodbye", layer=0)
@@ -82,7 +82,6 @@ def test_different_prompts_different_activations(model):
 
 def test_residual_stream_values_reasonable(model):
     """Test that residual stream has reasonable values."""
-    from template import extract_residual_stream
 
     residual = extract_residual_stream(model, "Test", layer=0)
 
@@ -96,7 +95,6 @@ def test_residual_stream_values_reasonable(model):
 
 def test_later_layers_build_on_earlier(model):
     """Test that later layers have different magnitudes."""
-    from template import extract_residual_stream
 
     prompt = "Test"
     layer0 = extract_residual_stream(model, prompt, layer=0)

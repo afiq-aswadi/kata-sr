@@ -3,8 +3,17 @@
 import pytest
 
 
+try:
+    from user_kata import ValidatedAttribute
+    from user_kata import CachedProperty
+    from user_kata import TypedAttribute
+except ImportError:
+    from .reference import ValidatedAttribute
+    from .reference import CachedProperty
+    from .reference import TypedAttribute
+
+
 def test_validated_attribute():
-    from template import ValidatedAttribute
 
     class Product:
         price = ValidatedAttribute(min_value=0, max_value=10000)
@@ -20,7 +29,6 @@ def test_validated_attribute():
 
 
 def test_validated_attribute_min():
-    from template import ValidatedAttribute
 
     class Product:
         price = ValidatedAttribute(min_value=0)
@@ -31,7 +39,6 @@ def test_validated_attribute_min():
 
 
 def test_validated_attribute_max():
-    from template import ValidatedAttribute
 
     class Product:
         quantity = ValidatedAttribute(max_value=100)
@@ -42,7 +49,6 @@ def test_validated_attribute_max():
 
 
 def test_cached_property():
-    from template import CachedProperty
 
     call_count = 0
 
@@ -66,7 +72,6 @@ def test_cached_property():
 
 
 def test_typed_attribute():
-    from template import TypedAttribute
 
     class Person:
         name = TypedAttribute(str)
@@ -81,7 +86,6 @@ def test_typed_attribute():
 
 
 def test_typed_attribute_wrong_type():
-    from template import TypedAttribute
 
     class Person:
         age = TypedAttribute(int)
@@ -92,7 +96,6 @@ def test_typed_attribute_wrong_type():
 
 
 def test_multiple_instances():
-    from template import ValidatedAttribute
 
     class Product:
         price = ValidatedAttribute(min_value=0)

@@ -10,6 +10,12 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+try:
+    from user_kata import add_arrow_annotation
+except ImportError:
+    from .reference import add_arrow_annotation
+
+
 def close_plots():
     """Close all plots after each test."""
     yield
@@ -18,7 +24,6 @@ def close_plots():
 
 def test_adds_annotation():
     """Test that annotation is added to axes."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -31,7 +36,6 @@ def test_adds_annotation():
 
 def test_annotation_text_matches():
     """Test that annotation text is correct."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -44,7 +48,6 @@ def test_annotation_text_matches():
 
 def test_has_arrow_properties():
     """Test that annotation has arrow properties."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -60,7 +63,6 @@ def test_has_arrow_properties():
 
 def test_fontsize_is_10():
     """Test that fontsize is 10."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -73,7 +75,6 @@ def test_fontsize_is_10():
 
 def test_has_bbox():
     """Test that annotation has a bbox."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -87,7 +88,6 @@ def test_has_bbox():
 
 def test_bbox_has_transparency():
     """Test that bbox has alpha=0.5."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -101,7 +101,6 @@ def test_bbox_has_transparency():
 
 def test_points_to_correct_location():
     """Test that arrow points to specified coordinates."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -117,7 +116,6 @@ def test_points_to_correct_location():
 
 def test_custom_offsets():
     """Test that custom offset values are respected."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2], [0, 1, 0])
@@ -134,7 +132,6 @@ def test_custom_offsets():
 
 def test_multiple_arrows():
     """Test that multiple arrow annotations can be added."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1, 2, 3], [0, 1, 0, 1])
@@ -149,7 +146,6 @@ def test_multiple_arrows():
 
 def test_edge_case_positions():
     """Test annotation at edge positions."""
-    from template import add_arrow_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])

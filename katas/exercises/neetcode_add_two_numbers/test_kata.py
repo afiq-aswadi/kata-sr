@@ -1,7 +1,12 @@
 """Tests for Add Two Numbers kata."""
 
+try:
+    from user_kata import ListNode, add_two_numbers
+except ImportError:
+    from .reference import ListNode, add_two_numbers
+
+
 def test_add_two_numbers_basic():
-    from template import ListNode, add_two_numbers
 
     # Create l1 = [2,4,3] (342)
     l1 = ListNode(2, ListNode(4, ListNode(3)))
@@ -19,7 +24,6 @@ def test_add_two_numbers_basic():
     assert vals == [7, 0, 8]
 
 def test_add_two_numbers_zeros():
-    from template import ListNode, add_two_numbers
 
     l1 = ListNode(0)
     l2 = ListNode(0)
@@ -34,7 +38,6 @@ def test_add_two_numbers_zeros():
     assert vals == [0]
 
 def test_add_two_numbers_different_lengths():
-    from template import ListNode, add_two_numbers
 
     # Create l1 = [9,9,9,9,9,9,9]
     l1 = ListNode(9, ListNode(9, ListNode(9, ListNode(9, ListNode(9, ListNode(9, ListNode(9)))))))
@@ -52,7 +55,6 @@ def test_add_two_numbers_different_lengths():
     assert vals == [8, 9, 9, 9, 0, 0, 0, 1]
 
 def test_add_two_numbers_carry():
-    from template import ListNode, add_two_numbers
 
     # Create l1 = [9,9]
     l1 = ListNode(9, ListNode(9))

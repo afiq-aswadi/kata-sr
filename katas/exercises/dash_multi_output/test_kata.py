@@ -4,9 +4,14 @@ import dash
 import plotly.graph_objects as go
 
 
+try:
+    from user_kata import create_multi_output_app
+except ImportError:
+    from .reference import create_multi_output_app
+
+
 def test_creates_dash_app():
     """Test that function returns a Dash app."""
-    from template import create_multi_output_app
 
     app = create_multi_output_app()
     assert isinstance(app, dash.Dash)
@@ -14,7 +19,6 @@ def test_creates_dash_app():
 
 def test_callback_registered():
     """Test that callback is registered."""
-    from template import create_multi_output_app
 
     app = create_multi_output_app()
     assert len(app.callback_map) > 0
@@ -22,7 +26,6 @@ def test_callback_registered():
 
 def test_callback_returns_tuple():
     """Test that callback returns two values (figure and text)."""
-    from template import create_multi_output_app
 
     app = create_multi_output_app()
 
@@ -37,7 +40,6 @@ def test_callback_returns_tuple():
 
 def test_callback_first_output_is_figure():
     """Test that first output is a Plotly figure."""
-    from template import create_multi_output_app
 
     app = create_multi_output_app()
 
@@ -51,7 +53,6 @@ def test_callback_first_output_is_figure():
 
 def test_callback_second_output_is_stats():
     """Test that second output contains statistics."""
-    from template import create_multi_output_app
 
     app = create_multi_output_app()
 

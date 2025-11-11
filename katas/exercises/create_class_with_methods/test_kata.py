@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import create_class_with_methods
+except ImportError:
+    from .reference import create_class_with_methods
+
+
 def test_single_method():
     """Test creating a class with a single method."""
-    from template import create_class_with_methods
 
     def greet(self):
         return "Hello!"
@@ -18,7 +23,6 @@ def test_single_method():
 
 def test_multiple_methods():
     """Test creating a class with multiple methods."""
-    from template import create_class_with_methods
 
     def add(self, a, b):
         return a + b
@@ -38,7 +42,6 @@ def test_multiple_methods():
 
 def test_method_with_self():
     """Test that methods receive self parameter."""
-    from template import create_class_with_methods
 
     def get_instance(self):
         return self
@@ -51,7 +54,6 @@ def test_method_with_self():
 
 def test_methods_and_attributes():
     """Test class with both methods and attributes."""
-    from template import create_class_with_methods
 
     def get_full_name(self):
         return f"{self.first} {self.last}"
@@ -68,7 +70,6 @@ def test_methods_and_attributes():
 
 def test_method_accessing_attributes():
     """Test method that accesses instance attributes."""
-    from template import create_class_with_methods
 
     def double_value(self):
         return self.value * 2
@@ -84,7 +85,6 @@ def test_method_accessing_attributes():
 
 def test_multiple_instances():
     """Test methods work independently across instances."""
-    from template import create_class_with_methods
 
     def set_value(self, val):
         self.data = val
@@ -109,7 +109,6 @@ def test_multiple_instances():
 
 def test_method_with_args_and_kwargs():
     """Test method that accepts various arguments."""
-    from template import create_class_with_methods
 
     def format_message(self, name, greeting="Hello"):
         return f"{greeting}, {name}!"

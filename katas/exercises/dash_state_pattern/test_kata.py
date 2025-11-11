@@ -4,9 +4,14 @@ import dash
 import plotly.graph_objects as go
 
 
+try:
+    from user_kata import create_state_app
+except ImportError:
+    from .reference import create_state_app
+
+
 def test_creates_dash_app():
     """Test that function returns a Dash app."""
-    from template import create_state_app
 
     app = create_state_app()
     assert isinstance(app, dash.Dash)
@@ -14,7 +19,6 @@ def test_creates_dash_app():
 
 def test_callback_registered():
     """Test that callback is registered."""
-    from template import create_state_app
 
     app = create_state_app()
     assert len(app.callback_map) > 0
@@ -22,7 +26,6 @@ def test_callback_registered():
 
 def test_callback_uses_state():
     """Test that callback uses State (not just Input)."""
-    from template import create_state_app
 
     app = create_state_app()
 
@@ -35,7 +38,6 @@ def test_callback_uses_state():
 
 def test_callback_input_is_button():
     """Test that Input is the button (not dropdown/slider)."""
-    from template import create_state_app
 
     app = create_state_app()
 
@@ -50,7 +52,6 @@ def test_callback_input_is_button():
 
 def test_callback_executes():
     """Test that callback executes and returns a figure."""
-    from template import create_state_app
 
     app = create_state_app()
 

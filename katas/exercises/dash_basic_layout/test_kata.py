@@ -3,9 +3,14 @@
 import dash
 
 
+try:
+    from user_kata import create_dashboard_layout
+except ImportError:
+    from .reference import create_dashboard_layout
+
+
 def test_creates_dash_app():
     """Test that function returns a Dash app instance."""
-    from template import create_dashboard_layout
 
     app = create_dashboard_layout()
     assert isinstance(app, dash.Dash)
@@ -13,7 +18,6 @@ def test_creates_dash_app():
 
 def test_layout_exists():
     """Test that app has a layout configured."""
-    from template import create_dashboard_layout
 
     app = create_dashboard_layout()
     assert app.layout is not None
@@ -21,7 +25,6 @@ def test_layout_exists():
 
 def test_layout_contains_title():
     """Test that layout contains H1 title."""
-    from template import create_dashboard_layout
 
     app = create_dashboard_layout()
     layout_str = str(app.layout)
@@ -30,7 +33,6 @@ def test_layout_contains_title():
 
 def test_layout_contains_dropdown():
     """Test that layout contains dropdown with correct ID."""
-    from template import create_dashboard_layout
 
     app = create_dashboard_layout()
     layout_str = str(app.layout)
@@ -40,7 +42,6 @@ def test_layout_contains_dropdown():
 
 def test_layout_contains_graph():
     """Test that layout contains graph with correct ID."""
-    from template import create_dashboard_layout
 
     app = create_dashboard_layout()
     layout_str = str(app.layout)

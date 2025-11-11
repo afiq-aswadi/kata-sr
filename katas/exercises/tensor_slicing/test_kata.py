@@ -3,8 +3,19 @@
 import torch
 
 
+try:
+    from user_kata import gather_rows
+    from user_kata import scatter_add
+    from user_kata import masked_select_2d
+    from user_kata import top_k_indices
+except ImportError:
+    from .reference import gather_rows
+    from .reference import scatter_add
+    from .reference import masked_select_2d
+    from .reference import top_k_indices
+
+
 def test_gather_rows():
-    from template import gather_rows
 
     x = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
     indices = torch.tensor([2, 0, 1])
@@ -14,7 +25,6 @@ def test_gather_rows():
 
 
 def test_scatter_add():
-    from template import scatter_add
 
     x = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
     indices = torch.tensor([0, 2, 0])
@@ -24,7 +34,6 @@ def test_scatter_add():
 
 
 def test_scatter_add_empty_bins():
-    from template import scatter_add
 
     x = torch.tensor([[1.0], [2.0]])
     indices = torch.tensor([0, 0])
@@ -35,7 +44,6 @@ def test_scatter_add_empty_bins():
 
 
 def test_masked_select_2d():
-    from template import masked_select_2d
 
     x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
     mask = torch.tensor([[True, False], [False, True]])
@@ -45,7 +53,6 @@ def test_masked_select_2d():
 
 
 def test_top_k_indices():
-    from template import top_k_indices
 
     x = torch.tensor([[3.0, 1.0, 4.0, 2.0], [8.0, 5.0, 7.0, 6.0]])
     result = top_k_indices(x, k=2)
@@ -54,7 +61,6 @@ def test_top_k_indices():
 
 
 def test_top_k_single_row():
-    from template import top_k_indices
 
     x = torch.tensor([[10.0, 5.0, 15.0, 3.0, 20.0]])
     result = top_k_indices(x, k=3)

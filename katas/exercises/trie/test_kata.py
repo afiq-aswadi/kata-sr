@@ -2,8 +2,13 @@
 
 
 
+try:
+    from user_kata import Trie
+except ImportError:
+    from .reference import Trie
+
+
 def test_trie_insert_and_search():
-    from template import Trie
 
     trie = Trie()
     trie.insert("apple")
@@ -13,7 +18,6 @@ def test_trie_insert_and_search():
 
 
 def test_trie_starts_with():
-    from template import Trie
 
     trie = Trie()
     trie.insert("apple")
@@ -25,7 +29,6 @@ def test_trie_starts_with():
 
 
 def test_trie_multiple_words():
-    from template import Trie
 
     trie = Trie()
     words = ["apple", "app", "application", "apply", "banana"]
@@ -37,7 +40,6 @@ def test_trie_multiple_words():
 
 
 def test_trie_get_words_with_prefix():
-    from template import Trie
 
     trie = Trie()
     words = ["apple", "app", "application", "apply", "banana", "band"]
@@ -52,7 +54,6 @@ def test_trie_get_words_with_prefix():
 
 
 def test_trie_empty():
-    from template import Trie
 
     trie = Trie()
     assert trie.search("test") is False
@@ -61,7 +62,6 @@ def test_trie_empty():
 
 
 def test_trie_prefix_not_word():
-    from template import Trie
 
     trie = Trie()
     trie.insert("apple")

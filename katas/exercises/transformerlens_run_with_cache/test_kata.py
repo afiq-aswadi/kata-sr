@@ -6,6 +6,12 @@ from transformer_lens import HookedTransformer
 
 
 @pytest.fixture
+try:
+    from user_kata import run_with_cache
+except ImportError:
+    from .reference import run_with_cache
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")
@@ -13,7 +19,6 @@ def model():
 
 def test_run_with_cache_returns_tuple(model):
     """Test that function returns (logits, cache) tuple."""
-    from template import run_with_cache
 
     prompt = "Hello world"
     result = run_with_cache(model, prompt)
@@ -24,7 +29,6 @@ def test_run_with_cache_returns_tuple(model):
 
 def test_logits_shape(model):
     """Test that logits have correct shape."""
-    from template import run_with_cache
 
     prompt = "The quick brown fox"
     logits, cache = run_with_cache(model, prompt)
@@ -37,7 +41,6 @@ def test_logits_shape(model):
 
 def test_cache_contains_activations(model):
     """Test that cache contains activation names."""
-    from template import run_with_cache
 
     prompt = "Test"
     logits, cache = run_with_cache(model, prompt)
@@ -49,7 +52,6 @@ def test_cache_contains_activations(model):
 
 def test_cache_has_residual_stream(model):
     """Test that cache contains residual stream activations."""
-    from template import run_with_cache
 
     prompt = "Test"
     logits, cache = run_with_cache(model, prompt)
@@ -61,7 +63,6 @@ def test_cache_has_residual_stream(model):
 
 def test_cache_has_attention(model):
     """Test that cache contains attention activations."""
-    from template import run_with_cache
 
     prompt = "Test"
     logits, cache = run_with_cache(model, prompt)
@@ -72,7 +73,6 @@ def test_cache_has_attention(model):
 
 def test_cache_has_mlp(model):
     """Test that cache contains MLP activations."""
-    from template import run_with_cache
 
     prompt = "Test"
     logits, cache = run_with_cache(model, prompt)
@@ -83,7 +83,6 @@ def test_cache_has_mlp(model):
 
 def test_different_prompts_different_outputs(model):
     """Test that different prompts produce different results."""
-    from template import run_with_cache
 
     logits1, _ = run_with_cache(model, "Hello")
     logits2, _ = run_with_cache(model, "Goodbye")
@@ -94,7 +93,6 @@ def test_different_prompts_different_outputs(model):
 
 def test_prompt_length_affects_sequence_length(model):
     """Test that longer prompts create longer sequences."""
-    from template import run_with_cache
 
     short_prompt = "Hi"
     long_prompt = "The quick brown fox jumps over the lazy dog"

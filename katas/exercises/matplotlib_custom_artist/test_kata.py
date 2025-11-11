@@ -9,6 +9,12 @@ matplotlib.use("Agg")
 
 
 @pytest.fixture(autouse=True)
+try:
+    from user_kata import CustomCircleArtist
+except ImportError:
+    from .reference import CustomCircleArtist
+
+
 def close_figures():
     """Close all matplotlib figures after each test."""
     yield
@@ -17,7 +23,6 @@ def close_figures():
 
 def test_custom_artist_class_exists():
     """Test that CustomCircleArtist class is defined."""
-    from template import CustomCircleArtist
 
     artist = CustomCircleArtist(center=(5, 5), radius=2)
     assert artist is not None
@@ -28,7 +33,6 @@ def test_custom_artist_class_exists():
 
 def test_custom_artist_has_draw_method():
     """Test that CustomCircleArtist implements draw() method."""
-    from template import CustomCircleArtist
 
     artist = CustomCircleArtist(center=(5, 5), radius=2)
     assert hasattr(artist, "draw")
@@ -39,7 +43,6 @@ def test_custom_artist_inherits_from_artist():
     """Test that CustomCircleArtist inherits from matplotlib Artist."""
     import matplotlib.artist as mpl_artist
 
-    from template import CustomCircleArtist
 
     artist = CustomCircleArtist(center=(5, 5), radius=2)
     assert isinstance(artist, mpl_artist.Artist)
@@ -47,7 +50,6 @@ def test_custom_artist_inherits_from_artist():
 
 def test_custom_artist_can_be_added_to_axes():
     """Test that custom artist can be added to axes without errors."""
-    from template import CustomCircleArtist
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 10)
@@ -63,7 +65,6 @@ def test_custom_artist_can_be_added_to_axes():
 
 def test_custom_artist_renders_without_error():
     """Test that the artist can be rendered without raising exceptions."""
-    from template import CustomCircleArtist
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 10)
@@ -79,7 +80,6 @@ def test_custom_artist_renders_without_error():
 
 def test_custom_artist_respects_visibility():
     """Test that artist respects visibility setting."""
-    from template import CustomCircleArtist
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 10)
@@ -102,7 +102,6 @@ def test_custom_artist_respects_visibility():
 
 def test_custom_artist_with_different_colors():
     """Test that custom color parameter works."""
-    from template import CustomCircleArtist
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 10)
@@ -121,7 +120,6 @@ def test_custom_artist_with_different_colors():
 
 def test_custom_artist_with_different_positions():
     """Test that artist works at different positions."""
-    from template import CustomCircleArtist
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 20)
@@ -139,7 +137,6 @@ def test_custom_artist_with_different_positions():
 
 def test_custom_artist_with_different_radii():
     """Test that artist works with different radii."""
-    from template import CustomCircleArtist
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 10)

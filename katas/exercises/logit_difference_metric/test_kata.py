@@ -6,9 +6,14 @@ import pytest
 import torch
 
 try:
-    from template import compute_logit_diff
 except ImportError:
     from reference import compute_logit_diff
+
+
+try:
+    from user_kata import compute_logit_diff
+except ImportError:
+    from .reference import compute_logit_diff
 
 
 class TestLogitDifference:

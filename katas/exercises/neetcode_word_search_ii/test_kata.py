@@ -1,7 +1,12 @@
 """Tests for Word Search II kata."""
 
+try:
+    from user_kata import find_words
+except ImportError:
+    from .reference import find_words
+
+
 def test_word_search_ii_example():
-    from template import find_words
 
     board = [
         ["o","a","a","n"],
@@ -14,7 +19,6 @@ def test_word_search_ii_example():
     assert set(result) == {"eat", "oath"}
 
 def test_word_search_ii_single_char():
-    from template import find_words
 
     board = [["a","b"],["c","d"]]
     words = ["a","b","c","d","abcd"]
@@ -22,7 +26,6 @@ def test_word_search_ii_single_char():
     assert set(result) == {"a", "b", "c", "d"}
 
 def test_word_search_ii_no_words():
-    from template import find_words
 
     board = [["a","a"]]
     words = ["aaa"]

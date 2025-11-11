@@ -2,8 +2,19 @@
 
 
 
+try:
+    from user_kata import binary_search
+    from user_kata import binary_search_leftmost
+    from user_kata import binary_search_rightmost
+    from user_kata import binary_search_insert_position
+except ImportError:
+    from .reference import binary_search
+    from .reference import binary_search_leftmost
+    from .reference import binary_search_rightmost
+    from .reference import binary_search_insert_position
+
+
 def test_binary_search_found():
-    from template import binary_search
 
     arr = [1, 3, 5, 7, 9, 11]
     assert binary_search(arr, 7) == 3
@@ -12,7 +23,6 @@ def test_binary_search_found():
 
 
 def test_binary_search_not_found():
-    from template import binary_search
 
     arr = [1, 3, 5, 7, 9]
     assert binary_search(arr, 4) == -1
@@ -21,13 +31,11 @@ def test_binary_search_not_found():
 
 
 def test_binary_search_empty():
-    from template import binary_search
 
     assert binary_search([], 5) == -1
 
 
 def test_binary_search_leftmost():
-    from template import binary_search_leftmost
 
     arr = [1, 2, 2, 2, 3, 4, 4, 5]
     assert binary_search_leftmost(arr, 2) == 1
@@ -36,7 +44,6 @@ def test_binary_search_leftmost():
 
 
 def test_binary_search_rightmost():
-    from template import binary_search_rightmost
 
     arr = [1, 2, 2, 2, 3, 4, 4, 5]
     assert binary_search_rightmost(arr, 2) == 3
@@ -45,7 +52,6 @@ def test_binary_search_rightmost():
 
 
 def test_binary_search_insert_position():
-    from template import binary_search_insert_position
 
     arr = [1, 3, 5, 7, 9]
     assert binary_search_insert_position(arr, 4) == 2
@@ -55,7 +61,6 @@ def test_binary_search_insert_position():
 
 
 def test_binary_search_single_element():
-    from template import binary_search
 
     assert binary_search([5], 5) == 0
     assert binary_search([5], 3) == -1

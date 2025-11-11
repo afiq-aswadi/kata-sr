@@ -10,6 +10,12 @@ matplotlib.use("Agg")
 
 
 @pytest.fixture(autouse=True)
+try:
+    from user_kata import create_blitting_animation
+except ImportError:
+    from .reference import create_blitting_animation
+
+
 def close_figures():
     """Close all matplotlib figures after each test."""
     yield
@@ -18,7 +24,6 @@ def close_figures():
 
 def test_returns_funcanimation():
     """Test that function returns a FuncAnimation object."""
-    from template import create_blitting_animation
 
     anim = create_blitting_animation(num_frames=10, interval=50)
     assert isinstance(anim, animation.FuncAnimation)
@@ -26,7 +31,6 @@ def test_returns_funcanimation():
 
 def test_works_with_default_parameters():
     """Test that function works with default parameters."""
-    from template import create_blitting_animation
 
     anim = create_blitting_animation()
     assert isinstance(anim, animation.FuncAnimation)
@@ -34,7 +38,6 @@ def test_works_with_default_parameters():
 
 def test_respects_num_frames():
     """Test that num_frames parameter is respected."""
-    from template import create_blitting_animation
 
     anim = create_blitting_animation(num_frames=20, interval=50)
     assert anim is not None
@@ -42,7 +45,6 @@ def test_respects_num_frames():
 
 def test_respects_interval():
     """Test that interval parameter is respected."""
-    from template import create_blitting_animation
 
     anim = create_blitting_animation(num_frames=10, interval=50)
     assert anim is not None
@@ -50,7 +52,6 @@ def test_respects_interval():
 
 def test_handles_minimal_frames():
     """Test that animation handles just 1 frame."""
-    from template import create_blitting_animation
 
     anim = create_blitting_animation(num_frames=1, interval=50)
     assert isinstance(anim, animation.FuncAnimation)
@@ -58,7 +59,6 @@ def test_handles_minimal_frames():
 
 def test_handles_many_frames():
     """Test that animation handles many frames."""
-    from template import create_blitting_animation
 
     anim = create_blitting_animation(num_frames=200, interval=33)
     assert isinstance(anim, animation.FuncAnimation)
@@ -66,7 +66,6 @@ def test_handles_many_frames():
 
 def test_30fps_interval():
     """Test that animation works with 30fps interval."""
-    from template import create_blitting_animation
 
     # 30 fps ≈ 33ms interval (default)
     anim = create_blitting_animation(num_frames=10)
@@ -75,7 +74,6 @@ def test_30fps_interval():
 
 def test_60fps_interval():
     """Test that animation works with 60fps interval."""
-    from template import create_blitting_animation
 
     # 60 fps ≈ 16ms interval
     anim = create_blitting_animation(num_frames=10, interval=16)

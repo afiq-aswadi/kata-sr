@@ -3,8 +3,17 @@
 import torch
 
 
+try:
+    from user_kata import sgd_step
+    from user_kata import sgd_momentum_step
+    from user_kata import AdamOptimizer
+except ImportError:
+    from .reference import sgd_step
+    from .reference import sgd_momentum_step
+    from .reference import AdamOptimizer
+
+
 def test_sgd_step():
-    from template import sgd_step
 
     param = torch.tensor([1.0, 2.0, 3.0])
     grad = torch.tensor([0.1, 0.2, 0.3])
@@ -17,7 +26,6 @@ def test_sgd_step():
 
 
 def test_sgd_momentum_step():
-    from template import sgd_momentum_step
 
     param = torch.tensor([1.0, 2.0])
     grad = torch.tensor([0.1, 0.2])
@@ -30,7 +38,6 @@ def test_sgd_momentum_step():
 
 
 def test_adam_initialization():
-    from template import AdamOptimizer
 
     params = [torch.randn(3, 3), torch.randn(5)]
     optimizer = AdamOptimizer(params)
@@ -41,7 +48,6 @@ def test_adam_initialization():
 
 
 def test_adam_single_step():
-    from template import AdamOptimizer
 
     param = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
     optimizer = AdamOptimizer([param])
@@ -58,7 +64,6 @@ def test_adam_single_step():
 
 
 def test_adam_multiple_steps():
-    from template import AdamOptimizer
 
     param = torch.tensor([10.0], requires_grad=True)
     optimizer = AdamOptimizer([param], lr=0.1)
@@ -75,7 +80,6 @@ def test_adam_multiple_steps():
 
 
 def test_adam_vs_pytorch():
-    from template import AdamOptimizer
 
     # Test that our implementation is close to PyTorch's
     torch.manual_seed(42)

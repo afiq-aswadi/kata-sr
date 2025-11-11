@@ -10,6 +10,16 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+try:
+    from user_kata import add_vertical_span
+    from user_kata import add_horizontal_span
+    from user_kata import add_horizontal_span, add_vertical_span
+except ImportError:
+    from .reference import add_vertical_span
+    from .reference import add_horizontal_span
+    from .reference import add_horizontal_span, add_vertical_span
+
+
 def close_plots():
     """Close all plots after each test."""
     yield
@@ -18,7 +28,6 @@ def close_plots():
 
 def test_vertical_span_adds_collection():
     """Test that vertical span adds a collection to axes."""
-    from template import add_vertical_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 10], [0, 1])
@@ -31,7 +40,6 @@ def test_vertical_span_adds_collection():
 
 def test_vertical_span_has_transparency():
     """Test that vertical span has alpha=0.3."""
-    from template import add_vertical_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 10], [0, 1])
@@ -44,7 +52,6 @@ def test_vertical_span_has_transparency():
 
 def test_vertical_span_behind_data():
     """Test that vertical span is behind data (zorder=0)."""
-    from template import add_vertical_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 10], [0, 1])
@@ -57,7 +64,6 @@ def test_vertical_span_behind_data():
 
 def test_vertical_span_custom_color():
     """Test that vertical span uses custom color."""
-    from template import add_vertical_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 10], [0, 1])
@@ -71,7 +77,6 @@ def test_vertical_span_custom_color():
 
 def test_horizontal_span_adds_collection():
     """Test that horizontal span adds a collection to axes."""
-    from template import add_horizontal_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 10])
@@ -84,7 +89,6 @@ def test_horizontal_span_adds_collection():
 
 def test_horizontal_span_has_transparency():
     """Test that horizontal span has alpha=0.3."""
-    from template import add_horizontal_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 10])
@@ -97,7 +101,6 @@ def test_horizontal_span_has_transparency():
 
 def test_horizontal_span_behind_data():
     """Test that horizontal span is behind data (zorder=0)."""
-    from template import add_horizontal_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 10])
@@ -110,7 +113,6 @@ def test_horizontal_span_behind_data():
 
 def test_horizontal_span_custom_color():
     """Test that horizontal span uses custom color."""
-    from template import add_horizontal_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 10])
@@ -124,7 +126,6 @@ def test_horizontal_span_custom_color():
 
 def test_multiple_vertical_spans():
     """Test that multiple vertical spans can be added."""
-    from template import add_vertical_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 10], [0, 1])
@@ -138,7 +139,6 @@ def test_multiple_vertical_spans():
 
 def test_multiple_horizontal_spans():
     """Test that multiple horizontal spans can be added."""
-    from template import add_horizontal_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 10])
@@ -151,7 +151,6 @@ def test_multiple_horizontal_spans():
 
 def test_mixed_spans():
     """Test that both vertical and horizontal spans can be used together."""
-    from template import add_horizontal_span, add_vertical_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 10], [0, 10])
@@ -164,7 +163,6 @@ def test_mixed_spans():
 
 def test_span_default_color():
     """Test that default color works."""
-    from template import add_vertical_span
 
     fig, ax = plt.subplots()
     ax.plot([0, 10], [0, 1])

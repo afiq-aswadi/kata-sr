@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import PluginBase
+except ImportError:
+    from .reference import PluginBase
+
+
 def test_basic_registration():
     """Test basic plugin registration."""
-    from template import PluginBase
 
     # Clear plugins
     PluginBase._plugins = {}
@@ -19,7 +24,6 @@ def test_basic_registration():
 
 def test_multiple_registrations():
     """Test multiple plugins can be registered."""
-    from template import PluginBase
 
     PluginBase._plugins = {}
 
@@ -40,7 +44,6 @@ def test_multiple_registrations():
 
 def test_get_plugin():
     """Test get_plugin retrieves correct plugin."""
-    from template import PluginBase
 
     PluginBase._plugins = {}
 
@@ -57,7 +60,6 @@ def test_get_plugin():
 
 def test_get_plugin_not_found():
     """Test get_plugin returns None for unknown plugin."""
-    from template import PluginBase
 
     PluginBase._plugins = {}
 
@@ -67,7 +69,6 @@ def test_get_plugin_not_found():
 
 def test_list_plugins():
     """Test list_plugins returns all plugin names."""
-    from template import PluginBase
 
     PluginBase._plugins = {}
 
@@ -85,7 +86,6 @@ def test_list_plugins():
 
 def test_without_name():
     """Test subclass without plugin_name is not registered."""
-    from template import PluginBase
 
     PluginBase._plugins = {}
 
@@ -98,7 +98,6 @@ def test_without_name():
 
 def test_with_inheritance():
     """Test plugins work with inheritance."""
-    from template import PluginBase
 
     PluginBase._plugins = {}
 
