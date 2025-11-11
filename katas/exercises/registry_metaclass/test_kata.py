@@ -3,9 +3,20 @@
 import pytest
 
 
+try:
+    from user_kata import RegistryMeta, _class_registry, clear_registry
+    from user_kata import RegistryMeta, get_registered_classes, clear_registry
+    from user_kata import RegistryMeta, get_class_by_name, clear_registry
+    from user_kata import get_class_by_name, clear_registry
+except ImportError:
+    from .reference import RegistryMeta, _class_registry, clear_registry
+    from .reference import RegistryMeta, get_registered_classes, clear_registry
+    from .reference import RegistryMeta, get_class_by_name, clear_registry
+    from .reference import get_class_by_name, clear_registry
+
+
 def test_registry_basic():
     """Test that classes are registered."""
-    from template import RegistryMeta, _class_registry, clear_registry
 
     clear_registry()
 
@@ -18,7 +29,6 @@ def test_registry_basic():
 
 def test_registry_multiple_classes():
     """Test multiple classes are all registered."""
-    from template import RegistryMeta, _class_registry, clear_registry
 
     clear_registry()
 
@@ -39,7 +49,6 @@ def test_registry_multiple_classes():
 
 def test_get_registered_classes():
     """Test get_registered_classes returns all classes."""
-    from template import RegistryMeta, get_registered_classes, clear_registry
 
     clear_registry()
 
@@ -59,7 +68,6 @@ def test_get_registered_classes():
 
 def test_get_class_by_name():
     """Test retrieving a class by name."""
-    from template import RegistryMeta, get_class_by_name, clear_registry
 
     clear_registry()
 
@@ -74,7 +82,6 @@ def test_get_class_by_name():
 
 def test_get_class_by_name_not_found():
     """Test retrieving non-existent class returns None."""
-    from template import get_class_by_name, clear_registry
 
     clear_registry()
 
@@ -84,7 +91,6 @@ def test_get_class_by_name_not_found():
 
 def test_clear_registry():
     """Test clearing the registry."""
-    from template import RegistryMeta, _class_registry, clear_registry
 
     class Temp(metaclass=RegistryMeta):
         pass
@@ -98,7 +104,6 @@ def test_clear_registry():
 
 def test_registry_with_inheritance():
     """Test registry works with class inheritance."""
-    from template import RegistryMeta, _class_registry, clear_registry
 
     clear_registry()
 
@@ -116,7 +121,6 @@ def test_registry_with_inheritance():
 
 def test_registry_preserves_attributes():
     """Test that registered classes preserve their attributes."""
-    from template import RegistryMeta, get_class_by_name, clear_registry
 
     clear_registry()
 
@@ -136,7 +140,6 @@ def test_registry_preserves_attributes():
 
 def test_registry_with_methods():
     """Test registry works with classes that have methods."""
-    from template import RegistryMeta, _class_registry, clear_registry
 
     clear_registry()
 
@@ -152,7 +155,6 @@ def test_registry_with_methods():
 
 def test_registry_instantiation():
     """Test that registered classes can be instantiated."""
-    from template import RegistryMeta, get_class_by_name, clear_registry
 
     clear_registry()
 
@@ -170,7 +172,6 @@ def test_registry_instantiation():
 
 def test_registry_class_metadata():
     """Test that class metadata is preserved."""
-    from template import RegistryMeta, get_class_by_name, clear_registry
 
     clear_registry()
 
@@ -186,7 +187,6 @@ def test_registry_class_metadata():
 
 def test_registry_factory_pattern():
     """Test using registry as a factory pattern."""
-    from template import RegistryMeta, get_class_by_name, clear_registry
 
     clear_registry()
 

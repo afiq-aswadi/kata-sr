@@ -1,7 +1,12 @@
 """Tests for Reverse Nodes in k-Group kata."""
 
+try:
+    from user_kata import ListNode, reverse_k_group
+except ImportError:
+    from .reference import ListNode, reverse_k_group
+
+
 def test_reverse_k_group_k2():
-    from template import ListNode, reverse_k_group
 
     # Create list 1->2->3->4->5
     head = ListNode(1, ListNode(2, ListNode(3, ListNode(4, ListNode(5)))))
@@ -16,7 +21,6 @@ def test_reverse_k_group_k2():
     assert vals == [2, 1, 4, 3, 5]
 
 def test_reverse_k_group_k3():
-    from template import ListNode, reverse_k_group
 
     # Create list 1->2->3->4->5
     head = ListNode(1, ListNode(2, ListNode(3, ListNode(4, ListNode(5)))))
@@ -31,7 +35,6 @@ def test_reverse_k_group_k3():
     assert vals == [3, 2, 1, 4, 5]
 
 def test_reverse_k_group_k1():
-    from template import ListNode, reverse_k_group
 
     # Create list 1->2->3
     head = ListNode(1, ListNode(2, ListNode(3)))
@@ -46,7 +49,6 @@ def test_reverse_k_group_k1():
     assert vals == [1, 2, 3]
 
 def test_reverse_k_group_exact_multiple():
-    from template import ListNode, reverse_k_group
 
     # Create list 1->2->3->4
     head = ListNode(1, ListNode(2, ListNode(3, ListNode(4))))
@@ -61,7 +63,6 @@ def test_reverse_k_group_exact_multiple():
     assert vals == [2, 1, 4, 3]
 
 def test_reverse_k_group_single_node():
-    from template import ListNode, reverse_k_group
 
     head = ListNode(1)
     result = reverse_k_group(head, 1)

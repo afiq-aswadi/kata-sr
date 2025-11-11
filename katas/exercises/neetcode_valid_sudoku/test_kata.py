@@ -1,7 +1,12 @@
 """Tests for Valid Sudoku kata."""
 
+try:
+    from user_kata import is_valid_sudoku
+except ImportError:
+    from .reference import is_valid_sudoku
+
+
 def test_is_valid_sudoku_valid():
-    from template import is_valid_sudoku
     board = [
         ["5","3",".",".","7",".",".",".","."],
         ["6",".",".","1","9","5",".",".","."],
@@ -16,7 +21,6 @@ def test_is_valid_sudoku_valid():
     assert is_valid_sudoku(board) == True
 
 def test_is_valid_sudoku_invalid():
-    from template import is_valid_sudoku
     board = [
         ["8","3",".",".","7",".",".",".","."],
         ["6",".",".","1","9","5",".",".","."],

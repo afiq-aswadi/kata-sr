@@ -6,6 +6,12 @@ from transformer_lens import HookedTransformer
 
 
 @pytest.fixture
+try:
+    from user_kata import cache_only_residual
+except ImportError:
+    from .reference import cache_only_residual
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")
@@ -13,7 +19,6 @@ def model():
 
 def test_cache_only_residual_returns_cache(model):
     """Test that function returns a cache object."""
-    from template import cache_only_residual
 
     cache = cache_only_residual(model, "Test")
     # Cache should be dict-like (support keys(), indexing, etc.)
@@ -23,7 +28,6 @@ def test_cache_only_residual_returns_cache(model):
 
 def test_cache_contains_residual(model):
     """Test that cache contains residual activations."""
-    from template import cache_only_residual
 
     cache = cache_only_residual(model, "Test")
 
@@ -34,7 +38,6 @@ def test_cache_contains_residual(model):
 
 def test_cache_only_has_residual(model):
     """Test that cache only contains residual (no attention or MLP)."""
-    from template import cache_only_residual
 
     cache = cache_only_residual(model, "Test")
 
@@ -48,7 +51,6 @@ def test_cache_only_has_residual(model):
 
 def test_cache_has_all_layers(model):
     """Test that cache has residual from all layers."""
-    from template import cache_only_residual
 
     cache = cache_only_residual(model, "Test")
     n_layers = model.cfg.n_layers
@@ -60,7 +62,6 @@ def test_cache_has_all_layers(model):
 
 def test_selective_cache_smaller_than_full(model):
     """Test that selective cache has fewer entries than full cache."""
-    from template import cache_only_residual
 
     prompt = "Test"
 
@@ -78,7 +79,6 @@ def test_selective_cache_smaller_than_full(model):
 
 def test_residual_values_correct(model):
     """Test that residual values match full cache."""
-    from template import cache_only_residual
 
     prompt = "Test"
 
@@ -97,7 +97,6 @@ def test_residual_values_correct(model):
 
 def test_different_prompts_different_caches(model):
     """Test that different prompts produce different caches."""
-    from template import cache_only_residual
 
     cache1 = cache_only_residual(model, "Hello")
     cache2 = cache_only_residual(model, "Goodbye")
@@ -110,7 +109,6 @@ def test_different_prompts_different_caches(model):
 
 def test_cache_has_embeddings(model):
     """Test that cache includes embedding residual stream."""
-    from template import cache_only_residual
 
     cache = cache_only_residual(model, "Test")
 
@@ -123,7 +121,6 @@ def test_cache_has_embeddings(model):
 
 def test_cache_structure_valid(model):
     """Test that cached activations have valid structure."""
-    from template import cache_only_residual
 
     cache = cache_only_residual(model, "Test input")
 

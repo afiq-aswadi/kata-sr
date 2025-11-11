@@ -1,7 +1,12 @@
 """Tests for Lowest Common Ancestor of a Binary Search Tree kata."""
 
+try:
+    from user_kata import TreeNode, lowest_common_ancestor
+except ImportError:
+    from .reference import TreeNode, lowest_common_ancestor
+
+
 def test_lca_bst_example1():
-    from template import TreeNode, lowest_common_ancestor
 
     # Create BST [6,2,8,0,4,7,9,null,null,3,5]
     root = TreeNode(6)
@@ -14,7 +19,6 @@ def test_lca_bst_example1():
     assert lowest_common_ancestor(root, p, q) == root
 
 def test_lca_bst_example2():
-    from template import TreeNode, lowest_common_ancestor
 
     # Create BST [6,2,8,0,4,7,9,null,null,3,5]
     root = TreeNode(6)
@@ -27,7 +31,6 @@ def test_lca_bst_example2():
     assert lowest_common_ancestor(root, p, q) == p
 
 def test_lca_bst_same_subtree():
-    from template import TreeNode, lowest_common_ancestor
 
     # Create BST [6,2,8,0,4,7,9,null,null,3,5]
     root = TreeNode(6)
@@ -40,7 +43,6 @@ def test_lca_bst_same_subtree():
     assert lowest_common_ancestor(root, p, q) == root.left.right
 
 def test_lca_bst_simple():
-    from template import TreeNode, lowest_common_ancestor
 
     # Create BST [2,1,3]
     root = TreeNode(2, TreeNode(1), TreeNode(3))

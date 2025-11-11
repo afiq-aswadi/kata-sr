@@ -11,6 +11,16 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+try:
+    from user_kata import add_circle_highlight
+    from user_kata import add_rectangle_highlight
+    from user_kata import add_circle_highlight, add_rectangle_highlight
+except ImportError:
+    from .reference import add_circle_highlight
+    from .reference import add_rectangle_highlight
+    from .reference import add_circle_highlight, add_rectangle_highlight
+
+
 def close_plots():
     """Close all plots after each test."""
     yield
@@ -19,7 +29,6 @@ def close_plots():
 
 def test_circle_adds_patch():
     """Test that circle adds a patch to axes."""
-    from template import add_circle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -32,7 +41,6 @@ def test_circle_adds_patch():
 
 def test_circle_center_position():
     """Test that circle is positioned at correct center."""
-    from template import add_circle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -47,7 +55,6 @@ def test_circle_center_position():
 
 def test_circle_radius():
     """Test that circle has correct radius."""
-    from template import add_circle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -60,7 +67,6 @@ def test_circle_radius():
 
 def test_circle_edge_styling():
     """Test that circle has colored edge."""
-    from template import add_circle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -77,7 +83,6 @@ def test_circle_edge_styling():
 
 def test_circle_linewidth():
     """Test that circle has appropriate linewidth."""
-    from template import add_circle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -90,7 +95,6 @@ def test_circle_linewidth():
 
 def test_rectangle_adds_patch():
     """Test that rectangle adds a patch to axes."""
-    from template import add_rectangle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -103,7 +107,6 @@ def test_rectangle_adds_patch():
 
 def test_rectangle_position():
     """Test that rectangle is positioned correctly."""
-    from template import add_rectangle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -118,7 +121,6 @@ def test_rectangle_position():
 
 def test_rectangle_dimensions():
     """Test that rectangle has correct width and height."""
-    from template import add_rectangle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -132,7 +134,6 @@ def test_rectangle_dimensions():
 
 def test_rectangle_has_transparency():
     """Test that rectangle has alpha transparency."""
-    from template import add_rectangle_highlight
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -145,7 +146,6 @@ def test_rectangle_has_transparency():
 
 def test_multiple_shapes():
     """Test that multiple shapes can be added."""
-    from template import add_circle_highlight, add_rectangle_highlight
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 10)
@@ -160,7 +160,6 @@ def test_multiple_shapes():
 
 def test_shapes_with_different_sizes():
     """Test shapes with various sizes."""
-    from template import add_circle_highlight, add_rectangle_highlight
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 10)

@@ -1,7 +1,12 @@
 """Tests for Subtree of Another Tree kata."""
 
+try:
+    from user_kata import TreeNode, is_subtree
+except ImportError:
+    from .reference import TreeNode, is_subtree
+
+
 def test_subtree_example1():
-    from template import TreeNode, is_subtree
 
     # Create root tree [3,4,5,1,2]
     root = TreeNode(3)
@@ -14,7 +19,6 @@ def test_subtree_example1():
     assert is_subtree(root, sub_root) == True
 
 def test_subtree_example2():
-    from template import TreeNode, is_subtree
 
     # Create root tree [3,4,5,1,2,null,null,null,null,0]
     root = TreeNode(3)
@@ -27,7 +31,6 @@ def test_subtree_example2():
     assert is_subtree(root, sub_root) == False
 
 def test_subtree_identical():
-    from template import TreeNode, is_subtree
 
     # Create identical trees [1,2,3]
     root = TreeNode(1, TreeNode(2), TreeNode(3))
@@ -36,7 +39,6 @@ def test_subtree_identical():
     assert is_subtree(root, sub_root) == True
 
 def test_subtree_single_node():
-    from template import TreeNode, is_subtree
 
     root = TreeNode(1, TreeNode(2), TreeNode(3))
     sub_root = TreeNode(2)
@@ -44,7 +46,6 @@ def test_subtree_single_node():
     assert is_subtree(root, sub_root) == True
 
 def test_subtree_not_found():
-    from template import TreeNode, is_subtree
 
     root = TreeNode(1, TreeNode(2), TreeNode(3))
     sub_root = TreeNode(4)

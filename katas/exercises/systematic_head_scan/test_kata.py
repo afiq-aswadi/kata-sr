@@ -7,12 +7,17 @@ import torch
 from transformer_lens import HookedTransformer
 
 try:
-    from template import scan_all_heads
 except ImportError:
     from reference import scan_all_heads
 
 
 @pytest.fixture(scope="module")
+try:
+    from user_kata import scan_all_heads
+except ImportError:
+    from .reference import scan_all_heads
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")

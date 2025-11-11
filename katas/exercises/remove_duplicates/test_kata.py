@@ -3,8 +3,15 @@
 import pytest
 
 
+try:
+    from user_kata import remove_duplicates
+    from user_kata import remove_duplicates_allow_twice
+except ImportError:
+    from .reference import remove_duplicates
+    from .reference import remove_duplicates_allow_twice
+
+
 def test_remove_duplicates_basic():
-    from template import remove_duplicates
 
     nums = [1, 1, 2]
     length = remove_duplicates(nums)
@@ -13,7 +20,6 @@ def test_remove_duplicates_basic():
 
 
 def test_remove_duplicates_multiple():
-    from template import remove_duplicates
 
     nums = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4]
     length = remove_duplicates(nums)
@@ -22,7 +28,6 @@ def test_remove_duplicates_multiple():
 
 
 def test_remove_duplicates_no_duplicates():
-    from template import remove_duplicates
 
     nums = [1, 2, 3, 4]
     length = remove_duplicates(nums)
@@ -31,7 +36,6 @@ def test_remove_duplicates_no_duplicates():
 
 
 def test_remove_duplicates_all_same():
-    from template import remove_duplicates
 
     nums = [1, 1, 1, 1]
     length = remove_duplicates(nums)
@@ -40,7 +44,6 @@ def test_remove_duplicates_all_same():
 
 
 def test_remove_duplicates_empty():
-    from template import remove_duplicates
 
     nums = []
     length = remove_duplicates(nums)
@@ -48,7 +51,6 @@ def test_remove_duplicates_empty():
 
 
 def test_remove_duplicates_allow_twice_basic():
-    from template import remove_duplicates_allow_twice
 
     nums = [1, 1, 1, 2, 2, 3]
     length = remove_duplicates_allow_twice(nums)
@@ -57,7 +59,6 @@ def test_remove_duplicates_allow_twice_basic():
 
 
 def test_remove_duplicates_allow_twice_multiple():
-    from template import remove_duplicates_allow_twice
 
     nums = [0, 0, 1, 1, 1, 1, 2, 3, 3]
     length = remove_duplicates_allow_twice(nums)

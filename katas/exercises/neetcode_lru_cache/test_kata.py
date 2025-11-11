@@ -1,7 +1,12 @@
 """Tests for LRU Cache kata."""
 
+try:
+    from user_kata import LRUCache
+except ImportError:
+    from .reference import LRUCache
+
+
 def test_lru_cache_basic():
-    from template import LRUCache
 
     cache = LRUCache(2)
     cache.put(1, 1)
@@ -15,7 +20,6 @@ def test_lru_cache_basic():
     assert cache.get(4) == 4
 
 def test_lru_cache_update():
-    from template import LRUCache
 
     cache = LRUCache(2)
     cache.put(1, 1)
@@ -28,7 +32,6 @@ def test_lru_cache_update():
     assert cache.get(3) == 3
 
 def test_lru_cache_single_capacity():
-    from template import LRUCache
 
     cache = LRUCache(1)
     cache.put(1, 1)
@@ -38,7 +41,6 @@ def test_lru_cache_single_capacity():
     assert cache.get(2) == 2
 
 def test_lru_cache_get_updates_recency():
-    from template import LRUCache
 
     cache = LRUCache(2)
     cache.put(1, 1)

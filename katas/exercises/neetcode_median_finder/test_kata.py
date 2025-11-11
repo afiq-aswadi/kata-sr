@@ -1,7 +1,12 @@
 """Tests for Find Median from Data Stream kata."""
 
+try:
+    from user_kata import MedianFinder
+except ImportError:
+    from .reference import MedianFinder
+
+
 def test_median_finder_basic():
-    from template import MedianFinder
 
     mf = MedianFinder()
     mf.add_num(1)
@@ -11,14 +16,12 @@ def test_median_finder_basic():
     assert mf.find_median() == 2.0
 
 def test_median_finder_single():
-    from template import MedianFinder
 
     mf = MedianFinder()
     mf.add_num(5)
     assert mf.find_median() == 5.0
 
 def test_median_finder_unordered():
-    from template import MedianFinder
 
     mf = MedianFinder()
     mf.add_num(6)
@@ -33,7 +36,6 @@ def test_median_finder_unordered():
     assert mf.find_median() == 6.0
 
 def test_median_finder_negative():
-    from template import MedianFinder
 
     mf = MedianFinder()
     mf.add_num(-1)

@@ -2,8 +2,19 @@
 
 
 
+try:
+    from user_kata import quicksort
+    from user_kata import quicksort_inplace
+    from user_kata import partition_lomuto
+    from user_kata import partition_hoare
+except ImportError:
+    from .reference import quicksort
+    from .reference import quicksort_inplace
+    from .reference import partition_lomuto
+    from .reference import partition_hoare
+
+
 def test_quicksort_basic():
-    from template import quicksort
 
     arr = [3, 6, 8, 10, 1, 2, 1]
     result = quicksort(arr)
@@ -11,7 +22,6 @@ def test_quicksort_basic():
 
 
 def test_quicksort_already_sorted():
-    from template import quicksort
 
     arr = [1, 2, 3, 4, 5]
     result = quicksort(arr)
@@ -19,7 +29,6 @@ def test_quicksort_already_sorted():
 
 
 def test_quicksort_reverse_sorted():
-    from template import quicksort
 
     arr = [5, 4, 3, 2, 1]
     result = quicksort(arr)
@@ -27,19 +36,16 @@ def test_quicksort_reverse_sorted():
 
 
 def test_quicksort_empty():
-    from template import quicksort
 
     assert quicksort([]) == []
 
 
 def test_quicksort_single():
-    from template import quicksort
 
     assert quicksort([5]) == [5]
 
 
 def test_quicksort_inplace():
-    from template import quicksort_inplace
 
     arr = [3, 6, 8, 10, 1, 2, 1]
     quicksort_inplace(arr)
@@ -47,7 +53,6 @@ def test_quicksort_inplace():
 
 
 def test_partition_lomuto():
-    from template import partition_lomuto
 
     arr = [3, 6, 8, 10, 1, 2, 1]
     pivot_idx = partition_lomuto(arr, 0, len(arr) - 1)
@@ -60,7 +65,6 @@ def test_partition_lomuto():
 
 
 def test_partition_hoare():
-    from template import partition_hoare
 
     arr = [3, 6, 8, 10, 1, 2, 1]
     partition_idx = partition_hoare(arr, 0, len(arr) - 1)

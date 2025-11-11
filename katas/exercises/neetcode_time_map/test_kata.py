@@ -1,7 +1,12 @@
 """Tests for Time Based Key-Value Store kata."""
 
+try:
+    from user_kata import TimeMap
+except ImportError:
+    from .reference import TimeMap
+
+
 def test_timemap_example():
-    from template import TimeMap
     tm = TimeMap()
     tm.set("foo", "bar", 1)
     assert tm.get("foo", 1) == "bar"
@@ -11,7 +16,6 @@ def test_timemap_example():
     assert tm.get("foo", 5) == "bar2"
 
 def test_timemap_multiple_keys():
-    from template import TimeMap
     tm = TimeMap()
     tm.set("love", "high", 10)
     tm.set("love", "low", 20)
@@ -22,12 +26,10 @@ def test_timemap_multiple_keys():
     assert tm.get("love", 25) == "low"
 
 def test_timemap_nonexistent_key():
-    from template import TimeMap
     tm = TimeMap()
     assert tm.get("nonexistent", 1) == ""
 
 def test_timemap_exact_timestamps():
-    from template import TimeMap
     tm = TimeMap()
     tm.set("a", "val1", 1)
     tm.set("a", "val2", 5)

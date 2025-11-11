@@ -1,7 +1,14 @@
 """Tests for Copy List with Random Pointer kata."""
 
+try:
+    from user_kata import Node, copy_random_list
+    from user_kata import copy_random_list
+except ImportError:
+    from .reference import Node, copy_random_list
+    from .reference import copy_random_list
+
+
 def test_copy_random_list_basic():
-    from template import Node, copy_random_list
 
     # Create list [[7,null],[13,0],[11,4],[10,2],[1,0]]
     node1 = Node(7)
@@ -55,11 +62,9 @@ def test_copy_random_list_basic():
             assert copy.random is nodes_copy[orig_idx]
 
 def test_copy_random_list_empty():
-    from template import copy_random_list
     assert copy_random_list(None) is None
 
 def test_copy_random_list_single():
-    from template import Node, copy_random_list
 
     node = Node(1)
     node.random = node

@@ -1,7 +1,12 @@
 """Tests for Reorder List kata."""
 
+try:
+    from user_kata import ListNode, reorder_list
+except ImportError:
+    from .reference import ListNode, reorder_list
+
+
 def test_reorder_list_even():
-    from template import ListNode, reorder_list
 
     head = ListNode(1, ListNode(2, ListNode(3, ListNode(4))))
     reorder_list(head)
@@ -14,7 +19,6 @@ def test_reorder_list_even():
     assert vals == [1, 4, 2, 3]
 
 def test_reorder_list_odd():
-    from template import ListNode, reorder_list
 
     head = ListNode(1, ListNode(2, ListNode(3, ListNode(4, ListNode(5)))))
     reorder_list(head)

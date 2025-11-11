@@ -1,5 +1,13 @@
 """Tests for Serialize and Deserialize Binary Tree kata."""
 
+try:
+    from user_kata import TreeNode, serialize, deserialize
+    from user_kata import serialize, deserialize
+except ImportError:
+    from .reference import TreeNode, serialize, deserialize
+    from .reference import serialize, deserialize
+
+
 def tree_to_list(root):
     """Helper to convert tree to level-order list."""
     if not root:
@@ -20,7 +28,6 @@ def tree_to_list(root):
     return result
 
 def test_serialize_deserialize_example1():
-    from template import TreeNode, serialize, deserialize
 
     # Create tree [1,2,3,null,null,4,5]
     root = TreeNode(1)
@@ -33,7 +40,6 @@ def test_serialize_deserialize_example1():
     assert tree_to_list(deserialized) == [1, 2, 3, None, None, 4, 5]
 
 def test_serialize_deserialize_empty():
-    from template import serialize, deserialize
 
     serialized = serialize(None)
     deserialized = deserialize(serialized)
@@ -41,7 +47,6 @@ def test_serialize_deserialize_empty():
     assert deserialized is None
 
 def test_serialize_deserialize_single():
-    from template import TreeNode, serialize, deserialize
 
     root = TreeNode(1)
 
@@ -51,7 +56,6 @@ def test_serialize_deserialize_single():
     assert tree_to_list(deserialized) == [1]
 
 def test_serialize_deserialize_left_skewed():
-    from template import TreeNode, serialize, deserialize
 
     # Create tree [1,2,null,3]
     root = TreeNode(1)
@@ -64,7 +68,6 @@ def test_serialize_deserialize_left_skewed():
     assert tree_to_list(deserialized) == [1, 2, None, 3]
 
 def test_serialize_deserialize_complete():
-    from template import TreeNode, serialize, deserialize
 
     # Create tree [1,2,3,4,5,6,7]
     root = TreeNode(1)
@@ -77,7 +80,6 @@ def test_serialize_deserialize_complete():
     assert tree_to_list(deserialized) == [1, 2, 3, 4, 5, 6, 7]
 
 def test_serialize_deserialize_negative():
-    from template import TreeNode, serialize, deserialize
 
     # Create tree with negative values
     root = TreeNode(-1, TreeNode(-2), TreeNode(-3))

@@ -1,7 +1,12 @@
 """Tests for Design Twitter kata."""
 
+try:
+    from user_kata import Twitter
+except ImportError:
+    from .reference import Twitter
+
+
 def test_twitter_basic():
-    from template import Twitter
 
     twitter = Twitter()
     twitter.post_tweet(1, 5)
@@ -13,7 +18,6 @@ def test_twitter_basic():
     assert twitter.get_news_feed(1) == [5]
 
 def test_twitter_multiple_users():
-    from template import Twitter
 
     twitter = Twitter()
     twitter.post_tweet(1, 1)
@@ -25,7 +29,6 @@ def test_twitter_multiple_users():
     assert set(feed) == {1, 2, 3}
 
 def test_twitter_ten_tweets():
-    from template import Twitter
 
     twitter = Twitter()
     for i in range(15):

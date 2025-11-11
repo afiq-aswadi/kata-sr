@@ -4,9 +4,14 @@ import dash
 import plotly.graph_objects as go
 
 
+try:
+    from user_kata import create_multi_input_app
+except ImportError:
+    from .reference import create_multi_input_app
+
+
 def test_creates_dash_app():
     """Test that function returns a Dash app."""
-    from template import create_multi_input_app
 
     app = create_multi_input_app()
     assert isinstance(app, dash.Dash)
@@ -14,7 +19,6 @@ def test_creates_dash_app():
 
 def test_callback_registered():
     """Test that callback is registered."""
-    from template import create_multi_input_app
 
     app = create_multi_input_app()
     assert len(app.callback_map) > 0
@@ -22,7 +26,6 @@ def test_callback_registered():
 
 def test_callback_accepts_two_inputs():
     """Test that callback function accepts two arguments."""
-    from template import create_multi_input_app
 
     app = create_multi_input_app()
 
@@ -37,7 +40,6 @@ def test_callback_accepts_two_inputs():
 
 def test_callback_dataset_a():
     """Test callback generates correct data for dataset A."""
-    from template import create_multi_input_app
 
     app = create_multi_input_app()
 
@@ -53,7 +55,6 @@ def test_callback_dataset_a():
 
 def test_callback_dataset_b():
     """Test callback generates correct data for dataset B."""
-    from template import create_multi_input_app
 
     app = create_multi_input_app()
 

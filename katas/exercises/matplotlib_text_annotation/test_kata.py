@@ -10,6 +10,12 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+try:
+    from user_kata import add_text_annotation
+except ImportError:
+    from .reference import add_text_annotation
+
+
 def close_plots():
     """Close all plots after each test."""
     yield
@@ -18,7 +24,6 @@ def close_plots():
 
 def test_adds_text_to_axes():
     """Test that text is added to the axes."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -31,7 +36,6 @@ def test_adds_text_to_axes():
 
 def test_text_content_matches():
     """Test that the text content is correct."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -44,7 +48,6 @@ def test_text_content_matches():
 
 def test_has_correct_fontsize():
     """Test that fontsize is 12."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -57,7 +60,6 @@ def test_has_correct_fontsize():
 
 def test_has_bbox():
     """Test that text has a bbox (background box)."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -71,7 +73,6 @@ def test_has_bbox():
 
 def test_bbox_has_transparency():
     """Test that bbox has alpha=0.5."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -85,7 +86,6 @@ def test_bbox_has_transparency():
 
 def test_horizontal_alignment_center():
     """Test that text is center-aligned horizontally."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -98,7 +98,6 @@ def test_horizontal_alignment_center():
 
 def test_vertical_alignment_bottom():
     """Test that text is bottom-aligned vertically."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -111,7 +110,6 @@ def test_vertical_alignment_bottom():
 
 def test_position_is_correct():
     """Test that text is positioned at the correct coordinates."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])
@@ -126,7 +124,6 @@ def test_position_is_correct():
 
 def test_multiple_annotations():
     """Test that multiple annotations can be added."""
-    from template import add_text_annotation
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1])

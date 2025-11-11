@@ -3,8 +3,15 @@
 import torch
 
 
+try:
+    from user_kata import batch_norm_1d
+    from user_kata import batch_norm_2d
+except ImportError:
+    from .reference import batch_norm_1d
+    from .reference import batch_norm_2d
+
+
 def test_batch_norm_1d_basic():
-    from template import batch_norm_1d
 
     x = torch.randn(32, 10)
     gamma = torch.ones(10)
@@ -18,7 +25,6 @@ def test_batch_norm_1d_basic():
 
 
 def test_batch_norm_1d_with_affine():
-    from template import batch_norm_1d
 
     x = torch.randn(16, 5)
     gamma = torch.randn(5) + 1.0
@@ -29,7 +35,6 @@ def test_batch_norm_1d_with_affine():
 
 
 def test_batch_norm_2d_basic():
-    from template import batch_norm_2d
 
     x = torch.randn(8, 3, 16, 16)
     gamma = torch.ones(3)
@@ -52,7 +57,6 @@ def test_batch_norm_2d_basic():
 
 
 def test_batch_norm_2d_with_affine():
-    from template import batch_norm_2d
 
     x = torch.randn(4, 6, 8, 8)
     gamma = torch.randn(6) + 1.0
@@ -63,7 +67,6 @@ def test_batch_norm_2d_with_affine():
 
 
 def test_batch_norm_1d_single_batch():
-    from template import batch_norm_1d
 
     x = torch.tensor([[1.0, 2.0, 3.0]])
     gamma = torch.ones(3)

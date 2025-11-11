@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import TypedMeta
+except ImportError:
+    from .reference import TypedMeta
+
+
 def test_correct_types():
     """Test TypedMeta allows correct types."""
-    from template import TypedMeta
 
     class Person(metaclass=TypedMeta):
         attribute_types = {'name': str, 'age': int}
@@ -19,7 +24,6 @@ def test_correct_types():
 
 def test_wrong_type_raises_error():
     """Test TypedMeta raises error for wrong type."""
-    from template import TypedMeta
 
     with pytest.raises(TypeError, match="must be int, got str"):
         class Person(metaclass=TypedMeta):
@@ -29,7 +33,6 @@ def test_wrong_type_raises_error():
 
 def test_multiple_wrong_types():
     """Test TypedMeta detects type errors."""
-    from template import TypedMeta
 
     with pytest.raises(TypeError, match="must be"):
         class Config(metaclass=TypedMeta):
@@ -40,7 +43,6 @@ def test_multiple_wrong_types():
 
 def test_no_validation():
     """Test TypedMeta works without attribute_types."""
-    from template import TypedMeta
 
     class Simple(metaclass=TypedMeta):
         value = 42
@@ -51,7 +53,6 @@ def test_no_validation():
 
 def test_partial_validation():
     """Test TypedMeta only validates specified attributes."""
-    from template import TypedMeta
 
     class Mixed(metaclass=TypedMeta):
         attribute_types = {'name': str}
@@ -66,7 +67,6 @@ def test_partial_validation():
 
 def test_bool_type():
     """Test TypedMeta with bool type."""
-    from template import TypedMeta
 
     class Flags(metaclass=TypedMeta):
         attribute_types = {'active': bool, 'debug': bool}
@@ -80,7 +80,6 @@ def test_bool_type():
 
 def test_list_type():
     """Test TypedMeta with list type."""
-    from template import TypedMeta
 
     class Container(metaclass=TypedMeta):
         attribute_types = {'items': list}
@@ -92,7 +91,6 @@ def test_list_type():
 
 def test_custom_class_type():
     """Test TypedMeta with custom class type."""
-    from template import TypedMeta
 
     class Address:
         pass

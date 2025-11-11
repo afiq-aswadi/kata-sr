@@ -1,7 +1,12 @@
 """Tests for Group Anagrams kata."""
 
+try:
+    from user_kata import group_anagrams
+except ImportError:
+    from .reference import group_anagrams
+
+
 def test_group_anagrams_example1():
-    from template import group_anagrams
     result = group_anagrams(["eat","tea","tan","ate","nat","bat"])
     result = [sorted(group) for group in result]
     result = sorted(result)
@@ -11,9 +16,7 @@ def test_group_anagrams_example1():
     assert result == expected
 
 def test_group_anagrams_empty():
-    from template import group_anagrams
     assert group_anagrams([""]) == [[""]]
 
 def test_group_anagrams_single():
-    from template import group_anagrams
     assert group_anagrams(["a"]) == [["a"]]

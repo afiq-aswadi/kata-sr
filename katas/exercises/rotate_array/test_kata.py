@@ -3,8 +3,15 @@
 import pytest
 
 
+try:
+    from user_kata import rotate
+    from user_kata import rotate_left
+except ImportError:
+    from .reference import rotate
+    from .reference import rotate_left
+
+
 def test_rotate_basic():
-    from template import rotate
 
     nums = [1, 2, 3, 4, 5, 6, 7]
     rotate(nums, 3)
@@ -12,7 +19,6 @@ def test_rotate_basic():
 
 
 def test_rotate_by_one():
-    from template import rotate
 
     nums = [1, 2, 3]
     rotate(nums, 1)
@@ -20,7 +26,6 @@ def test_rotate_by_one():
 
 
 def test_rotate_by_length():
-    from template import rotate
 
     nums = [1, 2, 3, 4]
     rotate(nums, 4)
@@ -28,7 +33,6 @@ def test_rotate_by_length():
 
 
 def test_rotate_larger_than_length():
-    from template import rotate
 
     nums = [1, 2, 3]
     rotate(nums, 5)  # 5 % 3 = 2
@@ -36,7 +40,6 @@ def test_rotate_larger_than_length():
 
 
 def test_rotate_empty():
-    from template import rotate
 
     nums = []
     rotate(nums, 3)
@@ -44,7 +47,6 @@ def test_rotate_empty():
 
 
 def test_rotate_single_element():
-    from template import rotate
 
     nums = [1]
     rotate(nums, 1)
@@ -52,7 +54,6 @@ def test_rotate_single_element():
 
 
 def test_rotate_left_basic():
-    from template import rotate_left
 
     nums = [1, 2, 3, 4, 5]
     rotate_left(nums, 2)
@@ -60,7 +61,6 @@ def test_rotate_left_basic():
 
 
 def test_rotate_left_by_one():
-    from template import rotate_left
 
     nums = [1, 2, 3]
     rotate_left(nums, 1)

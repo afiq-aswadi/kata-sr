@@ -11,6 +11,12 @@ import pytest
 
 
 @pytest.fixture
+try:
+    from user_kata import create_dual_axis_plot
+except ImportError:
+    from .reference import create_dual_axis_plot
+
+
 def sample_data():
     """Provide sample data for testing."""
     x = np.linspace(0, 10, 50)
@@ -28,7 +34,6 @@ def close_plots():
 
 def test_returns_three_objects(sample_data):
     """Test that function returns fig, ax1, ax2."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     result = create_dual_axis_plot(x, y1, y2)
@@ -39,7 +44,6 @@ def test_returns_three_objects(sample_data):
 
 def test_creates_figure(sample_data):
     """Test that a figure is created."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     fig, ax1, ax2 = create_dual_axis_plot(x, y1, y2)
@@ -49,7 +53,6 @@ def test_creates_figure(sample_data):
 
 def test_creates_two_axes(sample_data):
     """Test that two axes objects are created."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     fig, ax1, ax2 = create_dual_axis_plot(x, y1, y2)
@@ -61,7 +64,6 @@ def test_creates_two_axes(sample_data):
 
 def test_both_axes_have_data(sample_data):
     """Test that both axes have plotted data."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     fig, ax1, ax2 = create_dual_axis_plot(x, y1, y2)
@@ -72,7 +74,6 @@ def test_both_axes_have_data(sample_data):
 
 def test_axes_have_labels(sample_data):
     """Test that both axes have y-labels."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     fig, ax1, ax2 = create_dual_axis_plot(x, y1, y2)
@@ -83,7 +84,6 @@ def test_axes_have_labels(sample_data):
 
 def test_labels_have_different_colors(sample_data):
     """Test that y-axis labels have different colors."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     fig, ax1, ax2 = create_dual_axis_plot(x, y1, y2)
@@ -96,7 +96,6 @@ def test_labels_have_different_colors(sample_data):
 
 def test_uses_blue_and_red_colors(sample_data):
     """Test that the plot uses blue and red for the two axes."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     fig, ax1, ax2 = create_dual_axis_plot(x, y1, y2)
@@ -118,7 +117,6 @@ def test_uses_blue_and_red_colors(sample_data):
 
 def test_handles_different_scales(sample_data):
     """Test that dual axes can handle very different scales."""
-    from template import create_dual_axis_plot
 
     x = np.linspace(0, 10, 50)
     y1 = np.array([1, 2, 3, 4, 5] * 10)  # Small scale
@@ -133,7 +131,6 @@ def test_handles_different_scales(sample_data):
 
 def test_axes_share_x_axis(sample_data):
     """Test that both axes share the same x-axis data."""
-    from template import create_dual_axis_plot
 
     x, y1, y2 = sample_data
     fig, ax1, ax2 = create_dual_axis_plot(x, y1, y2)

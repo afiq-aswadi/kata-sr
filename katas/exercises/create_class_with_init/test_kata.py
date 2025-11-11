@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import create_class_with_init
+except ImportError:
+    from .reference import create_class_with_init
+
+
 def test_positional_arguments():
     """Test class with __init__ using positional arguments."""
-    from template import create_class_with_init
 
     Person = create_class_with_init('Person', ['name', 'age'])
 
@@ -16,7 +21,6 @@ def test_positional_arguments():
 
 def test_keyword_arguments():
     """Test class with __init__ using keyword arguments."""
-    from template import create_class_with_init
 
     Person = create_class_with_init('Person', ['name', 'age'])
 
@@ -27,7 +31,6 @@ def test_keyword_arguments():
 
 def test_mixed_arguments():
     """Test class with __init__ using mixed arguments."""
-    from template import create_class_with_init
 
     Person = create_class_with_init('Person', ['name', 'age', 'city'])
 
@@ -39,7 +42,6 @@ def test_mixed_arguments():
 
 def test_multiple_instances():
     """Test that multiple instances maintain separate attributes."""
-    from template import create_class_with_init
 
     Point = create_class_with_init('Point', ['x', 'y'])
 
@@ -54,7 +56,6 @@ def test_multiple_instances():
 
 def test_single_parameter():
     """Test class with single init parameter."""
-    from template import create_class_with_init
 
     Counter = create_class_with_init('Counter', ['value'])
 
@@ -64,7 +65,6 @@ def test_single_parameter():
 
 def test_many_parameters():
     """Test class with many init parameters."""
-    from template import create_class_with_init
 
     Config = create_class_with_init('Config', ['host', 'port', 'db', 'user'])
 
@@ -77,7 +77,6 @@ def test_many_parameters():
 
 def test_string_attributes():
     """Test init with string values."""
-    from template import create_class_with_init
 
     User = create_class_with_init('User', ['username', 'email'])
 

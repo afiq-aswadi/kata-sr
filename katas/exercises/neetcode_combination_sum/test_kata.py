@@ -1,7 +1,12 @@
 """Tests for Combination Sum kata."""
 
+try:
+    from user_kata import combination_sum
+except ImportError:
+    from .reference import combination_sum
+
+
 def test_combination_sum_example1():
-    from template import combination_sum
     result = combination_sum([2,3,6,7], 7)
     result = [sorted(combo) for combo in result]
     result = sorted(result)
@@ -11,7 +16,6 @@ def test_combination_sum_example1():
     assert result == expected
 
 def test_combination_sum_example2():
-    from template import combination_sum
     result = combination_sum([2,3,5], 8)
     result = [sorted(combo) for combo in result]
     result = sorted(result)
@@ -21,11 +25,9 @@ def test_combination_sum_example2():
     assert result == expected
 
 def test_combination_sum_example3():
-    from template import combination_sum
     result = combination_sum([2], 1)
     assert result == []
 
 def test_combination_sum_single_element():
-    from template import combination_sum
     result = combination_sum([1], 2)
     assert result == [[1,1]]

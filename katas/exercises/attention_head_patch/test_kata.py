@@ -7,12 +7,17 @@ import torch
 from transformer_lens import HookedTransformer
 
 try:
-    from template import patch_attention_head
 except ImportError:
     from reference import patch_attention_head
 
 
 @pytest.fixture(scope="module")
+try:
+    from user_kata import patch_attention_head
+except ImportError:
+    from .reference import patch_attention_head
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")

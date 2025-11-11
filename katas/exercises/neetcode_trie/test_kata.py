@@ -1,7 +1,12 @@
 """Tests for Implement Trie kata."""
 
+try:
+    from user_kata import Trie
+except ImportError:
+    from .reference import Trie
+
+
 def test_trie_basic():
-    from template import Trie
 
     trie = Trie()
     trie.insert("apple")
@@ -12,7 +17,6 @@ def test_trie_basic():
     assert trie.search("app") == True
 
 def test_trie_multiple_words():
-    from template import Trie
 
     trie = Trie()
     trie.insert("hello")
@@ -26,7 +30,6 @@ def test_trie_multiple_words():
     assert trie.starts_with("hel") == True
 
 def test_trie_prefix_not_word():
-    from template import Trie
 
     trie = Trie()
     trie.insert("application")

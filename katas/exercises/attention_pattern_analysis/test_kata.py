@@ -6,13 +6,34 @@ from transformer_lens import HookedTransformer
 
 
 @pytest.fixture
+try:
+    from user_kata import extract_attention_patterns
+    from user_kata import extract_attention_patterns, compute_attention_entropy
+    from user_kata import compute_attention_entropy
+    from user_kata import find_previous_token_heads
+    from user_kata import extract_attention_patterns, find_previous_token_heads
+    from user_kata import ablate_attention_head
+    from user_kata import compare_attention_patterns
+    from user_kata import extract_attention_patterns, get_max_attention_positions
+    from user_kata import get_max_attention_positions
+except ImportError:
+    from .reference import extract_attention_patterns
+    from .reference import extract_attention_patterns, compute_attention_entropy
+    from .reference import compute_attention_entropy
+    from .reference import find_previous_token_heads
+    from .reference import extract_attention_patterns, find_previous_token_heads
+    from .reference import ablate_attention_head
+    from .reference import compare_attention_patterns
+    from .reference import extract_attention_patterns, get_max_attention_positions
+    from .reference import get_max_attention_positions
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")
 
 
 def test_extract_attention_patterns_shape(model):
-    from template import extract_attention_patterns
 
     text = "The cat sat on the mat"
     patterns = extract_attention_patterns(model, text, layer=0)
@@ -25,7 +46,6 @@ def test_extract_attention_patterns_shape(model):
 
 
 def test_attention_patterns_normalized(model):
-    from template import extract_attention_patterns
 
     text = "Hello world"
     patterns = extract_attention_patterns(model, text, layer=0)
@@ -36,7 +56,6 @@ def test_attention_patterns_normalized(model):
 
 
 def test_attention_patterns_different_layers(model):
-    from template import extract_attention_patterns
 
     text = "Testing different layers"
     patterns_0 = extract_attention_patterns(model, text, layer=0)
@@ -47,7 +66,6 @@ def test_attention_patterns_different_layers(model):
 
 
 def test_compute_attention_entropy_shape(model):
-    from template import extract_attention_patterns, compute_attention_entropy
 
     text = "The quick brown fox"
     patterns = extract_attention_patterns(model, text, layer=0)
@@ -58,7 +76,6 @@ def test_compute_attention_entropy_shape(model):
 
 
 def test_compute_attention_entropy_values(model):
-    from template import compute_attention_entropy
 
     # Create a focused attention pattern (low entropy)
     focused = torch.zeros(1, 2, 3, 4)
@@ -79,7 +96,6 @@ def test_compute_attention_entropy_values(model):
 
 
 def test_find_previous_token_heads(model):
-    from template import find_previous_token_heads
 
     # Create synthetic pattern where head 0 attends to previous token
     batch, n_heads, seq = 1, 3, 5
@@ -106,7 +122,6 @@ def test_find_previous_token_heads(model):
 
 
 def test_find_previous_token_heads_real_model(model):
-    from template import extract_attention_patterns, find_previous_token_heads
 
     text = "The quick brown fox jumps over the lazy dog"
     patterns = extract_attention_patterns(model, text, layer=5)
@@ -118,7 +133,6 @@ def test_find_previous_token_heads_real_model(model):
 
 
 def test_ablate_attention_head(model):
-    from template import ablate_attention_head
 
     text = "The cat sat on the mat"
 
@@ -139,7 +153,6 @@ def test_ablate_attention_head(model):
 
 
 def test_ablate_attention_head_pattern_uniform(model):
-    from template import ablate_attention_head
 
     text = "Test ablation"
 
@@ -160,7 +173,6 @@ def test_ablate_attention_head_pattern_uniform(model):
 
 
 def test_compare_attention_patterns(model):
-    from template import compare_attention_patterns
 
     text1 = "The cat sat"
     text2 = "The dog ran"
@@ -182,7 +194,6 @@ def test_compare_attention_patterns(model):
 
 
 def test_compare_attention_patterns_different_lengths(model):
-    from template import compare_attention_patterns
 
     text1 = "Short"
     text2 = "This is a longer sentence"
@@ -194,7 +205,6 @@ def test_compare_attention_patterns_different_lengths(model):
 
 
 def test_get_max_attention_positions(model):
-    from template import extract_attention_patterns, get_max_attention_positions
 
     text = "The quick brown fox"
     patterns = extract_attention_patterns(model, text, layer=0)
@@ -211,7 +221,6 @@ def test_get_max_attention_positions(model):
 
 
 def test_get_max_attention_positions_correctness(model):
-    from template import get_max_attention_positions
 
     # Create synthetic pattern where we know the top positions
     batch, n_heads, seq = 1, 2, 5
@@ -230,7 +239,6 @@ def test_get_max_attention_positions_correctness(model):
 
 
 def test_entropy_properties(model):
-    from template import extract_attention_patterns, compute_attention_entropy
 
     text = "Testing entropy properties"
     patterns = extract_attention_patterns(model, text, layer=0)

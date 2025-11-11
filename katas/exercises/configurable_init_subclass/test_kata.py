@@ -3,9 +3,14 @@
 import pytest
 
 
+try:
+    from user_kata import ConfigurableBase
+except ImportError:
+    from .reference import ConfigurableBase
+
+
 def test_basic_configuration():
     """Test ConfigurableBase stores configuration."""
-    from template import ConfigurableBase
 
     class MyService(ConfigurableBase, timeout=30, retries=3):
         pass
@@ -17,7 +22,6 @@ def test_basic_configuration():
 
 def test_no_configuration():
     """Test ConfigurableBase works without configuration."""
-    from template import ConfigurableBase
 
     class Plain(ConfigurableBase):
         pass
@@ -28,7 +32,6 @@ def test_no_configuration():
 
 def test_multiple_classes():
     """Test different classes maintain separate configs."""
-    from template import ConfigurableBase
 
     class ServiceA(ConfigurableBase, port=8000):
         pass
@@ -42,7 +45,6 @@ def test_multiple_classes():
 
 def test_various_types():
     """Test ConfigurableBase handles various config types."""
-    from template import ConfigurableBase
 
     class Complex(ConfigurableBase,
                   name="service",
@@ -60,7 +62,6 @@ def test_various_types():
 
 def test_empty_configuration():
     """Test ConfigurableBase with no config kwargs."""
-    from template import ConfigurableBase
 
     class Empty(ConfigurableBase):
         value = 42
@@ -71,7 +72,6 @@ def test_empty_configuration():
 
 def test_string_config():
     """Test configuration with string values."""
-    from template import ConfigurableBase
 
     class App(ConfigurableBase, host="localhost", db="mydb"):
         pass
@@ -83,7 +83,6 @@ def test_string_config():
 
 def test_single_config_item():
     """Test with single configuration item."""
-    from template import ConfigurableBase
 
     class Worker(ConfigurableBase, workers=4):
         pass

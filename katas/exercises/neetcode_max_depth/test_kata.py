@@ -1,7 +1,14 @@
 """Tests for Maximum Depth of Binary Tree kata."""
 
+try:
+    from user_kata import TreeNode, max_depth
+    from user_kata import max_depth
+except ImportError:
+    from .reference import TreeNode, max_depth
+    from .reference import max_depth
+
+
 def test_max_depth_example1():
-    from template import TreeNode, max_depth
 
     # Create tree [3,9,20,null,null,15,7]
     root = TreeNode(3)
@@ -11,7 +18,6 @@ def test_max_depth_example1():
     assert max_depth(root) == 3
 
 def test_max_depth_example2():
-    from template import TreeNode, max_depth
 
     # Create tree [1,null,2]
     root = TreeNode(1)
@@ -20,16 +26,13 @@ def test_max_depth_example2():
     assert max_depth(root) == 2
 
 def test_max_depth_empty():
-    from template import max_depth
     assert max_depth(None) == 0
 
 def test_max_depth_single():
-    from template import TreeNode, max_depth
     root = TreeNode(1)
     assert max_depth(root) == 1
 
 def test_max_depth_skewed():
-    from template import TreeNode, max_depth
 
     # Create left-skewed tree
     root = TreeNode(1)

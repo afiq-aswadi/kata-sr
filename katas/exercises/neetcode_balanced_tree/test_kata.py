@@ -1,7 +1,14 @@
 """Tests for Balanced Binary Tree kata."""
 
+try:
+    from user_kata import TreeNode, is_balanced
+    from user_kata import is_balanced
+except ImportError:
+    from .reference import TreeNode, is_balanced
+    from .reference import is_balanced
+
+
 def test_balanced_example1():
-    from template import TreeNode, is_balanced
 
     # Create tree [3,9,20,null,null,15,7]
     root = TreeNode(3)
@@ -11,7 +18,6 @@ def test_balanced_example1():
     assert is_balanced(root) == True
 
 def test_balanced_example2():
-    from template import TreeNode, is_balanced
 
     # Create tree [1,2,2,3,3,null,null,4,4]
     root = TreeNode(1)
@@ -21,16 +27,13 @@ def test_balanced_example2():
     assert is_balanced(root) == False
 
 def test_balanced_empty():
-    from template import is_balanced
     assert is_balanced(None) == True
 
 def test_balanced_single():
-    from template import TreeNode, is_balanced
     root = TreeNode(1)
     assert is_balanced(root) == True
 
 def test_balanced_skewed():
-    from template import TreeNode, is_balanced
 
     # Create left-skewed tree
     root = TreeNode(1)

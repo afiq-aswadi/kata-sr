@@ -4,8 +4,15 @@ import torch
 import torch.nn.functional as F
 
 
+try:
+    from user_kata import conv2d
+    from user_kata import conv2d_einsum
+except ImportError:
+    from .reference import conv2d
+    from .reference import conv2d_einsum
+
+
 def test_conv2d_basic():
-    from template import conv2d
 
     x = torch.randn(2, 3, 8, 8)
     kernel = torch.randn(4, 3, 3, 3)
@@ -15,7 +22,6 @@ def test_conv2d_basic():
 
 
 def test_conv2d_with_padding():
-    from template import conv2d
 
     x = torch.randn(1, 1, 5, 5)
     kernel = torch.randn(1, 1, 3, 3)
@@ -25,7 +31,6 @@ def test_conv2d_with_padding():
 
 
 def test_conv2d_with_stride():
-    from template import conv2d
 
     x = torch.randn(1, 2, 10, 10)
     kernel = torch.randn(3, 2, 3, 3)
@@ -35,7 +40,6 @@ def test_conv2d_with_stride():
 
 
 def test_conv2d_einsum_basic():
-    from template import conv2d_einsum
 
     x = torch.randn(2, 3, 6, 6)
     kernel = torch.randn(4, 3, 3, 3)
@@ -45,7 +49,6 @@ def test_conv2d_einsum_basic():
 
 
 def test_conv2d_output_shape():
-    from template import conv2d
 
     x = torch.randn(1, 1, 10, 10)
     kernel = torch.randn(1, 1, 3, 3)

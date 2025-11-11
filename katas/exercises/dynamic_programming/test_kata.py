@@ -2,8 +2,21 @@
 
 
 
+try:
+    from user_kata import fibonacci_memo
+    from user_kata import fibonacci_tabulation
+    from user_kata import knapsack
+    from user_kata import longest_common_subsequence
+    from user_kata import coin_change
+except ImportError:
+    from .reference import fibonacci_memo
+    from .reference import fibonacci_tabulation
+    from .reference import knapsack
+    from .reference import longest_common_subsequence
+    from .reference import coin_change
+
+
 def test_fibonacci_memo():
-    from template import fibonacci_memo
 
     assert fibonacci_memo(0) == 0
     assert fibonacci_memo(1) == 1
@@ -13,7 +26,6 @@ def test_fibonacci_memo():
 
 
 def test_fibonacci_tabulation():
-    from template import fibonacci_tabulation
 
     assert fibonacci_tabulation(0) == 0
     assert fibonacci_tabulation(1) == 1
@@ -23,7 +35,6 @@ def test_fibonacci_tabulation():
 
 
 def test_knapsack_basic():
-    from template import knapsack
 
     weights = [2, 3, 4, 5]
     values = [3, 4, 5, 6]
@@ -34,7 +45,6 @@ def test_knapsack_basic():
 
 
 def test_knapsack_zero_capacity():
-    from template import knapsack
 
     weights = [1, 2, 3]
     values = [10, 20, 30]
@@ -44,7 +54,6 @@ def test_knapsack_zero_capacity():
 
 
 def test_longest_common_subsequence():
-    from template import longest_common_subsequence
 
     assert longest_common_subsequence("ABCDE", "ACE") == 3
     assert longest_common_subsequence("AGGTAB", "GXTXAYB") == 4
@@ -53,7 +62,6 @@ def test_longest_common_subsequence():
 
 
 def test_coin_change_basic():
-    from template import coin_change
 
     coins = [1, 2, 5]
     assert coin_change(coins, 11) == 3  # 5+5+1
@@ -61,14 +69,12 @@ def test_coin_change_basic():
 
 
 def test_coin_change_impossible():
-    from template import coin_change
 
     coins = [2]
     assert coin_change(coins, 3) == -1
 
 
 def test_coin_change_zero():
-    from template import coin_change
 
     coins = [1, 2, 5]
     assert coin_change(coins, 0) == 0

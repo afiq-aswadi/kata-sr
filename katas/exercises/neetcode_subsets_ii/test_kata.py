@@ -1,7 +1,12 @@
 """Tests for Subsets II kata."""
 
+try:
+    from user_kata import subsets_with_dup
+except ImportError:
+    from .reference import subsets_with_dup
+
+
 def test_subsets_with_dup_example1():
-    from template import subsets_with_dup
     result = subsets_with_dup([1,2,2])
     result = [sorted(subset) for subset in result]
     result = sorted(result)
@@ -11,7 +16,6 @@ def test_subsets_with_dup_example1():
     assert result == expected
 
 def test_subsets_with_dup_example2():
-    from template import subsets_with_dup
     result = subsets_with_dup([0])
     result = [sorted(subset) for subset in result]
     result = sorted(result)
@@ -21,7 +25,6 @@ def test_subsets_with_dup_example2():
     assert result == expected
 
 def test_subsets_with_dup_all_same():
-    from template import subsets_with_dup
     result = subsets_with_dup([1,1,1])
     result = [sorted(subset) for subset in result]
     result = sorted(result)

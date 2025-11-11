@@ -6,9 +6,14 @@ import pytest
 import torch
 
 try:
-    from template import analyze_circuit
 except ImportError:
     from reference import analyze_circuit
+
+
+try:
+    from user_kata import analyze_circuit
+except ImportError:
+    from .reference import analyze_circuit
 
 
 class TestCircuitAnalysis:

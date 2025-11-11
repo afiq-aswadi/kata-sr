@@ -1,7 +1,12 @@
 """Tests for Kth Largest Element in a Stream kata."""
 
+try:
+    from user_kata import KthLargest
+except ImportError:
+    from .reference import KthLargest
+
+
 def test_kth_largest_stream():
-    from template import KthLargest
 
     kth = KthLargest(3, [4, 5, 8, 2])
     assert kth.add(3) == 4
@@ -11,7 +16,6 @@ def test_kth_largest_stream():
     assert kth.add(4) == 8
 
 def test_kth_largest_stream_single():
-    from template import KthLargest
 
     kth = KthLargest(1, [])
     assert kth.add(-3) == -3
@@ -21,7 +25,6 @@ def test_kth_largest_stream_single():
     assert kth.add(4) == 4
 
 def test_kth_largest_stream_duplicates():
-    from template import KthLargest
 
     kth = KthLargest(2, [0])
     assert kth.add(-1) == -1

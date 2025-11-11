@@ -6,6 +6,12 @@ from transformer_lens import HookedTransformer
 
 
 @pytest.fixture
+try:
+    from user_kata import patch_residual_stream
+except ImportError:
+    from .reference import patch_residual_stream
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")
@@ -13,7 +19,6 @@ def model():
 
 def test_patch_returns_tensor(model):
     """Test that function returns logits tensor."""
-    from template import patch_residual_stream
 
     clean = "The Eiffel Tower is in Paris"
     corrupted = "The Eiffel Tower is in Rome"
@@ -24,7 +29,6 @@ def test_patch_returns_tensor(model):
 
 def test_patched_logits_shape(model):
     """Test that patched logits have correct shape."""
-    from template import patch_residual_stream
 
     clean = "The capital of France is Paris"
     corrupted = "The capital of France is Rome"
@@ -39,7 +43,6 @@ def test_patched_logits_shape(model):
 
 def test_patching_changes_output(model):
     """Test that patching actually changes the output."""
-    from template import patch_residual_stream
 
     clean = "The Eiffel Tower is in Paris"
     corrupted = "The Eiffel Tower is in Rome"
@@ -59,7 +62,6 @@ def test_patching_changes_output(model):
 
 def test_patching_different_layers(model):
     """Test that patching different layers gives different results."""
-    from template import patch_residual_stream
 
     clean = "Paris is the capital of France"
     corrupted = "Rome is the capital of France"
@@ -73,7 +75,6 @@ def test_patching_different_layers(model):
 
 def test_patching_different_positions(model):
     """Test that patching different positions gives different results."""
-    from template import patch_residual_stream
 
     clean = "The Eiffel Tower is in Paris"
     corrupted = "The Eiffel Tower is in Rome"
@@ -87,7 +88,6 @@ def test_patching_different_positions(model):
 
 def test_patching_same_prompts_no_effect(model):
     """Test that patching identical prompts has no effect."""
-    from template import patch_residual_stream
 
     prompt = "The capital of France is Paris"
 
@@ -106,7 +106,6 @@ def test_patching_same_prompts_no_effect(model):
 
 def test_patching_moves_toward_clean(model):
     """Test that patching makes output more similar to clean run."""
-    from template import patch_residual_stream
 
     clean = "The Eiffel Tower is in Paris"
     corrupted = "The Eiffel Tower is in Rome"
@@ -136,7 +135,6 @@ def test_patching_moves_toward_clean(model):
 
 def test_patching_last_position(model):
     """Test patching the last token position."""
-    from template import patch_residual_stream
 
     clean = "Two plus two equals four"
     corrupted = "Two plus two equals five"
@@ -150,7 +148,6 @@ def test_patching_last_position(model):
 
 def test_multiple_prompts_different_lengths(model):
     """Test patching works with different prompt lengths."""
-    from template import patch_residual_stream
 
     clean = "Hi"
     corrupted = "The quick brown fox jumps over the lazy dog"

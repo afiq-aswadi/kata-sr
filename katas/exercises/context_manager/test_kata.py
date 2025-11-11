@@ -7,8 +7,19 @@ import time
 import pytest
 
 
+try:
+    from user_kata import Timer
+    from user_kata import TemporaryValue
+    from user_kata import SuppressException
+    from user_kata import file_writer
+except ImportError:
+    from .reference import Timer
+    from .reference import TemporaryValue
+    from .reference import SuppressException
+    from .reference import file_writer
+
+
 def test_timer():
-    from template import Timer
 
     with Timer() as timer:
         time.sleep(0.1)
@@ -18,7 +29,6 @@ def test_timer():
 
 
 def test_temporary_value():
-    from template import TemporaryValue
 
     class Config:
         debug = False
@@ -33,7 +43,6 @@ def test_temporary_value():
 
 
 def test_temporary_value_with_exception():
-    from template import TemporaryValue
 
     class Config:
         value = 10
@@ -52,7 +61,6 @@ def test_temporary_value_with_exception():
 
 
 def test_suppress_exception():
-    from template import SuppressException
 
     with SuppressException(ValueError):
         raise ValueError("this should be suppressed")
@@ -61,7 +69,6 @@ def test_suppress_exception():
 
 
 def test_suppress_exception_wrong_type():
-    from template import SuppressException
 
     with pytest.raises(TypeError):
         with SuppressException(ValueError):
@@ -69,7 +76,6 @@ def test_suppress_exception_wrong_type():
 
 
 def test_suppress_multiple_exceptions():
-    from template import SuppressException
 
     with SuppressException(ValueError, KeyError):
         raise KeyError("suppressed")
@@ -78,7 +84,6 @@ def test_suppress_multiple_exceptions():
 
 
 def test_file_writer():
-    from template import file_writer
 
     with tempfile.TemporaryDirectory() as tmpdir:
         filepath = os.path.join(tmpdir, "test.txt")

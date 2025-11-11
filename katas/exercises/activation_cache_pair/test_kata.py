@@ -7,12 +7,17 @@ import torch
 from transformer_lens import HookedTransformer
 
 try:
-    from template import run_with_cache_pair
 except ImportError:
     from reference import run_with_cache_pair
 
 
 @pytest.fixture(scope="module")
+try:
+    from user_kata import run_with_cache_pair
+except ImportError:
+    from .reference import run_with_cache_pair
+
+
 def model():
     """Load a small model for testing."""
     return HookedTransformer.from_pretrained("gpt2-small")

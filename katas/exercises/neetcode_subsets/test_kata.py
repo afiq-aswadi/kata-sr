@@ -1,7 +1,12 @@
 """Tests for Subsets kata."""
 
+try:
+    from user_kata import subsets
+except ImportError:
+    from .reference import subsets
+
+
 def test_subsets_example1():
-    from template import subsets
     result = subsets([1,2,3])
     result = [sorted(subset) for subset in result]
     result = sorted(result)
@@ -11,7 +16,6 @@ def test_subsets_example1():
     assert result == expected
 
 def test_subsets_example2():
-    from template import subsets
     result = subsets([0])
     result = [sorted(subset) for subset in result]
     result = sorted(result)
@@ -21,7 +25,6 @@ def test_subsets_example2():
     assert result == expected
 
 def test_subsets_single():
-    from template import subsets
     result = subsets([1])
     result = [sorted(subset) for subset in result]
     result = sorted(result)
