@@ -557,6 +557,20 @@ impl App {
                     ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
                     ResultsAction::BackToLibrary => Some(ScreenAction::OpenLibrary),
                     ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
+                    ResultsAction::ViewPlot => {
+                        // Generate and view the plot
+                        match results_screen.generate_and_view_plot() {
+                            Ok(()) => {
+                                // Plot generated successfully, no state change needed
+                                None
+                            }
+                            Err(e) => {
+                                // Failed to generate plot - stay on results screen
+                                eprintln!("Failed to generate plot: {}", e);
+                                None
+                            }
+                        }
+                    }
                     ResultsAction::ToggleFlagWithReason(reason) => {
                         let kata_id = kata.id;
                         let was_problematic = kata.is_problematic;
