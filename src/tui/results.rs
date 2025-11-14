@@ -769,7 +769,25 @@ sys.path.insert(0, '{reference_dir}')
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend
 import matplotlib.pyplot as plt
+import ast
 import inspect
+
+def extract_test_call(test_file_path, func_name):
+    """Extract function call with arguments from test file using AST."""
+    try:
+        with open(test_file_path, 'r') as f:
+            tree = ast.parse(f.read())
+
+        # Find all function calls to our target function
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name) and node.func.id == func_name:
+                    # Found a call! Extract the setup code
+                    return node
+        return None
+    except Exception as e:
+        print(f"Error parsing test file: {{e}}")
+        return None
 
 def generate_plot(module_name, output_path, title_prefix):
     """Generate a plot from a module and save it."""
@@ -780,7 +798,7 @@ def generate_plot(module_name, output_path, title_prefix):
         else:
             import reference as mod
 
-        # Find the first function in the module (skip __builtins__, etc.)
+        # Find the first function in the module
         kata_functions = []
         for name, obj in inspect.getmembers(mod):
             if inspect.isfunction(obj) and not name.startswith('_'):
@@ -790,31 +808,81 @@ def generate_plot(module_name, output_path, title_prefix):
             print(f"Error: No functions found in {{module_name}}")
             return False
 
-        # Use the first function found
         func_name, func = kata_functions[0]
         print(f"Calling {{module_name}}.{{func_name}}()...")
 
-        # Call the function to generate the plot
-        result = func()  # Should return (fig, ax) or just fig
+        # Get function signature to see if it needs arguments
+        sig = inspect.signature(func)
 
-        # Handle both (fig, ax) tuple and just fig
-        if isinstance(result, tuple):
-            fig = result[0]
-            ax = result[1] if len(result) > 1 else None
+        # Try to run the function based on its signature
+        fig = None
+        ax = None
+
+        if len(sig.parameters) == 0:
+            # No parameters - call directly
+            result = func()
+            if isinstance(result, tuple):
+                fig = result[0]
+                ax = result[1] if len(result) > 1 else None
+            else:
+                fig = result
         else:
-            fig = result
-            ax = None
+            # Function has parameters - need to set up test environment
+            # Read the test file to see how the function is called
+            test_file = '{reference_dir}/test_kata.py'
+
+            # Try to execute the function in a test-like environment
+            # Create a basic matplotlib setup
+            fig, ax = plt.subplots()
+            ax.plot([0, 1], [0, 1])  # Add some dummy data
+
+            # Try calling with common argument patterns
+            params = list(sig.parameters.keys())
+
+            if 'ax' in params or 'axes' in params:
+                # Function modifies an axes object (most common pattern)
+                args = []
+                for param in params:
+                    if param in ['ax', 'axes']:
+                        args.append(ax)
+                    elif param in ['x', 'y', 'width', 'height']:
+                        args.append(0.5)
+                    elif param == 'text':
+                        args.append('Example')
+                    elif param == 'data':
+                        import numpy as np
+                        args.append(np.linspace(0, 10, 100))
+                    else:
+                        # Default values for unknown params
+                        args.append(0.5)
+
+                func(*args)
+                # Function returns None, figure is modified in-place
+            else:
+                # Function likely returns a figure
+                result = func()
+                if isinstance(result, tuple):
+                    fig = result[0]
+                    ax = result[1] if len(result) > 1 else None
+                else:
+                    fig = result
+
+        if fig is None:
+            print(f"Error: No figure created from {{module_name}}")
+            return False
 
         # Add a title to distinguish user vs reference
         if ax is not None:
             original_title = ax.get_title()
-            ax.set_title(f"{{title_prefix}}{{original_title}}")
+            new_title = f"{{title_prefix}}{{original_title}}" if original_title else title_prefix.strip()
+            ax.set_title(new_title)
         else:
             # Get the first axes from the figure
             axes = fig.get_axes()
             if axes:
                 original_title = axes[0].get_title()
-                axes[0].set_title(f"{{title_prefix}}{{original_title}}")
+                new_title = f"{{title_prefix}}{{original_title}}" if original_title else title_prefix.strip()
+                axes[0].set_title(new_title)
 
         # Save the plot
         fig.savefig(output_path, dpi=150, bbox_inches='tight')
