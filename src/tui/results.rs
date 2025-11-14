@@ -211,16 +211,15 @@ impl ResultsScreen {
                 "Tests failed. This was a preview attempt.\nFix your implementation and retry, or view the solution."
             };
 
-            let plot_hint = if is_plot_kata { "    [v] View plot" } else { "" };
-
-            let actions_text = if self.results.passed {
-                format!("\n[Esc] Back to library{}", plot_hint)
+            let mut actions_text = if self.results.passed {
+                "\n[Esc] Back to library".to_string()
             } else {
-                format!(
-                    "\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to library{}",
-                    plot_hint
-                )
+                "\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to library".to_string()
             };
+
+            if is_plot_kata {
+                actions_text.push_str("\n[v] View plot comparison");
+            }
 
             let text = format!("{}{}", status_text, actions_text);
             let block = Paragraph::new(text)
@@ -236,16 +235,12 @@ impl ResultsScreen {
                 || self.kata.tags.contains(&"matplotlib".to_string())
                 || self.kata.tags.contains(&"plotly".to_string());
 
-            let plot_hint = if is_plot_kata {
-                "    [v] View plot"
-            } else {
-                ""
-            };
+            let mut text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output    [s] Settings".to_string();
 
-            let text = format!(
-                "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output    [s] Settings{}",
-                plot_hint
-            );
+            if is_plot_kata {
+                text.push_str("\n[v] View plot comparison");
+            }
+
             let block = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL).title("Next steps"));
             frame.render_widget(block, area);
@@ -264,13 +259,16 @@ impl ResultsScreen {
                 None => "Loading queue...".to_string(),
             };
 
-            let plot_hint = if is_plot_kata { "   [v] View plot" } else { "" };
-
-            let lines = vec![
+            let mut lines = vec![
                 "Gave up and viewed solution. Rating saved: Again".to_string(),
                 remaining_msg,
-                format!("[Enter/d] Dashboard   [n] Next due   [r] Review picker   [s] Settings{}", plot_hint),
+                "[Enter/d] Dashboard   [n] Next due   [r] Review picker   [s] Settings".to_string(),
             ];
+
+            if is_plot_kata {
+                lines.push("[v] View plot comparison".to_string());
+            }
+
             let block = Paragraph::new(lines.join("\n"))
                 .block(Block::default().borders(Borders::ALL).title("What next?"));
             frame.render_widget(block, area);
@@ -293,13 +291,16 @@ impl ResultsScreen {
                 None => "Loading queue...".to_string(),
             };
 
-            let plot_hint = if is_plot_kata { "   [v] View plot" } else { "" };
-
-            let lines = vec![
+            let mut lines = vec![
                 format!("Saved rating: {}", rating_name),
                 remaining_msg,
-                format!("[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [s] Settings{}", plot_hint),
+                "[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [s] Settings".to_string(),
             ];
+
+            if is_plot_kata {
+                lines.push("[v] View plot comparison".to_string());
+            }
+
             let block = Paragraph::new(lines.join("\n"))
                 .block(Block::default().borders(Borders::ALL).title("What next?"));
             frame.render_widget(block, area);
@@ -341,12 +342,12 @@ impl ResultsScreen {
         lines.push(Line::from(""));
         lines.push(instructions);
 
-        let controls_text = if is_plot_kata {
-            "Press Enter to submit rating, [v] to view plot, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings."
-        } else {
-            "Press Enter to submit rating, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings."
-        };
+        let controls_text = "Press Enter to submit rating, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings.";
         lines.push(Line::from(controls_text));
+
+        if is_plot_kata {
+            lines.push(Line::from("[v] View plot comparison"));
+        }
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",
