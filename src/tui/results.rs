@@ -771,6 +771,13 @@ impl ResultsScreen {
             .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
         let reference_dir = katas_root.join("exercises").join(&self.kata.name);
 
+        // Convert reference_dir to string with forward slashes (Python accepts these on all platforms)
+        // This avoids Windows backslash escape issues when interpolating into Python code
+        let reference_dir_str = reference_dir
+            .to_str()
+            .context("Reference directory path contains invalid UTF-8")?
+            .replace('\\', "/");
+
         // Create a Python script to generate and save both plots
         let plot_script = format!(
             r#"
@@ -943,7 +950,7 @@ if not user_success and not ref_success:
     sys.exit(1)
 "#,
             module_suffix = module_suffix,
-            reference_dir = reference_dir.display(),
+            reference_dir = reference_dir_str,
             is_plotly = if is_plotly { "True" } else { "False" }
         );
 
@@ -964,11 +971,17 @@ if not user_success and not ref_success:
             let _ = std::fs::remove_file(ref_plot);
         }
 
-        // Get Python interpreter path from environment
-        let katas_root = std::env::var("KATA_SR_KATAS_DIR")
+        // Get Python interpreter path from environment (same logic as python_runner.rs)
+        // Respects KATA_SR_PYTHON override for custom interpreter paths
+        let python_path = std::env::var("KATA_SR_PYTHON")
             .map(std::path::PathBuf::from)
-            .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
-        let python_path = katas_root.join(".venv/bin/python");
+            .unwrap_or_else(|_| {
+                // Fall back to default venv location
+                let katas_root = std::env::var("KATA_SR_KATAS_DIR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
+                katas_root.join(".venv/bin/python")
+            });
 
         // Run the script to generate the plots
         let output = Command::new(&python_path)
