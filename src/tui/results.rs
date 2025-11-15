@@ -952,6 +952,18 @@ if not user_success and not ref_success:
         std::fs::write(&script_path, plot_script)
             .context("Failed to write plot generation script")?;
 
+        // Delete any stale plot files from previous runs
+        // This prevents showing outdated plots if current generation fails
+        let user_plot = std::path::Path::new("/tmp/kata_plot_user.png");
+        let ref_plot = std::path::Path::new("/tmp/kata_plot_reference.png");
+
+        if user_plot.exists() {
+            let _ = std::fs::remove_file(user_plot);
+        }
+        if ref_plot.exists() {
+            let _ = std::fs::remove_file(ref_plot);
+        }
+
         // Get Python interpreter path from environment
         let katas_root = std::env::var("KATA_SR_KATAS_DIR")
             .map(std::path::PathBuf::from)
@@ -970,33 +982,41 @@ if not user_success and not ref_success:
             anyhow::bail!("Failed to generate plot:\nstdout:\n{}\nstderr:\n{}", stdout, stderr);
         }
 
-        // Determine the appropriate image viewer command based on platform
-        let opener = if cfg!(target_os = "macos") {
-            "open"
-        } else if cfg!(target_os = "windows") {
-            "start"
-        } else {
-            // Linux and other Unix-like systems
-            "xdg-open"
-        };
-
         // Open both plots (side by side)
         // Opening multiple files at once will display them in separate windows
         let mut has_plots = false;
 
+        // Helper function to open a file with the platform-specific viewer
+        let open_file = |path: &str| -> anyhow::Result<()> {
+            if cfg!(target_os = "macos") {
+                Command::new("open")
+                    .arg(path)
+                    .spawn()
+                    .context("Failed to open plot with 'open'")?;
+            } else if cfg!(target_os = "windows") {
+                // On Windows, 'start' is a shell built-in, not an executable
+                // Must use cmd /C start to invoke it
+                Command::new("cmd")
+                    .args(["/C", "start", "", path])  // Empty string after start prevents it from interpreting path as window title
+                    .spawn()
+                    .context("Failed to open plot with 'cmd /C start'")?;
+            } else {
+                // Linux and other Unix-like systems
+                Command::new("xdg-open")
+                    .arg(path)
+                    .spawn()
+                    .context("Failed to open plot with 'xdg-open'")?;
+            }
+            Ok(())
+        };
+
         if std::path::Path::new("/tmp/kata_plot_user.png").exists() {
-            Command::new(opener)
-                .arg("/tmp/kata_plot_user.png")
-                .spawn()
-                .with_context(|| format!("Failed to open user plot with {}", opener))?;
+            open_file("/tmp/kata_plot_user.png")?;
             has_plots = true;
         }
 
         if std::path::Path::new("/tmp/kata_plot_reference.png").exists() {
-            Command::new(opener)
-                .arg("/tmp/kata_plot_reference.png")
-                .spawn()
-                .with_context(|| format!("Failed to open reference plot with {}", opener))?;
+            open_file("/tmp/kata_plot_reference.png")?;
             has_plots = true;
         }
 
