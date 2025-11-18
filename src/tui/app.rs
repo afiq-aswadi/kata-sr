@@ -92,6 +92,10 @@ pub enum Screen {
     SessionHistory(SessionHistoryScreen),
     /// Session detail screen showing full test results for a session
     SessionDetail(SessionDetailScreen),
+    /// Course library screen for browsing available courses
+    CourseLibrary(super::course_library::CourseLibrary),
+    /// Course detail screen for viewing course sections
+    CourseDetail(super::course_detail::CourseDetail),
 }
 
 /// Internal enum for handling screen transitions without borrow conflicts.
@@ -131,6 +135,11 @@ enum ScreenAction {
     DeleteSession(i64),     // session_id
     BackFromSessionHistory,
     BackFromSessionDetail,
+    OpenCourseLibrary,
+    SelectCourse(crate::db::repo::Course),
+    ViewCourseHTML(String), // html_path
+    BackFromCourseLibrary,
+    BackFromCourseDetail,
 }
 
 /// Main application state and event loop coordinator.
@@ -368,6 +377,12 @@ impl App {
             Screen::SessionDetail(session_detail) => {
                 session_detail.render(frame);
             }
+            Screen::CourseLibrary(course_library) => {
+                course_library.render(frame);
+            }
+            Screen::CourseDetail(course_detail) => {
+                course_detail.render(frame);
+            }
         }
 
         // Render popup overlay if present
@@ -405,6 +420,10 @@ impl App {
                 // handle library key 'l' in dashboard
                 if code == KeyCode::Char('l') {
                     return self.execute_action(ScreenAction::OpenLibrary);
+                }
+                // handle courses key 'c' in dashboard
+                if code == KeyCode::Char('c') {
+                    return self.execute_action(ScreenAction::OpenCourseLibrary);
                 }
                 // handle settings key 's' in dashboard
                 if code == KeyCode::Char('s') {
@@ -785,6 +804,52 @@ impl App {
                 match action {
                     SessionDetailAction::Back => Some(ScreenAction::BackFromSessionDetail),
                     SessionDetailAction::None => None,
+                }
+            }
+            Screen::CourseLibrary(course_library) => {
+                use super::course_library::CourseLibraryAction;
+                let action = course_library.handle_input(code);
+                match action {
+                    CourseLibraryAction::SelectCourse(course) => {
+                        Some(ScreenAction::SelectCourse(course))
+                    }
+                    CourseLibraryAction::ViewDetails(_course) => {
+                        // TODO: Show course details in a popup or separate screen
+                        None
+                    }
+                    CourseLibraryAction::Back => Some(ScreenAction::BackFromCourseLibrary),
+                    CourseLibraryAction::None => None,
+                }
+            }
+            Screen::CourseDetail(course_detail) => {
+                use super::course_detail::CourseDetailAction;
+                let action = course_detail.handle_input(code);
+                match action {
+                    CourseDetailAction::ViewSection(section) => {
+                        Some(ScreenAction::ViewCourseHTML(section.html_path.clone()))
+                    }
+                    CourseDetailAction::PracticeExercise(kata_name) => {
+                        // Look up kata by name and start practice
+                        if let Ok(Some(kata)) = self.repo.get_kata_by_name(&kata_name) {
+                            Some(ScreenAction::StartPractice(kata))
+                        } else {
+                            None
+                        }
+                    }
+                    CourseDetailAction::NextSection | CourseDetailAction::PreviousSection => {
+                        // Update progress after navigation
+                        if let Some(section) = course_detail.get_current_section() {
+                            let _ = self.repo.upsert_course_progress(
+                                &crate::db::repo::NewCourseProgress {
+                                    course_id: course_detail.course.id,
+                                    last_section_id: Some(section.id),
+                                },
+                            );
+                        }
+                        None
+                    }
+                    CourseDetailAction::Back => Some(ScreenAction::BackFromCourseDetail),
+                    CourseDetailAction::None => None,
                 }
             }
         };
@@ -1498,6 +1563,29 @@ impl App {
                     self.current_screen = Screen::SessionHistory(session_history);
                 }
             }
+            ScreenAction::OpenCourseLibrary => {
+                use super::course_library::CourseLibrary;
+                let course_library = CourseLibrary::load(&self.repo)?;
+                self.current_screen = Screen::CourseLibrary(course_library);
+            }
+            ScreenAction::SelectCourse(course) => {
+                use super::course_detail::CourseDetail;
+                let course_detail = CourseDetail::load(&self.repo, course)?;
+                self.current_screen = Screen::CourseDetail(course_detail);
+            }
+            ScreenAction::ViewCourseHTML(html_path) => {
+                // Open HTML file in default browser
+                self.open_html_in_browser(&html_path)?;
+                self.needs_terminal_clear = true;
+            }
+            ScreenAction::BackFromCourseLibrary => {
+                self.refresh_dashboard_screen()?;
+            }
+            ScreenAction::BackFromCourseDetail => {
+                use super::course_library::CourseLibrary;
+                let course_library = CourseLibrary::load(&self.repo)?;
+                self.current_screen = Screen::CourseLibrary(course_library);
+            }
         }
         Ok(())
     }
@@ -1511,6 +1599,29 @@ impl App {
             }
         }
         Ok(dep_ids)
+    }
+
+    /// Opens an HTML file in the default browser.
+    ///
+    /// Supports multiple platforms (Linux, macOS, Windows).
+    fn open_html_in_browser(&self, html_path: &str) -> anyhow::Result<()> {
+        use std::process::Command;
+
+        // Determine the command to open the browser based on the platform
+        #[cfg(target_os = "linux")]
+        let open_command = "xdg-open";
+        #[cfg(target_os = "macos")]
+        let open_command = "open";
+        #[cfg(target_os = "windows")]
+        let open_command = "start";
+
+        // Execute the command
+        Command::new(open_command)
+            .arg(html_path)
+            .spawn()
+            .with_context(|| format!("Failed to open HTML file: {}", html_path))?;
+
+        Ok(())
     }
 
     /// Handles async events from background threads.

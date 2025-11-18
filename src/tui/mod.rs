@@ -1,4 +1,6 @@
 pub mod app;
+pub mod course_detail;
+pub mod course_library;
 pub mod create_kata;
 pub mod dashboard;
 pub mod details;
