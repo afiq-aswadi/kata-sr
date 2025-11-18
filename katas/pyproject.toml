@@ -12,6 +12,7 @@ dependencies = [
     "transformer-lens>=2.0.0",
     "wandb>=0.16.0",
     "plotly>=5.18.0",
+    "kaleido>=0.2.1",
     "dash>=2.14.0",
     "matplotlib>=3.8.0",
 ]

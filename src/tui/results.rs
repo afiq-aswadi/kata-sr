@@ -90,6 +90,14 @@ impl ResultsScreen {
         self.kata = kata;
     }
 
+    /// Check if this kata uses matplotlib or plotly for visualization.
+    fn is_plot_kata(&self) -> bool {
+        self.kata.category.to_lowercase().contains("matplotlib")
+            || self.kata.category.to_lowercase().contains("plotly")
+            || self.kata.tags.contains(&"matplotlib".to_string())
+            || self.kata.tags.contains(&"plotly".to_string())
+    }
+
     pub fn render(&mut self, frame: &mut Frame) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
@@ -200,10 +208,7 @@ impl ResultsScreen {
 
         if is_preview_mode {
             // Preview mode: no rating, just back to library
-            let is_plot_kata = self.kata.category.to_lowercase().contains("matplotlib")
-                || self.kata.category.to_lowercase().contains("plotly")
-                || self.kata.tags.contains(&"matplotlib".to_string())
-                || self.kata.tags.contains(&"plotly".to_string());
+            let is_plot_kata = self.is_plot_kata();
 
             let status_text = if self.results.passed {
                 "Tests passed! This was a preview attempt.\nAdd this kata to your deck to track progress and schedule reviews."
@@ -214,7 +219,8 @@ impl ResultsScreen {
             let mut actions_text = if self.results.passed {
                 "\n[Esc] Back to library".to_string()
             } else {
-                "\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to library".to_string()
+                "\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to library"
+                    .to_string()
             };
 
             if is_plot_kata {
@@ -230,10 +236,7 @@ impl ResultsScreen {
         }
 
         if !self.results.passed && !self.rating_submitted {
-            let is_plot_kata = self.kata.category.to_lowercase().contains("matplotlib")
-                || self.kata.category.to_lowercase().contains("plotly")
-                || self.kata.tags.contains(&"matplotlib".to_string())
-                || self.kata.tags.contains(&"plotly".to_string());
+            let is_plot_kata = self.is_plot_kata();
 
             let mut text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output    [s] Settings".to_string();
 
@@ -248,10 +251,7 @@ impl ResultsScreen {
         }
 
         if !self.results.passed && self.rating_submitted {
-            let is_plot_kata = self.kata.category.to_lowercase().contains("matplotlib")
-                || self.kata.category.to_lowercase().contains("plotly")
-                || self.kata.tags.contains(&"matplotlib".to_string())
-                || self.kata.tags.contains(&"plotly".to_string());
+            let is_plot_kata = self.is_plot_kata();
 
             let remaining_msg = match self.remaining_due_after_submit {
                 Some(0) => "No more katas due today.".to_string(),
@@ -276,10 +276,7 @@ impl ResultsScreen {
         }
 
         if self.rating_submitted {
-            let is_plot_kata = self.kata.category.to_lowercase().contains("matplotlib")
-                || self.kata.category.to_lowercase().contains("plotly")
-                || self.kata.tags.contains(&"matplotlib".to_string())
-                || self.kata.tags.contains(&"plotly".to_string());
+            let is_plot_kata = self.is_plot_kata();
 
             let rating_name = self
                 .submitted_rating
@@ -331,10 +328,7 @@ impl ResultsScreen {
             lines.push(Line::from(spans));
         }
 
-        let is_plot_kata = self.kata.category.to_lowercase().contains("matplotlib")
-            || self.kata.category.to_lowercase().contains("plotly")
-            || self.kata.tags.contains(&"matplotlib".to_string())
-            || self.kata.tags.contains(&"plotly".to_string());
+        let is_plot_kata = self.is_plot_kata();
 
         let instructions = Line::from(vec![
             Span::raw("Use ←/→ or h/l to move, ↑/↓ or j/k to change selection, numbers 1-4 to jump. Tab focuses tests."),
@@ -793,25 +787,7 @@ if not is_plotly:
     matplotlib.use('Agg')  # Use non-GUI backend
     import matplotlib.pyplot as plt
 
-import ast
 import inspect
-
-def extract_test_call(test_file_path, func_name):
-    """Extract function call with arguments from test file using AST."""
-    try:
-        with open(test_file_path, 'r') as f:
-            tree = ast.parse(f.read())
-
-        # Find all function calls to our target function
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name) and node.func.id == func_name:
-                    # Found a call! Extract the setup code
-                    return node
-        return None
-    except Exception as e:
-        print(f"Error parsing test file: {{e}}")
-        return None
 
 def generate_plot(module_name, output_path, title_prefix):
     """Generate a plot from a module and save it."""
@@ -888,8 +864,26 @@ def generate_plot(module_name, output_path, title_prefix):
                     else:
                         fig = result
             else:
-                # Plotly setup - most plotly functions return figures directly
-                result = func()
+                # Plotly setup - functions may need parameters
+                params = list(sig.parameters.keys())
+
+                # Try to provide common argument patterns
+                args = []
+                for param in params:
+                    if param in ['x', 'y', 'width', 'height', 'value']:
+                        args.append(0.5)
+                    elif param == 'text':
+                        args.append('Example')
+                    elif param == 'data':
+                        import numpy as np
+                        args.append(np.linspace(0, 10, 100))
+                    elif param == 'title':
+                        args.append('Plot')
+                    else:
+                        # Default values for unknown params
+                        args.append(0.5)
+
+                result = func(*args)
                 if isinstance(result, tuple):
                     fig = result[0]
                     ax = None
@@ -992,7 +986,11 @@ if not user_success and not ref_success:
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             let stdout = String::from_utf8_lossy(&output.stdout);
-            anyhow::bail!("Failed to generate plot:\nstdout:\n{}\nstderr:\n{}", stdout, stderr);
+            anyhow::bail!(
+                "Failed to generate plot:\nstdout:\n{}\nstderr:\n{}",
+                stdout,
+                stderr
+            );
         }
 
         // Open both plots (side by side)
@@ -1010,7 +1008,7 @@ if not user_success and not ref_success:
                 // On Windows, 'start' is a shell built-in, not an executable
                 // Must use cmd /C start to invoke it
                 Command::new("cmd")
-                    .args(["/C", "start", "", path])  // Empty string after start prevents it from interpreting path as window title
+                    .args(["/C", "start", "", path]) // Empty string after start prevents it from interpreting path as window title
                     .spawn()
                     .context("Failed to open plot with 'cmd /C start'")?;
             } else {
