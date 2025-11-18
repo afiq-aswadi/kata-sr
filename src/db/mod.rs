@@ -5,3 +5,4 @@
 
 pub mod repo;
 pub mod schema;
+mod sql_constants;
