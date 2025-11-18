@@ -1,0 +1,26 @@
+[course]
+name = "intro_to_attention"
+title = "Introduction to Attention Mechanisms"
+description = "Learn the fundamentals of attention mechanisms used in transformer models. This course covers scaled dot-product attention, multi-head attention, and self-attention with interactive visualizations."
+author = "Kata SR Team"
+
+[[sections]]
+title = "What is Attention?"
+html_file = "01_what_is_attention.html"
+
+[[sections]]
+title = "Scaled Dot-Product Attention"
+html_file = "02_scaled_dot_product.html"
+exercise_kata = "attention_scores"
+
+[[sections]]
+title = "Multi-Head Attention"
+html_file = "03_multi_head.html"
+
+[[sections]]
+title = "Self-Attention"
+html_file = "04_self_attention.html"
+
+[[sections]]
+title = "Attention Visualization"
+html_file = "05_visualization.html"

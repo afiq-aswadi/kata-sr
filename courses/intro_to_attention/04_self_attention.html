@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Attention</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 0.5rem; }
+        .key-point { background-color: #d1ecf1; padding: 1rem; border-left: 4px solid #17a2b8; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <h1>Self-Attention</h1>
+
+    <div class="key-point">
+        <strong>Definition:</strong> Self-attention is when Q, K, and V all come from the same source (the input sequence itself).
+    </div>
+
+    <h2>Use Cases</h2>
+    <p>
+        Self-attention is the key mechanism in:
+        <ul>
+            <li><strong>BERT:</strong> Bidirectional encoder for language understanding</li>
+            <li><strong>GPT:</strong> Autoregressive language model</li>
+            <li><strong>Vision Transformers (ViT):</strong> Image classification</li>
+        </ul>
+    </p>
+
+    <h2>How It Works</h2>
+    <p>
+        For each position in the sequence:
+        <ol>
+            <li>The model computes attention scores with <em>all</em> other positions</li>
+            <li>These scores determine how much each position should influence the current position</li>
+            <li>The result is a context-aware representation that captures long-range dependencies</li>
+        </ol>
+    </p>
+
+    <h2>Example: Understanding "it"</h2>
+    <p>
+        Consider: <em>"The animal didn't cross the street because it was too tired."</em>
+    </p>
+    <p>
+        When processing "it", self-attention allows the model to look back at "animal" (not "street") to understand the reference.
+    </p>
+</body>
+</html>

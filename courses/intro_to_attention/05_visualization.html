@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attention Visualization</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 0.5rem; }
+        .key-point { background-color: #d1ecf1; padding: 1rem; border-left: 4px solid #17a2b8; margin: 1rem 0; }
+        .success { background-color: #d4edda; padding: 1rem; border-left: 4px solid #28a745; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <h1>Visualizing Attention</h1>
+
+    <div class="key-point">
+        <strong>Congratulations!</strong> You've completed the Introduction to Attention Mechanisms course.
+    </div>
+
+    <h2>What You've Learned</h2>
+    <p>
+        In this course, you explored:
+        <ul>
+            <li>The core concept and motivation behind attention mechanisms</li>
+            <li>Scaled dot-product attention mathematics and implementation</li>
+            <li>Multi-head attention for richer representations</li>
+            <li>Self-attention and its applications in modern architectures</li>
+        </ul>
+    </p>
+
+    <h2>Visualizing Attention Weights</h2>
+    <p>
+        Attention weights can be visualized as heatmaps, where:
+        <ul>
+            <li>Rows represent query positions</li>
+            <li>Columns represent key/value positions</li>
+            <li>Brightness indicates attention strength</li>
+        </ul>
+    </p>
+
+    <h2>Next Steps</h2>
+    <p>
+        Now that you understand attention:
+        <ol>
+            <li>Practice implementing attention from scratch</li>
+            <li>Study the Transformer architecture (AIAYN paper)</li>
+            <li>Explore BERT, GPT, and Vision Transformers</li>
+            <li>Experiment with attention variants (sparse attention, local attention, etc.)</li>
+        </ol>
+    </p>
+
+    <div class="success">
+        <strong>Course Complete!</strong> You can now return to the dashboard and practice related katas to reinforce your learning.
+    </div>
+
+    <h2>Recommended Katas</h2>
+    <ul>
+        <li><strong>attention_scores:</strong> Implement QK^T / √d_k</li>
+        <li><strong>attention_weights:</strong> Apply softmax to scores</li>
+        <li><strong>attention_output:</strong> Compute weighted sum of values</li>
+    </ul>
+</body>
+</html>

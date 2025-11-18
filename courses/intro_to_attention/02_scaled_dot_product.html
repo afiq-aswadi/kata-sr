@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scaled Dot-Product Attention</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 2rem;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 1rem;
+            border-left: 4px solid #ffc107;
+            margin: 1rem 0;
+        }
+        .key-point {
+            background-color: #d1ecf1;
+            padding: 1rem;
+            border-left: 4px solid #17a2b8;
+            margin: 1rem 0;
+        }
+        .exercise {
+            background-color: #d4edda;
+            padding: 1rem;
+            border-left: 4px solid #28a745;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Scaled Dot-Product Attention</h1>
+
+    <div class="key-point">
+        <strong>Core Formula:</strong> Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d<sub>k</sub>) V
+    </div>
+
+    <h2>The Mathematics</h2>
+    <p>
+        Scaled dot-product attention computes a weighted sum of values, where the weights are determined by the similarity between queries and keys.
+    </p>
+
+    <h3>Step 1: Compute Attention Scores</h3>
+    <p>
+        First, we compute the dot product between queries (Q) and keys (K):
+    </p>
+    <pre><code>scores = Q @ K.T</code></pre>
+    <p>
+        This gives us a matrix where each element represents how much attention position i should pay to position j.
+    </p>
+
+    <h3>Step 2: Scale the Scores</h3>
+    <p>
+        We scale by √d<sub>k</sub> (the square root of the key dimension) to prevent the dot products from growing too large:
+    </p>
+    <pre><code>scaled_scores = scores / sqrt(d_k)</code></pre>
+
+    <div class="highlight">
+        <strong>Why scale?</strong> For large values of d<sub>k</sub>, the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients. Scaling prevents this.
+    </div>
+
+    <h3>Step 3: Apply Softmax</h3>
+    <p>
+        Apply softmax to convert scores into probabilities that sum to 1:
+    </p>
+    <pre><code>attention_weights = softmax(scaled_scores)</code></pre>
+
+    <h3>Step 4: Weighted Sum of Values</h3>
+    <p>
+        Finally, compute the weighted sum of values using the attention weights:
+    </p>
+    <pre><code>output = attention_weights @ V</code></pre>
+
+    <h2>Example in PyTorch</h2>
+    <pre><code>import torch
+import torch.nn.functional as F
+
+def scaled_dot_product_attention(Q, K, V):
+    d_k = Q.size(-1)
+
+    # Compute attention scores
+    scores = torch.matmul(Q, K.transpose(-2, -1))
+
+    # Scale by sqrt(d_k)
+    scaled_scores = scores / torch.sqrt(torch.tensor(d_k, dtype=torch.float32))
+
+    # Apply softmax
+    attention_weights = F.softmax(scaled_scores, dim=-1)
+
+    # Weighted sum of values
+    output = torch.matmul(attention_weights, V)
+
+    return output, attention_weights
+</code></pre>
+
+    <div class="exercise">
+        <strong>Practice Exercise:</strong> Press 'e' in the TUI to practice implementing the attention scores computation!
+    </div>
+
+    <h2>Dimensions</h2>
+    <p>
+        For a batch of sequences:
+        <ul>
+            <li><strong>Q, K, V:</strong> (batch_size, seq_len, d_k)</li>
+            <li><strong>scores:</strong> (batch_size, seq_len, seq_len)</li>
+            <li><strong>output:</strong> (batch_size, seq_len, d_k)</li>
+        </ul>
+    </p>
+
+    <div class="key-point">
+        <strong>Next Up:</strong> Learn about multi-head attention, which runs multiple attention operations in parallel.
+    </div>
+</body>
+</html>
