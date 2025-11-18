@@ -8,6 +8,7 @@
 //! - Analytics and statistics aggregation
 
 pub mod analytics;
+pub mod course_loader;
 pub mod dependencies;
 pub mod difficulty;
 pub mod fsrs;

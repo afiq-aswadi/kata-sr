@@ -159,6 +159,62 @@ const MIGRATION_ADD_CODE_ATTEMPT: &str = r#"
 ALTER TABLE sessions ADD COLUMN code_attempt TEXT;
 "#;
 
+/// SQL migration for creating the courses table.
+///
+/// Stores course metadata including name, description, and author info.
+const MIGRATION_COURSES: &str = r#"
+CREATE TABLE IF NOT EXISTS courses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    author TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_courses_name ON courses(name);
+"#;
+
+/// SQL migration for creating the course_sections table.
+///
+/// Stores sections within each course, including HTML content path and optional kata exercise.
+const MIGRATION_COURSE_SECTIONS: &str = r#"
+CREATE TABLE IF NOT EXISTS course_sections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id INTEGER NOT NULL,
+    order_num INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    html_path TEXT NOT NULL,
+    exercise_kata_name TEXT,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    UNIQUE(course_id, order_num)
+);
+
+CREATE INDEX IF NOT EXISTS idx_course_sections_course ON course_sections(course_id);
+CREATE INDEX IF NOT EXISTS idx_course_sections_order ON course_sections(course_id, order_num);
+"#;
+
+/// SQL migration for creating the course_progress table.
+///
+/// Tracks user progress through courses, storing last accessed section and completion status.
+const MIGRATION_COURSE_PROGRESS: &str = r#"
+CREATE TABLE IF NOT EXISTS course_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id INTEGER NOT NULL,
+    last_section_id INTEGER,
+    started_at INTEGER NOT NULL,
+    completed_at INTEGER,
+    last_accessed_at INTEGER NOT NULL,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (last_section_id) REFERENCES course_sections(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_course_progress_course ON course_progress(course_id);
+CREATE INDEX IF NOT EXISTS idx_course_progress_accessed ON course_progress(last_accessed_at);
+"#;
+
 /// Runs all database migrations.
 ///
 /// Creates all tables and indexes if they don't exist. Safe to call
@@ -205,6 +261,11 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
 
     // Add code attempt column if it doesn't exist
     add_code_attempt_column_if_needed(conn)?;
+
+    // Add courses tables
+    conn.execute_batch(MIGRATION_COURSES)?;
+    conn.execute_batch(MIGRATION_COURSE_SECTIONS)?;
+    conn.execute_batch(MIGRATION_COURSE_PROGRESS)?;
 
     Ok(())
 }

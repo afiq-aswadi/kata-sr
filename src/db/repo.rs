@@ -1751,6 +1751,250 @@ impl KataRepository {
             current_streak,
         })
     }
+
+    // ==================== Course Methods ====================
+
+    /// Retrieves all courses from the database.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use kata_sr::db::repo::KataRepository;
+    /// # let repo = KataRepository::new("kata.db")?;
+    /// let all_courses = repo.get_all_courses()?;
+    /// # Ok::<(), rusqlite::Error>(())
+    /// ```
+    pub fn get_all_courses(&self) -> Result<Vec<Course>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, title, description, author, created_at, updated_at
+             FROM courses
+             ORDER BY created_at DESC",
+        )?;
+
+        let courses = stmt
+            .query_map([], row_to_course)?
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(courses)
+    }
+
+    /// Retrieves a single course by ID.
+    ///
+    /// Returns `None` if the course doesn't exist.
+    pub fn get_course_by_id(&self, id: i64) -> Result<Option<Course>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, title, description, author, created_at, updated_at
+             FROM courses
+             WHERE id = ?1",
+        )?;
+
+        let mut courses = stmt.query_map([id], row_to_course)?;
+
+        match courses.next() {
+            Some(result) => result.map(Some),
+            None => Ok(None),
+        }
+    }
+
+    /// Retrieves a single course by name.
+    ///
+    /// Returns `None` if the course doesn't exist.
+    pub fn get_course_by_name(&self, name: &str) -> Result<Option<Course>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, title, description, author, created_at, updated_at
+             FROM courses
+             WHERE name = ?1",
+        )?;
+
+        let mut courses = stmt.query_map([name], row_to_course)?;
+
+        match courses.next() {
+            Some(result) => result.map(Some),
+            None => Ok(None),
+        }
+    }
+
+    /// Creates a new course in the database.
+    ///
+    /// Returns the ID of the newly created course.
+    pub fn create_course(&self, course: &NewCourse) -> Result<i64> {
+        let now = Utc::now().timestamp();
+
+        self.conn.execute(
+            "INSERT INTO courses (name, title, description, author, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![course.name, course.title, course.description, course.author, now],
+        )?;
+
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Updates a course's metadata.
+    pub fn update_course(
+        &self,
+        course_id: i64,
+        title: &str,
+        description: &str,
+        author: Option<&str>,
+    ) -> Result<()> {
+        let now = Utc::now().timestamp();
+
+        self.conn.execute(
+            "UPDATE courses
+             SET title = ?1, description = ?2, author = ?3, updated_at = ?4
+             WHERE id = ?5",
+            params![title, description, author, now, course_id],
+        )?;
+
+        Ok(())
+    }
+
+    /// Deletes a course from the database.
+    ///
+    /// This will cascade delete all sections and progress for this course.
+    pub fn delete_course(&self, course_id: i64) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM courses WHERE id = ?1", params![course_id])?;
+        Ok(())
+    }
+
+    /// Retrieves all sections for a course, ordered by order_num.
+    pub fn get_course_sections(&self, course_id: i64) -> Result<Vec<CourseSection>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, course_id, order_num, title, html_path, exercise_kata_name, created_at
+             FROM course_sections
+             WHERE course_id = ?1
+             ORDER BY order_num ASC",
+        )?;
+
+        let sections = stmt
+            .query_map([course_id], row_to_course_section)?
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(sections)
+    }
+
+    /// Retrieves a single section by ID.
+    pub fn get_course_section_by_id(&self, section_id: i64) -> Result<Option<CourseSection>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, course_id, order_num, title, html_path, exercise_kata_name, created_at
+             FROM course_sections
+             WHERE id = ?1",
+        )?;
+
+        let mut sections = stmt.query_map([section_id], row_to_course_section)?;
+
+        match sections.next() {
+            Some(result) => result.map(Some),
+            None => Ok(None),
+        }
+    }
+
+    /// Creates a new course section.
+    ///
+    /// Returns the ID of the newly created section.
+    pub fn create_course_section(&self, section: &NewCourseSection) -> Result<i64> {
+        let now = Utc::now().timestamp();
+
+        self.conn.execute(
+            "INSERT INTO course_sections (course_id, order_num, title, html_path, exercise_kata_name, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                section.course_id,
+                section.order_num,
+                section.title,
+                section.html_path,
+                section.exercise_kata_name,
+                now
+            ],
+        )?;
+
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Deletes a course section.
+    pub fn delete_course_section(&self, section_id: i64) -> Result<()> {
+        self.conn.execute(
+            "DELETE FROM course_sections WHERE id = ?1",
+            params![section_id],
+        )?;
+        Ok(())
+    }
+
+    /// Retrieves the course progress for a specific course.
+    ///
+    /// Returns `None` if no progress has been recorded yet.
+    pub fn get_course_progress(&self, course_id: i64) -> Result<Option<CourseProgress>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, course_id, last_section_id, started_at, completed_at, last_accessed_at
+             FROM course_progress
+             WHERE course_id = ?1",
+        )?;
+
+        let mut progress_items = stmt.query_map([course_id], row_to_course_progress)?;
+
+        match progress_items.next() {
+            Some(result) => result.map(Some),
+            None => Ok(None),
+        }
+    }
+
+    /// Creates or updates course progress.
+    ///
+    /// If progress already exists for this course, it updates the last_section_id and last_accessed_at.
+    /// If not, it creates a new progress record.
+    pub fn upsert_course_progress(&self, progress: &NewCourseProgress) -> Result<()> {
+        let now = Utc::now().timestamp();
+
+        // Check if progress exists
+        if self.get_course_progress(progress.course_id)?.is_some() {
+            // Update existing progress
+            self.conn.execute(
+                "UPDATE course_progress
+                 SET last_section_id = ?1, last_accessed_at = ?2
+                 WHERE course_id = ?3",
+                params![progress.last_section_id, now, progress.course_id],
+            )?;
+        } else {
+            // Create new progress
+            self.conn.execute(
+                "INSERT INTO course_progress (course_id, last_section_id, started_at, last_accessed_at)
+                 VALUES (?1, ?2, ?3, ?4)",
+                params![progress.course_id, progress.last_section_id, now, now],
+            )?;
+        }
+
+        Ok(())
+    }
+
+    /// Marks a course as completed.
+    pub fn complete_course(&self, course_id: i64) -> Result<()> {
+        let now = Utc::now().timestamp();
+
+        self.conn.execute(
+            "UPDATE course_progress
+             SET completed_at = ?1
+             WHERE course_id = ?2",
+            params![now, course_id],
+        )?;
+
+        Ok(())
+    }
+
+    /// Gets all courses with their progress status.
+    ///
+    /// Returns a list of tuples: (Course, Option<CourseProgress>)
+    pub fn get_courses_with_progress(&self) -> Result<Vec<(Course, Option<CourseProgress>)>> {
+        let courses = self.get_all_courses()?;
+        let mut result = Vec::new();
+
+        for course in courses {
+            let progress = self.get_course_progress(course.id)?;
+            result.push((course, progress));
+        }
+
+        Ok(result)
+    }
 }
 
 /// Database statistics for debug/inspection purposes.
@@ -1878,6 +2122,67 @@ pub struct DailyCount {
     pub count: usize,
 }
 
+/// Course record from the database.
+#[derive(Debug, Clone)]
+pub struct Course {
+    pub id: i64,
+    pub name: String,
+    pub title: String,
+    pub description: String,
+    pub author: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+/// New course to be inserted into the database.
+#[derive(Debug, Clone)]
+pub struct NewCourse {
+    pub name: String,
+    pub title: String,
+    pub description: String,
+    pub author: Option<String>,
+}
+
+/// Course section record from the database.
+#[derive(Debug, Clone)]
+pub struct CourseSection {
+    pub id: i64,
+    pub course_id: i64,
+    pub order_num: i32,
+    pub title: String,
+    pub html_path: String,
+    pub exercise_kata_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// New course section to be inserted into the database.
+#[derive(Debug, Clone)]
+pub struct NewCourseSection {
+    pub course_id: i64,
+    pub order_num: i32,
+    pub title: String,
+    pub html_path: String,
+    pub exercise_kata_name: Option<String>,
+}
+
+/// Course progress record from the database.
+#[derive(Debug, Clone)]
+pub struct CourseProgress {
+    pub id: i64,
+    pub course_id: i64,
+    pub last_section_id: Option<i64>,
+    pub started_at: DateTime<Utc>,
+    pub completed_at: Option<DateTime<Utc>>,
+    pub last_accessed_at: DateTime<Utc>,
+}
+
+/// New course progress to be inserted into the database.
+#[derive(Debug, Clone)]
+pub struct NewCourseProgress {
+    pub course_id: i64,
+    pub last_section_id: Option<i64>,
+}
+
 fn row_to_kata(row: &Row) -> Result<Kata> {
     let next_review_ts: Option<i64> = row.get(8)?;
     let last_reviewed_ts: Option<i64> = row.get(9)?;
@@ -1938,6 +2243,58 @@ fn row_to_session(row: &Row) -> Result<Session> {
         duration_ms: row.get(8)?,
         quality_rating: row.get(9)?,
         code_attempt: row.get(10)?,
+    })
+}
+
+fn row_to_course(row: &Row) -> Result<Course> {
+    let created_ts: i64 = row.get(5)?;
+    let updated_ts: Option<i64> = row.get(6)?;
+
+    let created_at = convert_timestamp(created_ts, 5, "created_at")?;
+    let updated_at = convert_optional_timestamp(updated_ts, 6, "updated_at")?;
+
+    Ok(Course {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        title: row.get(2)?,
+        description: row.get(3)?,
+        author: row.get(4)?,
+        created_at,
+        updated_at,
+    })
+}
+
+fn row_to_course_section(row: &Row) -> Result<CourseSection> {
+    let created_ts: i64 = row.get(6)?;
+    let created_at = convert_timestamp(created_ts, 6, "created_at")?;
+
+    Ok(CourseSection {
+        id: row.get(0)?,
+        course_id: row.get(1)?,
+        order_num: row.get(2)?,
+        title: row.get(3)?,
+        html_path: row.get(4)?,
+        exercise_kata_name: row.get(5)?,
+        created_at,
+    })
+}
+
+fn row_to_course_progress(row: &Row) -> Result<CourseProgress> {
+    let started_ts: i64 = row.get(3)?;
+    let completed_ts: Option<i64> = row.get(4)?;
+    let accessed_ts: i64 = row.get(5)?;
+
+    let started_at = convert_timestamp(started_ts, 3, "started_at")?;
+    let completed_at = convert_optional_timestamp(completed_ts, 4, "completed_at")?;
+    let last_accessed_at = convert_timestamp(accessed_ts, 5, "last_accessed_at")?;
+
+    Ok(CourseProgress {
+        id: row.get(0)?,
+        course_id: row.get(1)?,
+        last_section_id: row.get(2)?,
+        started_at,
+        completed_at,
+        last_accessed_at,
     })
 }
 
