@@ -29,7 +29,13 @@ enum PracticeStatus {
 
 impl PracticeScreen {
     pub fn new(kata: Kata, editor_config: EditorConfig) -> anyhow::Result<Self> {
-        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+        // For preview mode (kata.id == -1), use kata_preview as module name to avoid invalid Python syntax
+        let module_suffix = if kata.id == -1 {
+            "preview".to_string()
+        } else {
+            kata.id.to_string()
+        };
+        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", module_suffix));
 
         let katas_root = std::env::var("KATA_SR_KATAS_DIR")
             .map(PathBuf::from)
@@ -100,7 +106,13 @@ impl PracticeScreen {
     /// # Ok::<(), anyhow::Error>(())
     /// ```
     pub fn new_retry(kata: Kata, editor_config: EditorConfig) -> anyhow::Result<Self> {
-        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+        // For preview mode (kata.id == -1), use kata_preview as module name to avoid invalid Python syntax
+        let module_suffix = if kata.id == -1 {
+            "preview".to_string()
+        } else {
+            kata.id.to_string()
+        };
+        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", module_suffix));
 
         // verify the file exists (it should, since we're retrying)
         if !template_path.exists() {

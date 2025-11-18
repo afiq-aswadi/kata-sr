@@ -90,6 +90,14 @@ impl ResultsScreen {
         self.kata = kata;
     }
 
+    /// Check if this kata uses matplotlib or plotly for visualization.
+    fn is_plot_kata(&self) -> bool {
+        self.kata.category.to_lowercase().contains("matplotlib")
+            || self.kata.category.to_lowercase().contains("plotly")
+            || self.kata.tags.contains(&"matplotlib".to_string())
+            || self.kata.tags.contains(&"plotly".to_string())
+    }
+
     pub fn render(&mut self, frame: &mut Frame) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
@@ -200,17 +208,24 @@ impl ResultsScreen {
 
         if is_preview_mode {
             // Preview mode: no rating, just back to library
+            let is_plot_kata = self.is_plot_kata();
+
             let status_text = if self.results.passed {
                 "Tests passed! This was a preview attempt.\nAdd this kata to your deck to track progress and schedule reviews."
             } else {
                 "Tests failed. This was a preview attempt.\nFix your implementation and retry, or view the solution."
             };
 
-            let actions_text = if self.results.passed {
-                "\n[Esc] Back to library"
+            let mut actions_text = if self.results.passed {
+                "\n[Esc] Back to library".to_string()
             } else {
                 "\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to library"
+                    .to_string()
             };
+
+            if is_plot_kata {
+                actions_text.push_str("\n[v] View plot comparison");
+            }
 
             let text = format!("{}{}", status_text, actions_text);
             let block = Paragraph::new(text)
@@ -221,7 +236,14 @@ impl ResultsScreen {
         }
 
         if !self.results.passed && !self.rating_submitted {
-            let text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output    [s] Settings";
+            let is_plot_kata = self.is_plot_kata();
+
+            let mut text = "Tests failed. Fix your implementation before rating.\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to dashboard\n[o] Inspect selected test output    [s] Settings".to_string();
+
+            if is_plot_kata {
+                text.push_str("\n[v] View plot comparison");
+            }
+
             let block = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL).title("Next steps"));
             frame.render_widget(block, area);
@@ -229,16 +251,24 @@ impl ResultsScreen {
         }
 
         if !self.results.passed && self.rating_submitted {
+            let is_plot_kata = self.is_plot_kata();
+
             let remaining_msg = match self.remaining_due_after_submit {
                 Some(0) => "No more katas due today.".to_string(),
                 Some(count) => format!("{} kata(s) still due.", count),
                 None => "Loading queue...".to_string(),
             };
-            let lines = vec![
+
+            let mut lines = vec![
                 "Gave up and viewed solution. Rating saved: Again".to_string(),
                 remaining_msg,
                 "[Enter/d] Dashboard   [n] Next due   [r] Review picker   [s] Settings".to_string(),
             ];
+
+            if is_plot_kata {
+                lines.push("[v] View plot comparison".to_string());
+            }
+
             let block = Paragraph::new(lines.join("\n"))
                 .block(Block::default().borders(Borders::ALL).title("What next?"));
             frame.render_widget(block, area);
@@ -246,6 +276,8 @@ impl ResultsScreen {
         }
 
         if self.rating_submitted {
+            let is_plot_kata = self.is_plot_kata();
+
             let rating_name = self
                 .submitted_rating
                 .and_then(|r| RATING_LABELS.get((r - 1) as usize).copied()) // Convert 1-4 to 0-3 index
@@ -255,12 +287,17 @@ impl ResultsScreen {
                 Some(count) => format!("{} kata(s) still due.", count),
                 None => "Loading queue...".to_string(),
             };
-            let lines = vec![
+
+            let mut lines = vec![
                 format!("Saved rating: {}", rating_name),
                 remaining_msg,
-                "[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [s] Settings"
-                    .to_string(),
+                "[n] Next kata (auto)   [c] Choose different kata   [Enter/d] Dashboard   [s] Settings".to_string(),
             ];
+
+            if is_plot_kata {
+                lines.push("[v] View plot comparison".to_string());
+            }
+
             let block = Paragraph::new(lines.join("\n"))
                 .block(Block::default().borders(Borders::ALL).title("What next?"));
             frame.render_widget(block, area);
@@ -291,12 +328,20 @@ impl ResultsScreen {
             lines.push(Line::from(spans));
         }
 
+        let is_plot_kata = self.is_plot_kata();
+
         let instructions = Line::from(vec![
             Span::raw("Use ←/→ or h/l to move, ↑/↓ or j/k to change selection, numbers 1-4 to jump. Tab focuses tests."),
         ]);
         lines.push(Line::from(""));
         lines.push(instructions);
-        lines.push(Line::from("Press Enter to submit rating, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings."));
+
+        let controls_text = "Press Enter to submit rating, [b] to bury (postpone to tomorrow), [f] to flag, or [s] for Settings.";
+        lines.push(Line::from(controls_text));
+
+        if is_plot_kata {
+            lines.push(Line::from("[v] View plot comparison"));
+        }
 
         let title = match self.focus {
             ResultsFocus::Rating => "Rate Difficulty (focused)",
@@ -551,6 +596,16 @@ impl ResultsScreen {
             return ResultsAction::None;
         }
 
+        // Handle 'v' to view plot (only for matplotlib/plotly katas)
+        if matches!(code, KeyCode::Char('v'))
+            && (self.kata.category.to_lowercase().contains("matplotlib")
+                || self.kata.category.to_lowercase().contains("plotly")
+                || self.kata.tags.contains(&"matplotlib".to_string())
+                || self.kata.tags.contains(&"plotly".to_string()))
+        {
+            return ResultsAction::ViewPlot;
+        }
+
         if code == KeyCode::Tab {
             self.focus = self.focus.toggle();
             return ResultsAction::None;
@@ -686,6 +741,303 @@ impl ResultsScreen {
             .unwrap_or(s.len())
     }
 
+    pub fn generate_and_view_plot(&self) -> anyhow::Result<()> {
+        // Determine if this is a plotly kata
+        let is_plotly = self.kata.category.to_lowercase().contains("plotly")
+            || self.kata.tags.contains(&"plotly".to_string());
+
+        // Get the path to the user's kata file
+        // For preview mode (kata.id == -1), use kata_preview as module name
+        let module_suffix = if self.kata.id == -1 {
+            "preview".to_string()
+        } else {
+            self.kata.id.to_string()
+        };
+        let template_path = std::path::PathBuf::from(format!("/tmp/kata_{}.py", module_suffix));
+
+        if !template_path.exists() {
+            anyhow::bail!("Kata file not found at {}", template_path.display());
+        }
+
+        // Get the path to the reference solution
+        let katas_root = std::env::var("KATA_SR_KATAS_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
+        let reference_dir = katas_root.join("exercises").join(&self.kata.name);
+
+        // Convert reference_dir to string with forward slashes (Python accepts these on all platforms)
+        // This avoids Windows backslash escape issues when interpolating into Python code
+        let reference_dir_str = reference_dir
+            .to_str()
+            .context("Reference directory path contains invalid UTF-8")?
+            .replace('\\', "/");
+
+        // Create a Python script to generate and save both plots
+        let plot_script = format!(
+            r#"
+import sys
+sys.path.insert(0, '/tmp')
+sys.path.insert(0, '{reference_dir}')
+
+# Determine plot library based on kata type
+is_plotly = {is_plotly}
+
+if not is_plotly:
+    import matplotlib
+    matplotlib.use('Agg')  # Use non-GUI backend
+    import matplotlib.pyplot as plt
+
+import inspect
+
+def generate_plot(module_name, output_path, title_prefix):
+    """Generate a plot from a module and save it."""
+    try:
+        # Import the module
+        if module_name.startswith('kata_'):
+            import kata_{module_suffix} as mod
+        else:
+            import reference as mod
+
+        # Find the first function in the module
+        kata_functions = []
+        for name, obj in inspect.getmembers(mod):
+            if inspect.isfunction(obj) and not name.startswith('_'):
+                kata_functions.append((name, obj))
+
+        if not kata_functions:
+            print(f"Error: No functions found in {{module_name}}")
+            return False
+
+        func_name, func = kata_functions[0]
+        print(f"Calling {{module_name}}.{{func_name}}()...")
+
+        # Get function signature to see if it needs arguments
+        sig = inspect.signature(func)
+
+        # Try to run the function based on its signature
+        fig = None
+        ax = None
+
+        if len(sig.parameters) == 0:
+            # No parameters - call directly
+            result = func()
+            if isinstance(result, tuple):
+                fig = result[0]
+                ax = result[1] if len(result) > 1 else None
+            else:
+                fig = result
+        else:
+            # Function has parameters - need to set up test environment
+            if not is_plotly:
+                # Matplotlib setup
+                fig, ax = plt.subplots()
+                ax.plot([0, 1], [0, 1])  # Add some dummy data
+
+                # Try calling with common argument patterns
+                params = list(sig.parameters.keys())
+
+                if 'ax' in params or 'axes' in params:
+                    # Function modifies an axes object (most common pattern)
+                    args = []
+                    for param in params:
+                        if param in ['ax', 'axes']:
+                            args.append(ax)
+                        elif param in ['x', 'y', 'width', 'height']:
+                            args.append(0.5)
+                        elif param == 'text':
+                            args.append('Example')
+                        elif param == 'data':
+                            import numpy as np
+                            args.append(np.linspace(0, 10, 100))
+                        else:
+                            # Default values for unknown params
+                            args.append(0.5)
+
+                    func(*args)
+                    # Function returns None, figure is modified in-place
+                else:
+                    # Function likely returns a figure
+                    result = func()
+                    if isinstance(result, tuple):
+                        fig = result[0]
+                        ax = result[1] if len(result) > 1 else None
+                    else:
+                        fig = result
+            else:
+                # Plotly setup - functions may need parameters
+                params = list(sig.parameters.keys())
+
+                # Try to provide common argument patterns
+                args = []
+                for param in params:
+                    if param in ['x', 'y', 'width', 'height', 'value']:
+                        args.append(0.5)
+                    elif param == 'text':
+                        args.append('Example')
+                    elif param == 'data':
+                        import numpy as np
+                        args.append(np.linspace(0, 10, 100))
+                    elif param == 'title':
+                        args.append('Plot')
+                    else:
+                        # Default values for unknown params
+                        args.append(0.5)
+
+                result = func(*args)
+                if isinstance(result, tuple):
+                    fig = result[0]
+                    ax = None
+                else:
+                    fig = result
+                    ax = None
+
+        if fig is None:
+            print(f"Error: No figure created from {{module_name}}")
+            return False
+
+        # Add a title to distinguish user vs reference
+        if not is_plotly:
+            # Matplotlib title handling
+            if ax is not None:
+                original_title = ax.get_title()
+                new_title = f"{{title_prefix}}{{original_title}}" if original_title else title_prefix.strip()
+                ax.set_title(new_title)
+            else:
+                # Get the first axes from the figure
+                axes = fig.get_axes()
+                if axes:
+                    original_title = axes[0].get_title()
+                    new_title = f"{{title_prefix}}{{original_title}}" if original_title else title_prefix.strip()
+                    axes[0].set_title(new_title)
+
+        # Save the plot (different methods for matplotlib vs plotly)
+        if not is_plotly:
+            # Matplotlib
+            fig.savefig(output_path, dpi=150, bbox_inches='tight')
+            import matplotlib.pyplot as plt
+            plt.close(fig)
+        else:
+            # Plotly - update title and save
+            if hasattr(fig, 'update_layout'):
+                current_title = fig.layout.title.text if fig.layout.title else ''
+                new_title = f"{{title_prefix}}{{current_title}}" if current_title else title_prefix.strip()
+                fig.update_layout(title=new_title)
+
+            # Use write_image for plotly
+            fig.write_image(output_path, width=1500, height=900)
+
+        print(f"Plot saved to {{output_path}}")
+        return True
+    except Exception as e:
+        print(f"Error generating plot from {{module_name}}: {{e}}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+# Generate user's plot
+user_success = generate_plot('kata_{module_suffix}', '/tmp/kata_plot_user.png', '[Your Solution] ')
+
+# Generate reference plot
+ref_success = generate_plot('reference', '/tmp/kata_plot_reference.png', '[Reference] ')
+
+if not user_success and not ref_success:
+    sys.exit(1)
+"#,
+            module_suffix = module_suffix,
+            reference_dir = reference_dir_str,
+            is_plotly = if is_plotly { "True" } else { "False" }
+        );
+
+        // Write the script to a temporary file
+        let script_path = std::path::PathBuf::from("/tmp/generate_kata_plot.py");
+        std::fs::write(&script_path, plot_script)
+            .context("Failed to write plot generation script")?;
+
+        // Delete any stale plot files from previous runs
+        // This prevents showing outdated plots if current generation fails
+        let user_plot = std::path::Path::new("/tmp/kata_plot_user.png");
+        let ref_plot = std::path::Path::new("/tmp/kata_plot_reference.png");
+
+        if user_plot.exists() {
+            let _ = std::fs::remove_file(user_plot);
+        }
+        if ref_plot.exists() {
+            let _ = std::fs::remove_file(ref_plot);
+        }
+
+        // Get Python interpreter path from environment (same logic as python_runner.rs)
+        // Respects KATA_SR_PYTHON override for custom interpreter paths
+        let python_path = std::env::var("KATA_SR_PYTHON")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|_| {
+                // Fall back to default venv location
+                let katas_root = std::env::var("KATA_SR_KATAS_DIR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|_| std::path::PathBuf::from("katas"));
+                katas_root.join(".venv/bin/python")
+            });
+
+        // Run the script to generate the plots
+        let output = Command::new(&python_path)
+            .arg(&script_path)
+            .output()
+            .context("Failed to run plot generation script")?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            anyhow::bail!(
+                "Failed to generate plot:\nstdout:\n{}\nstderr:\n{}",
+                stdout,
+                stderr
+            );
+        }
+
+        // Open both plots (side by side)
+        // Opening multiple files at once will display them in separate windows
+        let mut has_plots = false;
+
+        // Helper function to open a file with the platform-specific viewer
+        let open_file = |path: &str| -> anyhow::Result<()> {
+            if cfg!(target_os = "macos") {
+                Command::new("open")
+                    .arg(path)
+                    .spawn()
+                    .context("Failed to open plot with 'open'")?;
+            } else if cfg!(target_os = "windows") {
+                // On Windows, 'start' is a shell built-in, not an executable
+                // Must use cmd /C start to invoke it
+                Command::new("cmd")
+                    .args(["/C", "start", "", path]) // Empty string after start prevents it from interpreting path as window title
+                    .spawn()
+                    .context("Failed to open plot with 'cmd /C start'")?;
+            } else {
+                // Linux and other Unix-like systems
+                Command::new("xdg-open")
+                    .arg(path)
+                    .spawn()
+                    .context("Failed to open plot with 'xdg-open'")?;
+            }
+            Ok(())
+        };
+
+        if std::path::Path::new("/tmp/kata_plot_user.png").exists() {
+            open_file("/tmp/kata_plot_user.png")?;
+            has_plots = true;
+        }
+
+        if std::path::Path::new("/tmp/kata_plot_reference.png").exists() {
+            open_file("/tmp/kata_plot_reference.png")?;
+            has_plots = true;
+        }
+
+        if !has_plots {
+            anyhow::bail!("No plots were generated");
+        }
+
+        Ok(())
+    }
+
     pub fn open_solution_in_editor(&mut self, is_give_up: bool) -> anyhow::Result<()> {
         let katas_root = std::env::var("KATA_SR_KATAS_DIR")
             .map(std::path::PathBuf::from)
@@ -806,6 +1158,7 @@ pub enum ResultsAction {
     OpenSettings,
     ToggleFlagWithReason(Option<String>),
     SolutionViewed, // Signal that external editor was used and terminal needs clearing
+    ViewPlot,       // Generate and display plot for matplotlib katas
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
