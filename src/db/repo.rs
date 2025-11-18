@@ -6,6 +6,9 @@
 //! consistent error handling and transaction management.
 
 use crate::core::dependencies::DependencyGraph;
+use crate::db::sql_constants::{
+    KATA_SELECT_COLUMNS, KATA_SELECT_COLUMNS_ALIASED, SESSION_SELECT_COLUMNS,
+};
 use chrono::{DateTime, LocalResult, TimeZone, Utc};
 use rusqlite::types::Type;
 use rusqlite::{params, Connection, Result, Row};
@@ -110,30 +113,19 @@ impl KataRepository {
     /// ```
     pub fn get_katas_due(&self, before: DateTime<Utc>) -> Result<Vec<Kata>> {
         let timestamp = before.timestamp();
-        let mut stmt = self.conn.prepare(
-            "SELECT id, name, category, description, base_difficulty, current_difficulty,
-                    parent_kata_id, variation_params, next_review_at, last_reviewed_at,
-                    current_ease_factor, current_interval_days, current_repetition_count,
-                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
-                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
-                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
-                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at,
-                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
-             FROM katas
+        let query = format!(
+            "SELECT {} FROM katas
              WHERE next_review_at IS NULL OR next_review_at <= ?1
              ORDER BY next_review_at ASC NULLS FIRST",
-        )?;
+            KATA_SELECT_COLUMNS
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let mut katas = stmt
             .query_map([timestamp], row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
 
-        // load tags for each kata
-        for kata in &mut katas {
-            kata.tags = self.get_kata_tags(kata.id)?;
-        }
-
+        self.load_kata_tags(&mut katas)?;
         Ok(katas)
     }
 
@@ -148,29 +140,17 @@ impl KataRepository {
     /// # Ok::<(), rusqlite::Error>(())
     /// ```
     pub fn get_all_katas(&self) -> Result<Vec<Kata>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, name, category, description, base_difficulty, current_difficulty,
-                    parent_kata_id, variation_params, next_review_at, last_reviewed_at,
-                    current_ease_factor, current_interval_days, current_repetition_count,
-                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
-                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
-                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
-                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at,
-                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
-             FROM katas
-             ORDER BY created_at DESC",
-        )?;
+        let query = format!(
+            "SELECT {} FROM katas ORDER BY created_at DESC",
+            KATA_SELECT_COLUMNS
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let mut katas = stmt
             .query_map([], row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
 
-        // load tags for each kata
-        for kata in &mut katas {
-            kata.tags = self.get_kata_tags(kata.id)?;
-        }
-
+        self.load_kata_tags(&mut katas)?;
         Ok(katas)
     }
 
@@ -189,19 +169,8 @@ impl KataRepository {
     /// # Ok::<(), rusqlite::Error>(())
     /// ```
     pub fn get_kata_by_id(&self, id: i64) -> Result<Option<Kata>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, name, category, description, base_difficulty, current_difficulty,
-                    parent_kata_id, variation_params, next_review_at, last_reviewed_at,
-                    current_ease_factor, current_interval_days, current_repetition_count,
-                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
-                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
-                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
-                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at,
-                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
-             FROM katas
-             WHERE id = ?1",
-        )?;
+        let query = format!("SELECT {} FROM katas WHERE id = ?1", KATA_SELECT_COLUMNS);
+        let mut stmt = self.conn.prepare(&query)?;
 
         let mut rows = stmt.query([id])?;
         if let Some(row) = rows.next()? {
@@ -332,14 +301,14 @@ impl KataRepository {
     /// # Ok::<(), rusqlite::Error>(())
     /// ```
     pub fn get_recent_sessions(&self, kata_id: i64, limit: usize) -> Result<Vec<Session>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
-             FROM sessions
+        let query = format!(
+            "SELECT {} FROM sessions
              WHERE kata_id = ?1
              ORDER BY started_at DESC
              LIMIT ?2",
-        )?;
+            SESSION_SELECT_COLUMNS
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let sessions = stmt
             .query_map(params![kata_id, limit], row_to_session)?
@@ -363,13 +332,13 @@ impl KataRepository {
     /// # Ok::<(), rusqlite::Error>(())
     /// ```
     pub fn get_all_sessions_for_kata(&self, kata_id: i64) -> Result<Vec<Session>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
-             FROM sessions
+        let query = format!(
+            "SELECT {} FROM sessions
              WHERE kata_id = ?1
              ORDER BY started_at DESC",
-        )?;
+            SESSION_SELECT_COLUMNS
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let sessions = stmt
             .query_map([kata_id], row_to_session)?
@@ -397,12 +366,11 @@ impl KataRepository {
     /// # Ok::<(), rusqlite::Error>(())
     /// ```
     pub fn get_session_by_id(&self, session_id: i64) -> Result<Option<Session>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
-             FROM sessions
-             WHERE id = ?1",
-        )?;
+        let query = format!(
+            "SELECT {} FROM sessions WHERE id = ?1",
+            SESSION_SELECT_COLUMNS
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let mut rows = stmt.query([session_id])?;
         if let Some(row) = rows.next()? {
@@ -418,13 +386,13 @@ impl KataRepository {
     ///
     /// * `date` - Date in YYYY-MM-DD format
     pub fn get_sessions_for_date(&self, date: &str) -> Result<Vec<Session>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, kata_id, started_at, completed_at, test_results_json,
-                    num_passed, num_failed, num_skipped, duration_ms, quality_rating, code_attempt
-             FROM sessions
+        let query = format!(
+            "SELECT {} FROM sessions
              WHERE date(completed_at, 'unixepoch') = ?1
              ORDER BY started_at DESC",
-        )?;
+            SESSION_SELECT_COLUMNS
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let sessions = stmt
             .query_map([date], row_to_session)?
@@ -1015,30 +983,19 @@ impl KataRepository {
     /// # Ok::<(), rusqlite::Error>(())
     /// ```
     pub fn get_problematic_katas(&self) -> Result<Vec<Kata>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, name, category, description, base_difficulty, current_difficulty,
-                    parent_kata_id, variation_params, next_review_at, last_reviewed_at,
-                    current_ease_factor, current_interval_days, current_repetition_count,
-                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
-                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
-                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
-                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at,
-                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
-             FROM katas
+        let query = format!(
+            "SELECT {} FROM katas
              WHERE is_problematic = TRUE
              ORDER BY flagged_at DESC",
-        )?;
+            KATA_SELECT_COLUMNS
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let mut katas = stmt
             .query_map([], row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
 
-        // load tags for each kata
-        for kata in &mut katas {
-            kata.tags = self.get_kata_tags(kata.id)?;
-        }
-
+        self.load_kata_tags(&mut katas)?;
         Ok(katas)
     }
 
@@ -1224,20 +1181,8 @@ impl KataRepository {
     /// * `Ok(Some(Kata))` if found
     /// * `Ok(None)` if not found
     pub fn get_kata_by_name(&self, name: &str) -> Result<Option<Kata>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, name, category, description, base_difficulty,
-                    current_difficulty, parent_kata_id, variation_params,
-                    next_review_at, last_reviewed_at, current_ease_factor,
-                    current_interval_days, current_repetition_count,
-                    COALESCE(fsrs_stability, 0.0), COALESCE(fsrs_difficulty, 0.0),
-                    COALESCE(fsrs_elapsed_days, 0), COALESCE(fsrs_scheduled_days, 0),
-                    COALESCE(fsrs_reps, 0), COALESCE(fsrs_lapses, 0),
-                    COALESCE(fsrs_state, 'New'), COALESCE(scheduler_type, 'SM2'),
-                    created_at,
-                    COALESCE(is_problematic, FALSE), problematic_notes, flagged_at
-             FROM katas
-             WHERE name = ?1",
-        )?;
+        let query = format!("SELECT {} FROM katas WHERE name = ?1", KATA_SELECT_COLUMNS);
+        let mut stmt = self.conn.prepare(&query)?;
 
         let mut rows = stmt.query([name])?;
 
@@ -1321,32 +1266,20 @@ impl KataRepository {
     /// # Ok::<(), rusqlite::Error>(())
     /// ```
     pub fn get_katas_by_tag(&self, tag: &str) -> Result<Vec<Kata>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT DISTINCT k.id, k.name, k.category, k.description, k.base_difficulty,
-                    k.current_difficulty, k.parent_kata_id, k.variation_params,
-                    k.next_review_at, k.last_reviewed_at, k.current_ease_factor,
-                    k.current_interval_days, k.current_repetition_count,
-                    COALESCE(k.fsrs_stability, 0.0), COALESCE(k.fsrs_difficulty, 0.0),
-                    COALESCE(k.fsrs_elapsed_days, 0), COALESCE(k.fsrs_scheduled_days, 0),
-                    COALESCE(k.fsrs_reps, 0), COALESCE(k.fsrs_lapses, 0),
-                    COALESCE(k.fsrs_state, 'New'), COALESCE(k.scheduler_type, 'SM2'),
-                    k.created_at,
-                    COALESCE(k.is_problematic, FALSE), k.problematic_notes, k.flagged_at
-             FROM katas k
+        let query = format!(
+            "SELECT DISTINCT {} FROM katas k
              JOIN kata_tags kt ON k.id = kt.kata_id
              WHERE kt.tag = ?
              ORDER BY k.name",
-        )?;
+            KATA_SELECT_COLUMNS_ALIASED
+        );
+        let mut stmt = self.conn.prepare(&query)?;
 
         let mut katas = stmt
             .query_map([tag], row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
 
-        // load tags for each kata
-        for kata in &mut katas {
-            kata.tags = self.get_kata_tags(kata.id)?;
-        }
-
+        self.load_kata_tags(&mut katas)?;
         Ok(katas)
     }
 
@@ -1373,23 +1306,13 @@ impl KataRepository {
         // Build query with HAVING clause to match all tags
         let placeholders = tags.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let query = format!(
-            "SELECT k.id, k.name, k.category, k.description, k.base_difficulty,
-                    k.current_difficulty, k.parent_kata_id, k.variation_params,
-                    k.next_review_at, k.last_reviewed_at, k.current_ease_factor,
-                    k.current_interval_days, k.current_repetition_count,
-                    COALESCE(k.fsrs_stability, 0.0), COALESCE(k.fsrs_difficulty, 0.0),
-                    COALESCE(k.fsrs_elapsed_days, 0), COALESCE(k.fsrs_scheduled_days, 0),
-                    COALESCE(k.fsrs_reps, 0), COALESCE(k.fsrs_lapses, 0),
-                    COALESCE(k.fsrs_state, 'New'), COALESCE(k.scheduler_type, 'SM2'),
-                    k.created_at,
-                    COALESCE(k.is_problematic, FALSE), k.problematic_notes, k.flagged_at
-             FROM katas k
+            "SELECT {} FROM katas k
              JOIN kata_tags kt ON k.id = kt.kata_id
              WHERE kt.tag IN ({})
              GROUP BY k.id
              HAVING COUNT(DISTINCT kt.tag) = ?
              ORDER BY k.name",
-            placeholders
+            KATA_SELECT_COLUMNS_ALIASED, placeholders
         );
 
         let mut stmt = self.conn.prepare(&query)?;
@@ -1402,11 +1325,7 @@ impl KataRepository {
             .query_map(params.as_slice(), row_to_kata)?
             .collect::<Result<Vec<_>>>()?;
 
-        // load tags for each kata
-        for kata in &mut katas {
-            kata.tags = self.get_kata_tags(kata.id)?;
-        }
-
+        self.load_kata_tags(&mut katas)?;
         Ok(katas)
     }
 
@@ -1750,6 +1669,18 @@ impl KataRepository {
             dependencies_count,
             current_streak,
         })
+    }
+
+    // ===== Private Helper Methods =====
+
+    /// Helper method to load tags for a list of katas.
+    ///
+    /// This mutates the provided kata vec in place, populating the tags field.
+    fn load_kata_tags(&self, katas: &mut [Kata]) -> Result<()> {
+        for kata in katas {
+            kata.tags = self.get_kata_tags(kata.id)?;
+        }
+        Ok(())
     }
 }
 
