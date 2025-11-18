@@ -1,19 +1,19 @@
 # Kata Spaced Repetition
 
-A terminal-based spaced repetition system for mastering coding patterns and algorithms. Practice PyTorch implementations, algorithm patterns, and ML techniques with scientifically-optimized review scheduling using the FSRS-5 algorithm.
+> **Note:** Personal software, not intended for general use. 
 
-**Think LeetCode meets Anki** - you implement algorithms from templates, tests verify correctness, and an intelligent scheduler ensures you retain knowledge long-term.
+A terminal-based spaced repetition system for mastering coding patterns and algorithms. Practice PyTorch implementations, algorithm patterns, and ML techniques with scientifically-optimized review scheduling using the FSRS-5 algorithm.
 
 ## Features
 
-### 🧠 FSRS-5 Spaced Repetition Algorithm
+### FSRS-5 Spaced Repetition Algorithm
 
 - Modern memory model that tracks **stability**, **difficulty**, and **retrievability**
 - Optimized from millions of reviews for maximum retention efficiency
 - 4-point rating scale: Again / Hard / Good / Easy
 - Personalized parameter optimization based on your review history
 
-### 📚 Intelligent Kata Management
+### Intelligent Kata Management
 
 - **Multi-tag organization**: Categorize katas with multiple tags (e.g., "transformers", "attention", "advanced")
 - **Library browser**: Search, filter, and sort available katas
@@ -21,7 +21,7 @@ A terminal-based spaced repetition system for mastering coding patterns and algo
 - **Adaptive difficulty**: System tracks your performance and recommends appropriate challenges
 - **Kata variations**: Practice different versions with varying constraints
 
-### 📊 Progress Analytics
+### Progress Analytics
 
 - **Streak tracking**: Monitor consecutive days of practice
 - **GitHub-style heatmap**: Visual calendar of your activity
@@ -29,7 +29,7 @@ A terminal-based spaced repetition system for mastering coding patterns and algo
 - **Category breakdown**: See which areas you're focusing on
 - All visualizations are text-based for terminal environments
 
-### 🎯 Interactive TUI
+### Interactive TUI
 
 - **Dashboard**: See katas due today with priority sorting
 - **Library tabs**: Browse "My Deck" vs "All Katas"
@@ -446,16 +446,6 @@ cargo clippy -- -D warnings
 cargo doc --open
 ```
 
-### Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests for your changes
-4. Ensure `cargo test` and `cargo clippy` pass
-5. Commit changes (`git commit -m 'Add amazing feature'`)
-6. Push to branch (`git push origin feature/amazing-feature`)
-7. Open Pull Request
-
 ## Example Katas
 
 The repository includes several example katas to get started:
@@ -525,8 +515,3 @@ MIT
 - FSRS algorithm by [Jarrett Ye](https://github.com/open-spaced-repetition/fsrs-rs)
 - Ratatui framework for terminal UI
 
----
-
-**Happy Learning!** 🚀
-
-Track your progress, master complex algorithms, and build lasting knowledge with scientifically-optimized spaced repetition.
