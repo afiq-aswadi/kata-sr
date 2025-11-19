@@ -212,10 +212,15 @@ impl Screen {
                             Ok(()) => {
                                 // Check if this is preview mode (kata not in deck)
                                 if kata.id == -1 {
-                                    ScreenAction::ResultsSolutionViewed
+                                    // Preview mode: return to library
+                                    ScreenAction::OpenLibrary
                                 } else {
                                     // Normal mode: auto-submit Rating::Again (1)
-                                    ScreenAction::ResultsSolutionViewed
+                                    ScreenAction::SubmitRating(
+                                        kata.clone(),
+                                        1, // Rating::Again
+                                        results_screen.get_results().clone(),
+                                    )
                                 }
                             }
                             Err(e) => {
