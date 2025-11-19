@@ -1092,7 +1092,17 @@ impl App {
                 crossterm::terminal::disable_raw_mode()
                     .context("Failed to disable raw mode before launching editor")?;
 
-                let status_result = Command::new(&editor).arg(&file_path).status();
+                let parts: Vec<&str> = editor.split_whitespace().collect();
+                if parts.is_empty() {
+                    anyhow::bail!("EDITOR environment variable is empty");
+                }
+                let editor_cmd = parts[0];
+                let editor_args = &parts[1..];
+
+                let status_result = Command::new(editor_cmd)
+                    .args(editor_args)
+                    .arg(&file_path)
+                    .status();
 
                 crossterm::terminal::enable_raw_mode()
                     .context("Failed to re-enable raw mode after exiting editor")?;
