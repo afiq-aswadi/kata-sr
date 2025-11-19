@@ -100,7 +100,7 @@ pub enum ScreenAction {
     PracticeEditorExited,
     
     // Results specific actions
-    ResultsSolutionViewed,
+    ResultsSolutionViewed(Kata, TestResults),
     ResultsToggleFlagWithReason(Kata, Option<String>),
     
     // Library specific actions
@@ -213,12 +213,14 @@ impl Screen {
                                 // Check if this is preview mode (kata not in deck)
                                 if kata.id == -1 {
                                     // Preview mode: return to library
-                                    ScreenAction::OpenLibrary
+                                    ScreenAction::ResultsSolutionViewed(
+                                        kata.clone(),
+                                        results_screen.get_results().clone(),
+                                    )
                                 } else {
                                     // Normal mode: auto-submit Rating::Again (1)
-                                    ScreenAction::SubmitRating(
+                                    ScreenAction::ResultsSolutionViewed(
                                         kata.clone(),
-                                        1, // Rating::Again
                                         results_screen.get_results().clone(),
                                     )
                                 }
@@ -229,7 +231,10 @@ impl Screen {
                             }
                         }
                     }
-                    ResultsAction::SolutionViewed => ScreenAction::ResultsSolutionViewed,
+                    ResultsAction::SolutionViewed => ScreenAction::ResultsSolutionViewed(
+                        kata.clone(),
+                        results_screen.get_results().clone(),
+                    ),
                     ResultsAction::StartNextDue => ScreenAction::StartNextDue,
                     ResultsAction::ReviewAnother => ScreenAction::ReturnToDashboard,
                     ResultsAction::BackToDashboard => ScreenAction::ReturnToDashboard,

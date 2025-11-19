@@ -337,7 +337,7 @@ impl App {
             // Results
             ScreenAction::SubmitRating(_, _, _)
             | ScreenAction::BuryKata(_)
-            | ScreenAction::ResultsSolutionViewed
+            | ScreenAction::ResultsSolutionViewed(_, _)
             | ScreenAction::ResultsToggleFlagWithReason(_, _) => {
                 self.handle_results_action(action)?;
             }
@@ -493,8 +493,16 @@ impl App {
                 )?;
                 self.refresh_dashboard_screen()?;
             }
-            ScreenAction::ResultsSolutionViewed => {
+            ScreenAction::ResultsSolutionViewed(kata, results) => {
                 self.needs_terminal_clear = true;
+                
+                if kata.id == -1 {
+                    // Preview mode: return to library
+                    self.execute_action(ScreenAction::OpenLibrary)?;
+                } else {
+                    // Normal mode: auto-submit Rating::Again (1)
+                    self.execute_action(ScreenAction::SubmitRating(kata, 1, results))?;
+                }
             }
             ScreenAction::ResultsToggleFlagWithReason(kata, reason) => {
                 let kata_id = kata.id;
