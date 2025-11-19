@@ -12,23 +12,24 @@ use ratatui::{Frame, Terminal};
 use std::io;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
-use super::create_kata::{CreateKataAction, CreateKataScreen};
-use super::dashboard::{Dashboard, DashboardAction};
-use super::details::{DetailsAction, DetailsScreen};
-use super::done::{DoneAction, DoneScreen};
-use super::edit_kata::{EditKataAction, EditKataScreen};
-use super::keybindings;
-use super::library::{Library, LibraryAction};
-use super::practice::{PracticeAction, PracticeScreen};
-use super::results::{ResultsAction, ResultsScreen};
-use super::session_detail::{SessionDetailAction, SessionDetailScreen};
-use super::session_history::{SessionHistoryAction, SessionHistoryScreen};
-use super::settings::{SettingsAction, SettingsScreen};
-use super::startup::{StartupAction, StartupScreen};
-use crate::config::AppConfig;
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
-use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
+use crate::db::repo::{Kata, NewKata, NewSession};
+use super::create_kata::CreateKataScreen;
+use super::dashboard::Dashboard;
+use super::details::DetailsScreen;
+use super::done::DoneScreen;
+use super::edit_kata::EditKataScreen;
+use super::keybindings;
+use super::library::Library;
+use super::practice::PracticeScreen;
+use super::results::ResultsScreen;
+use super::session_detail::SessionDetailScreen;
+use super::session_history::SessionHistoryScreen;
+use super::settings::SettingsScreen;
+use super::startup::StartupScreen;
+use crate::config::AppConfig;
+use crate::db::repo::KataRepository;
 use crate::runner::python_runner::TestResults;
 
 /// Style for popup messages.
@@ -62,76 +63,7 @@ pub enum AppEvent {
     Quit,
 }
 
-/// Current screen being displayed in the TUI.
-///
-/// Each screen maintains its own state and handles its own rendering.
-pub enum Screen {
-    /// Startup screen with ASCII art
-    Startup(StartupScreen),
-    /// Dashboard showing katas due today and stats
-    Dashboard,
-    /// Celebration screen when no reviews are due
-    Done(DoneScreen),
-    /// Practice screen for a specific kata
-    Practice(Kata, PracticeScreen),
-    /// Results screen showing test output and rating selection
-    Results(Kata, ResultsScreen),
-    /// Help screen showing keybindings
-    Help,
-    /// Settings screen for editing configuration
-    Settings(SettingsScreen),
-    /// Library screen for browsing and adding katas
-    Library(Library),
-    /// Details screen for viewing kata information
-    Details(DetailsScreen),
-    /// Create kata screen for generating new kata files
-    CreateKata(CreateKataScreen),
-    /// Edit kata screen for modifying existing katas
-    EditKata(EditKataScreen),
-    /// Session history screen showing past sessions for a kata
-    SessionHistory(SessionHistoryScreen),
-    /// Session detail screen showing full test results for a session
-    SessionDetail(SessionDetailScreen),
-}
-
-/// Internal enum for handling screen transitions without borrow conflicts.
-enum ScreenAction {
-    StartPractice(Kata),
-    AttemptKataWithoutDeck(crate::core::kata_loader::AvailableKata),
-    ReturnToDashboard,
-    SubmitRating(Kata, u8, TestResults),
-    BuryKata(Kata),
-    StartNextDue,
-    OpenLibrary,
-    AddKataFromLibrary(String),
-    BackFromLibrary,
-    ViewDetails(crate::core::kata_loader::AvailableKata, bool),
-    BackFromDetails,
-    RetryKata(Kata),
-    RemoveKataFromDeck(Kata),
-    OpenCreateKata,
-    SubmitNewKata {
-        form_data: crate::core::kata_generator::KataFormData,
-        slug: String,
-    },
-    CancelCreateKata,
-    OpenEditKata(i64),
-    SubmitEditKata {
-        kata_id: i64,
-        original_slug: String,
-        form_data: crate::core::kata_generator::KataFormData,
-        new_slug: String,
-    },
-    OpenEditorFile(std::path::PathBuf),
-    CancelEditKata,
-    OpenSettings,
-    CloseSettings,
-    ViewSessionHistory(Kata),
-    ViewSessionDetail(i64), // session_id
-    DeleteSession(i64),     // session_id
-    BackFromSessionHistory,
-    BackFromSessionDetail,
-}
+use super::screen::{Screen, ScreenAction};
 
 /// Main application state and event loop coordinator.
 ///
@@ -328,47 +260,7 @@ impl App {
             return;
         }
 
-        match &mut self.current_screen {
-            Screen::Startup(startup_screen) => {
-                startup_screen.render(frame);
-            }
-            Screen::Dashboard => {
-                self.dashboard.render(frame);
-            }
-            Screen::Done(done_screen) => {
-                done_screen.render(frame);
-            }
-            Screen::Practice(_, practice_screen) => {
-                practice_screen.render(frame);
-            }
-            Screen::Results(_, results_screen) => {
-                results_screen.render(frame);
-            }
-            Screen::Help => {
-                keybindings::render_help_screen(frame);
-            }
-            Screen::Settings(settings_screen) => {
-                settings_screen.render(frame);
-            }
-            Screen::Library(library) => {
-                library.render(frame);
-            }
-            Screen::Details(details) => {
-                details.render(frame);
-            }
-            Screen::CreateKata(create_kata) => {
-                create_kata.render(frame);
-            }
-            Screen::EditKata(edit_kata) => {
-                edit_kata.render(frame);
-            }
-            Screen::SessionHistory(session_history) => {
-                session_history.render(frame);
-            }
-            Screen::SessionDetail(session_detail) => {
-                session_detail.render(frame);
-            }
-        }
+        self.current_screen.render(frame, &self.dashboard);
 
         // Render popup overlay if present
         if self.popup_message.is_some() {
@@ -391,406 +283,10 @@ impl App {
         }
 
         // extract action from current screen to avoid borrow checker issues
-        let action_result = match &mut self.current_screen {
-            Screen::Startup(startup_screen) => {
-                let action = startup_screen.handle_input(code);
-                match action {
-                    StartupAction::StartReview => Some(ScreenAction::ReturnToDashboard),
-                    StartupAction::OpenLibrary => Some(ScreenAction::OpenLibrary),
-                    StartupAction::OpenSettings => Some(ScreenAction::OpenSettings),
-                    StartupAction::None => None,
-                }
-            }
-            Screen::Dashboard => {
-                // handle library key 'l' in dashboard
-                if code == KeyCode::Char('l') {
-                    return self.execute_action(ScreenAction::OpenLibrary);
-                }
-                // handle settings key 's' in dashboard
-                if code == KeyCode::Char('s') {
-                    return self.execute_action(ScreenAction::OpenSettings);
-                }
-                // handle history key 'h' in dashboard (only if kata is selected)
-                if code == KeyCode::Char('h') && !self.dashboard.katas_due.is_empty() {
-                    if let Some(kata) = self.dashboard.katas_due.get(self.dashboard.selected_index)
-                    {
-                        return self.execute_action(ScreenAction::ViewSessionHistory(kata.clone()));
-                    }
-                }
-                let action = self.dashboard.handle_input(code);
-                match action {
-                    DashboardAction::SelectKata(kata) => Some(ScreenAction::StartPractice(kata)),
-                    DashboardAction::RemoveKata(kata) => {
-                        Some(ScreenAction::RemoveKataFromDeck(kata))
-                    }
-                    DashboardAction::EditKata(kata) => Some(ScreenAction::OpenEditKata(kata.id)),
-                    DashboardAction::ToggleFlagKata(kata) => {
-                        // Toggle the problematic flag in database
-                        if kata.is_problematic {
-                            self.repo.unflag_kata(kata.id)?;
-                        } else {
-                            self.repo.flag_kata(kata.id, None)?;
-                        }
-                        // Reload dashboard to get fresh kata state (preserve hide_flagged state)
-                        self.dashboard = Dashboard::load_with_filter(
-                            &self.repo,
-                            self.config.display.heatmap_days,
-                            self.dashboard_hide_flagged,
-                        )?;
-                        None
-                    }
-                    DashboardAction::ToggleHideFlagged => {
-                        // Toggle the hide_flagged filter and reload dashboard
-                        self.dashboard_hide_flagged = !self.dashboard.hide_flagged;
-                        self.dashboard = Dashboard::load_with_filter(
-                            &self.repo,
-                            self.config.display.heatmap_days,
-                            self.dashboard_hide_flagged,
-                        )?;
-                        None
-                    }
-                    DashboardAction::None => None,
-                }
-            }
-            Screen::Practice(kata, practice_screen) => {
-                // Handle 'f' to toggle flag on current kata
-                if code == KeyCode::Char('f') {
-                    let kata_id = kata.id;
-                    let was_problematic = kata.is_problematic;
-
-                    // Toggle the flag in database
-                    if was_problematic {
-                        self.repo.unflag_kata(kata_id)?;
-                    } else {
-                        self.repo.flag_kata(kata_id, None)?;
-                    }
-
-                    // Reload fresh kata state from database and update Screen enum
-                    if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
-                        // Extract the practice_screen by temporarily replacing current_screen
-                        let old_screen =
-                            std::mem::replace(&mut self.current_screen, Screen::Dashboard);
-                        if let Screen::Practice(_, ps) = old_screen {
-                            self.current_screen = Screen::Practice(fresh_kata, ps);
-                        }
-                    }
-
-                    // Also reload dashboard for consistency (preserve hide_flagged state)
-                    self.dashboard = Dashboard::load_with_filter(
-                        &self.repo,
-                        self.config.display.heatmap_days,
-                        self.dashboard_hide_flagged,
-                    )?;
-                    return Ok(());
-                }
-
-                let action = practice_screen.handle_input(code, self.event_tx.clone())?;
-                match action {
-                    PracticeAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
-                    PracticeAction::EditorExited => {
-                        self.needs_terminal_clear = true;
-                        None
-                    }
-                    PracticeAction::None => None,
-                }
-            }
-            Screen::Done(done_screen) => match done_screen.handle_input(code) {
-                DoneAction::BrowseLibrary => Some(ScreenAction::OpenLibrary),
-                DoneAction::ToggleHideFlagged => {
-                    // Toggle the hide_flagged filter and reload dashboard
-                    self.dashboard_hide_flagged = !self.dashboard_hide_flagged;
-                    self.dashboard = Dashboard::load_with_filter(
-                        &self.repo,
-                        self.config.display.heatmap_days,
-                        self.dashboard_hide_flagged,
-                    )?;
-                    // Refresh the screen - if there are now katas due, show dashboard; otherwise stay on Done
-                    self.refresh_dashboard_screen()?;
-                    None
-                }
-                DoneAction::None => None,
-            },
-            Screen::Results(kata, results_screen) => {
-                let action = results_screen.handle_input(code);
-                match action {
-                    ResultsAction::SubmitRating(rating) => Some(ScreenAction::SubmitRating(
-                        kata.clone(),
-                        rating,
-                        results_screen.get_results().clone(),
-                    )),
-                    ResultsAction::BuryCard => Some(ScreenAction::BuryKata(kata.clone())),
-                    ResultsAction::Retry => Some(ScreenAction::RetryKata(kata.clone())),
-                    ResultsAction::GiveUp => {
-                        // Open solution in editor
-                        match results_screen.open_solution_in_editor(true) {
-                            Ok(()) => {
-                                // Successfully viewed solution, signal terminal clear needed
-                                self.needs_terminal_clear = true;
-
-                                // Check if this is preview mode (kata not in deck)
-                                if kata.id == -1 {
-                                    // Preview mode: don't save rating, just return to library
-                                    Some(ScreenAction::OpenLibrary)
-                                } else {
-                                    // Normal mode: auto-submit Rating::Again (1)
-                                    Some(ScreenAction::SubmitRating(
-                                        kata.clone(),
-                                        1,
-                                        results_screen.get_results().clone(),
-                                    ))
-                                }
-                            }
-                            Err(e) => {
-                                // Failed to open editor - stay on results screen
-                                eprintln!("Failed to open solution: {}", e);
-                                None
-                            }
-                        }
-                    }
-                    ResultsAction::SolutionViewed => {
-                        // External editor was used, signal terminal needs clearing
-                        self.needs_terminal_clear = true;
-                        None
-                    }
-                    ResultsAction::StartNextDue => Some(ScreenAction::StartNextDue),
-                    ResultsAction::ReviewAnother => Some(ScreenAction::ReturnToDashboard),
-                    ResultsAction::BackToDashboard => Some(ScreenAction::ReturnToDashboard),
-                    ResultsAction::BackToLibrary => Some(ScreenAction::OpenLibrary),
-                    ResultsAction::OpenSettings => Some(ScreenAction::OpenSettings),
-                    ResultsAction::ToggleFlagWithReason(reason) => {
-                        let kata_id = kata.id;
-                        let was_problematic = kata.is_problematic;
-
-                        // Toggle the flag in database with reason
-                        if was_problematic {
-                            self.repo.unflag_kata(kata_id)?;
-                        } else {
-                            self.repo.flag_kata(kata_id, reason)?;
-                        }
-
-                        // Reload fresh kata state from database and update Screen enum
-                        if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
-                            // Extract the results_screen by temporarily replacing current_screen
-                            let old_screen =
-                                std::mem::replace(&mut self.current_screen, Screen::Dashboard);
-                            if let Screen::Results(_, mut rs) = old_screen {
-                                // Update the kata inside ResultsScreen so flag popup shows correct status
-                                rs.update_kata(fresh_kata.clone());
-                                self.current_screen = Screen::Results(fresh_kata, rs);
-                            }
-                        }
-
-                        // Also reload dashboard for consistency (preserve hide_flagged state)
-                        self.dashboard = Dashboard::load_with_filter(
-                            &self.repo,
-                            self.config.display.heatmap_days,
-                            self.dashboard_hide_flagged,
-                        )?;
-                        None
-                    }
-                    ResultsAction::None => None,
-                }
-            }
-            Screen::Help => Some(ScreenAction::ReturnToDashboard),
-            Screen::Settings(settings_screen) => {
-                let action = settings_screen.handle_input(code);
-                match action {
-                    SettingsAction::Cancel => Some(ScreenAction::CloseSettings),
-                    SettingsAction::Save(config) => {
-                        // Save config to file
-                        match config.save() {
-                            Ok(_) => {
-                                // Update app config
-                                self.config = config;
-                                // Show success popup
-                                self.popup_message = Some(PopupMessage {
-                                    title: "Settings Saved".to_string(),
-                                    message:
-                                        "Settings have been saved to ~/.config/kata-sr/config.toml"
-                                            .to_string(),
-                                    style: PopupStyle::Success,
-                                });
-                                None
-                            }
-                            Err(e) => {
-                                // Show error popup
-                                self.popup_message = Some(PopupMessage {
-                                    title: "Error Saving Settings".to_string(),
-                                    message: format!("Failed to save settings:\n\n{}", e),
-                                    style: PopupStyle::Error,
-                                });
-                                None
-                            }
-                        }
-                    }
-                    SettingsAction::None => None,
-                }
-            }
-            Screen::Library(library) => {
-                // handle history key 'h' in My Deck tab
-                if code == KeyCode::Char('h') {
-                    use super::library::LibraryTab;
-                    if library.active_tab == LibraryTab::MyDeck
-                        && library.deck_selected < library.deck_katas.len()
-                    {
-                        let kata = library.deck_katas[library.deck_selected].clone();
-                        Some(ScreenAction::ViewSessionHistory(kata))
-                    } else {
-                        None
-                    }
-                } else {
-                    let action = library.handle_input(code);
-                    match action {
-                        LibraryAction::AddKata(name) => {
-                            Some(ScreenAction::AddKataFromLibrary(name))
-                        }
-                        LibraryAction::AttemptKata(available_kata) => {
-                            Some(ScreenAction::AttemptKataWithoutDeck(available_kata))
-                        }
-                        LibraryAction::PracticeKata(kata) => {
-                            Some(ScreenAction::StartPractice(kata))
-                        }
-                        LibraryAction::RemoveKata(kata) => {
-                            Some(ScreenAction::RemoveKataFromDeck(kata))
-                        }
-                        LibraryAction::ToggleFlagKata(kata) => {
-                            // Toggle the problematic flag in database (deprecated - kept for backward compatibility)
-                            if kata.is_problematic {
-                                self.repo.unflag_kata(kata.id)?;
-                            } else {
-                                self.repo.flag_kata(kata.id, None)?;
-                            }
-                            // Reload dashboard for consistency (preserve hide_flagged state)
-                            self.dashboard = Dashboard::load_with_filter(
-                                &self.repo,
-                                self.config.display.heatmap_days,
-                                self.dashboard_hide_flagged,
-                            )?;
-                            // Reload library with fresh kata states
-                            return self.execute_action(ScreenAction::OpenLibrary);
-                        }
-                        LibraryAction::ToggleHideFlagged => {
-                            // Toggle the hide_flagged filter and reload library
-                            self.library_hide_flagged = !library.hide_flagged;
-                            let new_library = Library::load_with_filter(
-                                &self.repo,
-                                &self.config.library.default_sort,
-                                self.config.library.default_sort_ascending,
-                                self.library_hide_flagged,
-                            )?;
-                            self.current_screen = Screen::Library(new_library);
-                            None
-                        }
-                        LibraryAction::ToggleFlagWithReason(kata, reason) => {
-                            // Toggle the problematic flag in database with reason
-                            if kata.is_problematic {
-                                self.repo.unflag_kata(kata.id)?;
-                            } else {
-                                self.repo.flag_kata(kata.id, reason)?;
-                            }
-                            // Reload dashboard for consistency (preserve hide_flagged state)
-                            self.dashboard = Dashboard::load_with_filter(
-                                &self.repo,
-                                self.config.display.heatmap_days,
-                                self.dashboard_hide_flagged,
-                            )?;
-                            // Reload library with fresh kata states
-                            return self.execute_action(ScreenAction::OpenLibrary);
-                        }
-                        LibraryAction::Back => Some(ScreenAction::BackFromLibrary),
-                        LibraryAction::ViewDetails(kata) => {
-                            let in_deck = library.kata_ids_in_deck.contains(&kata.name);
-                            Some(ScreenAction::ViewDetails(kata, in_deck))
-                        }
-                        LibraryAction::CreateKata => Some(ScreenAction::OpenCreateKata),
-                        LibraryAction::EditKataById(kata_id) => {
-                            Some(ScreenAction::OpenEditKata(kata_id))
-                        }
-                        LibraryAction::EditKataByName(name) => {
-                            // Look up kata by name to get ID
-                            if let Ok(Some(kata)) = self.repo.get_kata_by_name(&name) {
-                                Some(ScreenAction::OpenEditKata(kata.id))
-                            } else {
-                                None
-                            }
-                        }
-                        LibraryAction::None => None,
-                    }
-                }
-            }
-            Screen::Details(details) => {
-                let action = details.handle_input(code);
-                match action {
-                    DetailsAction::AddKata(name) => Some(ScreenAction::AddKataFromLibrary(name)),
-                    DetailsAction::Back => Some(ScreenAction::BackFromDetails),
-                    DetailsAction::EditKata(name) => {
-                        // Look up kata by name to get ID
-                        if let Ok(Some(kata)) = self.repo.get_kata_by_name(&name) {
-                            Some(ScreenAction::OpenEditKata(kata.id))
-                        } else {
-                            None
-                        }
-                    }
-                    DetailsAction::None => None,
-                }
-            }
-            Screen::CreateKata(create_kata) => {
-                let exercises_dir = std::path::Path::new("katas/exercises");
-                let action = create_kata.handle_input(code, exercises_dir);
-                match action {
-                    CreateKataAction::Submit { form_data, slug } => {
-                        Some(ScreenAction::SubmitNewKata { form_data, slug })
-                    }
-                    CreateKataAction::Cancel => Some(ScreenAction::CancelCreateKata),
-                    CreateKataAction::None => None,
-                }
-            }
-            Screen::EditKata(edit_kata) => {
-                let exercises_dir = std::path::Path::new("katas/exercises");
-                let action = edit_kata.handle_input(code, exercises_dir);
-                match action {
-                    EditKataAction::Submit {
-                        kata_id,
-                        original_slug,
-                        form_data,
-                        new_slug,
-                    } => Some(ScreenAction::SubmitEditKata {
-                        kata_id,
-                        original_slug,
-                        form_data,
-                        new_slug,
-                    }),
-                    EditKataAction::OpenEditor { file_path } => {
-                        Some(ScreenAction::OpenEditorFile(file_path))
-                    }
-                    EditKataAction::Cancel => Some(ScreenAction::CancelEditKata),
-                    EditKataAction::None => None,
-                }
-            }
-            Screen::SessionHistory(session_history) => {
-                let action = session_history.handle_input(code);
-                match action {
-                    SessionHistoryAction::ViewDetails(session_id) => {
-                        Some(ScreenAction::ViewSessionDetail(session_id))
-                    }
-                    SessionHistoryAction::Delete(session_id) => {
-                        Some(ScreenAction::DeleteSession(session_id))
-                    }
-                    SessionHistoryAction::Back => Some(ScreenAction::BackFromSessionHistory),
-                    SessionHistoryAction::None => None,
-                }
-            }
-            Screen::SessionDetail(session_detail) => {
-                let action = session_detail.handle_input(code);
-                match action {
-                    SessionDetailAction::Back => Some(ScreenAction::BackFromSessionDetail),
-                    SessionDetailAction::None => None,
-                }
-            }
-        };
+        let action_result = self.current_screen.handle_input(code, &mut self.dashboard, self.event_tx.clone());
 
         // handle the extracted action (no longer borrowing self.current_screen)
-        if let Some(action) = action_result {
+        if let Ok(action) = action_result {
             self.execute_action(action)?;
         }
 
@@ -830,15 +326,95 @@ impl App {
     /// Executes a screen action, handling all state transitions.
     fn execute_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
         match action {
+            // Practice Init
+            ScreenAction::StartPractice(_)
+            | ScreenAction::AttemptKataWithoutDeck(_)
+            | ScreenAction::StartNextDue
+            | ScreenAction::RetryKata(_) => {
+                self.handle_practice_init_action(action)?;
+            }
+
+            // Results
+            ScreenAction::SubmitRating(_, _, _)
+            | ScreenAction::BuryKata(_)
+            | ScreenAction::ResultsSolutionViewed
+            | ScreenAction::ResultsToggleFlagWithReason(_, _) => {
+                self.handle_results_action(action)?;
+            }
+
+            // Library
+            ScreenAction::OpenLibrary
+            | ScreenAction::AddKataFromLibrary(_)
+            | ScreenAction::BackFromLibrary
+            | ScreenAction::RemoveKataFromDeck(_)
+            | ScreenAction::LibraryToggleFlagKata(_)
+            | ScreenAction::LibraryToggleHideFlagged
+            | ScreenAction::LibraryToggleFlagWithReason(_, _) => {
+                self.handle_library_action(action)?;
+            }
+
+            // Dashboard
+            ScreenAction::ReturnToDashboard
+            | ScreenAction::DashboardSelectKata(_)
+            | ScreenAction::DashboardRemoveKata(_)
+            | ScreenAction::DashboardEditKata(_)
+            | ScreenAction::DashboardToggleFlagKata(_)
+            | ScreenAction::DashboardToggleHideFlagged => {
+                self.handle_dashboard_action(action)?;
+            }
+
+            // Session
+            ScreenAction::ViewSessionHistory(_)
+            | ScreenAction::ViewSessionDetail(_)
+            | ScreenAction::DeleteSession(_)
+            | ScreenAction::BackFromSessionHistory
+            | ScreenAction::BackFromSessionDetail => {
+                self.handle_session_action(action)?;
+            }
+
+            // Kata CRUD
+            ScreenAction::OpenCreateKata
+            | ScreenAction::SubmitNewKata { .. }
+            | ScreenAction::CancelCreateKata
+            | ScreenAction::OpenEditKata(_)
+            | ScreenAction::SubmitEditKata { .. }
+            | ScreenAction::OpenEditorFile(_)
+            | ScreenAction::CancelEditKata
+            | ScreenAction::EditKataByName(_) => {
+                self.handle_kata_crud_action(action)?;
+            }
+
+            // Settings
+            ScreenAction::OpenSettings
+            | ScreenAction::CloseSettings
+            | ScreenAction::SaveSettings(_) => {
+                self.handle_settings_action(action)?;
+            }
+
+            // Misc
+            ScreenAction::PracticeEditorExited
+            | ScreenAction::ViewDetails(_, _)
+            | ScreenAction::BackFromDetails => {
+                self.handle_misc_action(action)?;
+            }
+
+            ScreenAction::None => {}
+        }
+        Ok(())
+    }
+
+    // --- Action Handlers ---
+
+    fn handle_practice_init_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
             ScreenAction::StartPractice(kata) => {
                 let practice_screen =
                     PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::AttemptKataWithoutDeck(available_kata) => {
-                // Create a temporary Kata object for preview mode (id = -1)
                 let preview_kata = Kata {
-                    id: -1, // Special ID to indicate preview mode
+                    id: -1,
                     name: available_kata.name.clone(),
                     category: available_kata.category.clone(),
                     description: available_kata.description.clone(),
@@ -869,14 +445,34 @@ impl App {
                     PracticeScreen::new(preview_kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(preview_kata, practice_screen);
             }
-            ScreenAction::ReturnToDashboard => {
-                self.dashboard = Dashboard::load_with_filter(
-                    &self.repo,
-                    self.config.display.heatmap_days,
-                    self.dashboard_hide_flagged,
-                )?;
-                self.refresh_dashboard_screen()?;
+            ScreenAction::StartNextDue => {
+                if self.dashboard.katas_due.is_empty() {
+                    self.dashboard = Dashboard::load_with_filter(
+                        &self.repo,
+                        self.config.display.heatmap_days,
+                        self.dashboard_hide_flagged,
+                    )?;
+                }
+                if let Some(next_kata) = self.dashboard.katas_due.first().cloned() {
+                    let practice_screen =
+                        PracticeScreen::new(next_kata.clone(), self.config.editor.clone())?;
+                    self.current_screen = Screen::Practice(next_kata, practice_screen);
+                } else {
+                    self.refresh_dashboard_screen()?;
+                }
             }
+            ScreenAction::RetryKata(kata) => {
+                let practice_screen =
+                    PracticeScreen::new_retry(kata.clone(), self.config.editor.clone())?;
+                self.current_screen = Screen::Practice(kata, practice_screen);
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn handle_results_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
             ScreenAction::SubmitRating(kata, rating, results) => {
                 self.handle_rating_submission(kata, rating, results)?;
                 self.dashboard = Dashboard::load_with_filter(
@@ -897,22 +493,41 @@ impl App {
                 )?;
                 self.refresh_dashboard_screen()?;
             }
-            ScreenAction::StartNextDue => {
-                if self.dashboard.katas_due.is_empty() {
-                    self.dashboard = Dashboard::load_with_filter(
-                        &self.repo,
-                        self.config.display.heatmap_days,
-                        self.dashboard_hide_flagged,
-                    )?;
-                }
-                if let Some(next_kata) = self.dashboard.katas_due.first().cloned() {
-                    let practice_screen =
-                        PracticeScreen::new(next_kata.clone(), self.config.editor.clone())?;
-                    self.current_screen = Screen::Practice(next_kata, practice_screen);
-                } else {
-                    self.refresh_dashboard_screen()?;
-                }
+            ScreenAction::ResultsSolutionViewed => {
+                self.needs_terminal_clear = true;
             }
+            ScreenAction::ResultsToggleFlagWithReason(kata, reason) => {
+                let kata_id = kata.id;
+                let was_problematic = kata.is_problematic;
+
+                if was_problematic {
+                    self.repo.unflag_kata(kata_id)?;
+                } else {
+                    self.repo.flag_kata(kata.id, reason)?;
+                }
+
+                if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
+                    let old_screen =
+                        std::mem::replace(&mut self.current_screen, Screen::Dashboard);
+                    if let Screen::Results(_, mut rs) = old_screen {
+                        rs.update_kata(fresh_kata.clone());
+                        self.current_screen = Screen::Results(fresh_kata, rs);
+                    }
+                }
+
+                self.dashboard = Dashboard::load_with_filter(
+                    &self.repo,
+                    self.config.display.heatmap_days,
+                    self.dashboard_hide_flagged,
+                )?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn handle_library_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
             ScreenAction::OpenLibrary => {
                 let library = Library::load_with_filter(
                     &self.repo,
@@ -923,10 +538,8 @@ impl App {
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::AddKataFromLibrary(kata_name) => {
-                // load available katas
                 let available_katas = crate::core::kata_loader::load_available_katas()?;
                 if let Some(available_kata) = available_katas.iter().find(|k| k.name == kata_name) {
-                    // create NewKata
                     let new_kata = NewKata {
                         name: available_kata.name.clone(),
                         category: available_kata.category.clone(),
@@ -936,18 +549,14 @@ impl App {
                         variation_params: None,
                     };
 
-                    // add to database with next_review_at = now (so it appears as due)
                     self.repo.create_kata(&new_kata, Utc::now())?;
 
-                    // update library state if on library screen, or navigate back if on details
                     match &mut self.current_screen {
                         Screen::Library(library) => {
                             library.mark_as_added(&kata_name);
-                            // Force terminal clear to prevent display corruption
                             self.needs_terminal_clear = true;
                         }
                         Screen::Details(_) => {
-                            // navigate back to library with updated state
                             let library = Library::load_with_filter(
                                 &self.repo,
                                 &self.config.library.default_sort,
@@ -955,13 +564,11 @@ impl App {
                                 self.library_hide_flagged,
                             )?;
                             self.current_screen = Screen::Library(library);
-                            // Force terminal clear to prevent display corruption
                             self.needs_terminal_clear = true;
                         }
                         _ => {}
                     }
 
-                    // reload dashboard so counts are updated (preserve hide_flagged state)
                     self.dashboard = Dashboard::load_with_filter(
                         &self.repo,
                         self.config.display.heatmap_days,
@@ -972,36 +579,15 @@ impl App {
             ScreenAction::BackFromLibrary => {
                 self.refresh_dashboard_screen()?;
             }
-            ScreenAction::ViewDetails(kata, in_deck) => {
-                let details = DetailsScreen::new(kata, in_deck);
-                self.current_screen = Screen::Details(details);
-            }
-            ScreenAction::BackFromDetails => {
-                let library = Library::load_with_filter(
-                    &self.repo,
-                    &self.config.library.default_sort,
-                    self.config.library.default_sort_ascending,
-                    self.library_hide_flagged,
-                )?;
-                self.current_screen = Screen::Library(library);
-            }
-            ScreenAction::RetryKata(kata) => {
-                let practice_screen =
-                    PracticeScreen::new_retry(kata.clone(), self.config.editor.clone())?;
-                self.current_screen = Screen::Practice(kata, practice_screen);
-            }
             ScreenAction::RemoveKataFromDeck(kata) => {
-                // Delete the kata from the database
                 self.repo.delete_kata(kata.id)?;
 
-                // Reload dashboard to reflect the change (preserve hide_flagged state)
                 self.dashboard = Dashboard::load_with_filter(
                     &self.repo,
                     self.config.display.heatmap_days,
                     self.dashboard_hide_flagged,
                 )?;
 
-                // If on library screen, update library state
                 match &mut self.current_screen {
                     Screen::Library(library) => {
                         library.mark_as_removed(&kata.name);
@@ -1012,8 +598,150 @@ impl App {
                     }
                 }
             }
+            ScreenAction::LibraryToggleFlagKata(kata) => {
+                if kata.is_problematic {
+                    self.repo.unflag_kata(kata.id)?;
+                } else {
+                    self.repo.flag_kata(kata.id, None)?;
+                }
+                self.dashboard = Dashboard::load_with_filter(
+                    &self.repo,
+                    self.config.display.heatmap_days,
+                    self.dashboard_hide_flagged,
+                )?;
+                return self.execute_action(ScreenAction::OpenLibrary);
+            }
+            ScreenAction::LibraryToggleHideFlagged => {
+                if let Screen::Library(library) = &self.current_screen {
+                     self.library_hide_flagged = !library.hide_flagged;
+                    let new_library = Library::load_with_filter(
+                        &self.repo,
+                        &self.config.library.default_sort,
+                        self.config.library.default_sort_ascending,
+                        self.library_hide_flagged,
+                    )?;
+                    self.current_screen = Screen::Library(new_library);
+                }
+            }
+            ScreenAction::LibraryToggleFlagWithReason(kata, reason) => {
+                if kata.is_problematic {
+                    self.repo.unflag_kata(kata.id)?;
+                } else {
+                    self.repo.flag_kata(kata.id, reason)?;
+                }
+                self.dashboard = Dashboard::load_with_filter(
+                    &self.repo,
+                    self.config.display.heatmap_days,
+                    self.dashboard_hide_flagged,
+                )?;
+                return self.execute_action(ScreenAction::OpenLibrary);
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn handle_dashboard_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
+            ScreenAction::ReturnToDashboard => {
+                self.dashboard = Dashboard::load_with_filter(
+                    &self.repo,
+                    self.config.display.heatmap_days,
+                    self.dashboard_hide_flagged,
+                )?;
+                self.refresh_dashboard_screen()?;
+            }
+            ScreenAction::DashboardSelectKata(kata) => {
+                 let practice_screen =
+                    PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
+                self.current_screen = Screen::Practice(kata, practice_screen);
+            }
+            ScreenAction::DashboardRemoveKata(kata) => {
+                 self.execute_action(ScreenAction::RemoveKataFromDeck(kata))?;
+            }
+            ScreenAction::DashboardEditKata(kata) => {
+                 self.execute_action(ScreenAction::OpenEditKata(kata.id))?;
+            }
+            ScreenAction::DashboardToggleFlagKata(kata) => {
+                if kata.is_problematic {
+                    self.repo.unflag_kata(kata.id)?;
+                } else {
+                    self.repo.flag_kata(kata.id, None)?;
+                }
+                self.dashboard = Dashboard::load_with_filter(
+                    &self.repo,
+                    self.config.display.heatmap_days,
+                    self.dashboard_hide_flagged,
+                )?;
+                if let Screen::Practice(_, _) = &self.current_screen {
+                     if let Some(fresh_kata) = self.repo.get_kata_by_id(kata.id)? {
+                        let old_screen =
+                            std::mem::replace(&mut self.current_screen, Screen::Dashboard);
+                        if let Screen::Practice(_, ps) = old_screen {
+                            self.current_screen = Screen::Practice(fresh_kata, ps);
+                        }
+                    }
+                }
+            }
+            ScreenAction::DashboardToggleHideFlagged => {
+                self.dashboard_hide_flagged = !self.dashboard_hide_flagged;
+                self.dashboard = Dashboard::load_with_filter(
+                    &self.repo,
+                    self.config.display.heatmap_days,
+                    self.dashboard_hide_flagged,
+                )?;
+                if let Screen::Done(_) = self.current_screen {
+                     self.refresh_dashboard_screen()?;
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn handle_session_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
+            ScreenAction::ViewSessionHistory(kata) => {
+                let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                self.current_screen = Screen::SessionHistory(session_history);
+            }
+            ScreenAction::ViewSessionDetail(session_id) => {
+                let session_detail = SessionDetailScreen::new(session_id, &self.repo)?;
+                self.current_screen = Screen::SessionDetail(session_detail);
+            }
+            ScreenAction::DeleteSession(session_id) => {
+                self.repo.delete_session(session_id)?;
+
+                if let Screen::SessionHistory(ref session_history) = &self.current_screen {
+                    let kata = session_history.kata.clone();
+                    let mut new_session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                    new_session_history.selected = session_history
+                        .selected
+                        .min(new_session_history.sessions.len().saturating_sub(1));
+                    self.current_screen = Screen::SessionHistory(new_session_history);
+                }
+            }
+            ScreenAction::BackFromSessionHistory => {
+                self.refresh_dashboard_screen()?;
+            }
+            ScreenAction::BackFromSessionDetail => {
+                if let Screen::SessionDetail(ref session_detail) = &self.current_screen {
+                    let kata = self
+                        .repo
+                        .get_kata_by_id(session_detail.session.kata_id)?
+                        .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
+                    let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
+                    self.current_screen = Screen::SessionHistory(session_history);
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn handle_kata_crud_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
             ScreenAction::OpenCreateKata => {
-                // Load available katas for dependency selection
                 let available_katas = crate::core::kata_loader::load_available_katas()?;
                 let kata_names: Vec<String> =
                     available_katas.iter().map(|k| k.name.clone()).collect();
@@ -1023,13 +751,10 @@ impl App {
             }
             ScreenAction::SubmitNewKata { form_data, slug: _ } => {
                 use crate::core::kata_generator::generate_kata_files;
-
                 let exercises_dir = std::path::Path::new("katas/exercises");
 
-                // Generate the kata files
                 match generate_kata_files(&form_data, exercises_dir) {
                     Ok(created_slug) => {
-                        // Success! Return to library and show success popup
                         let library = Library::load_with_filter(
                             &self.repo,
                             &self.config.library.default_sort,
@@ -1048,7 +773,6 @@ impl App {
                         });
                     }
                     Err(e) => {
-                        // Error! Return to library and show error popup
                         let library = Library::load_with_filter(
                             &self.repo,
                             &self.config.library.default_sort,
@@ -1066,7 +790,6 @@ impl App {
                 }
             }
             ScreenAction::CancelCreateKata => {
-                // Return to library
                 let library = Library::load_with_filter(
                     &self.repo,
                     &self.config.library.default_sort,
@@ -1076,13 +799,10 @@ impl App {
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::OpenEditKata(kata_id) => {
-                // Load kata from database
                 if let Some(kata) = self.repo.get_kata_by_id(kata_id)? {
-                    // Load tags and dependencies
                     let tags = self.repo.get_kata_tags(kata_id)?;
                     let dependencies = self.repo.get_kata_dependencies(kata_id)?;
 
-                    // Get dependency names (not IDs)
                     let dep_names: Vec<String> = dependencies
                         .iter()
                         .filter_map(|dep_id| {
@@ -1094,7 +814,6 @@ impl App {
                         })
                         .collect();
 
-                    // Load available katas for dependency selection
                     let available_katas = crate::core::kata_loader::load_available_katas()?;
                     let kata_names: Vec<String> =
                         available_katas.iter().map(|k| k.name.clone()).collect();
@@ -1118,7 +837,6 @@ impl App {
                 let exercises_dir = std::path::Path::new("katas/exercises");
                 let name_changed = original_slug != new_slug;
 
-                // Get original state for rollback
                 let original_kata = self
                     .repo
                     .get_kata_by_id(kata_id)?
@@ -1126,7 +844,6 @@ impl App {
                 let original_dependencies = self.repo.get_kata_dependencies(kata_id)?;
                 let original_tags = self.repo.get_kata_tags(kata_id)?;
 
-                // Parse category field as comma-separated tags
                 let new_tags: Vec<String> = form_data
                     .category
                     .split(',')
@@ -1134,14 +851,12 @@ impl App {
                     .filter(|s| !s.is_empty())
                     .collect();
 
-                // Use the first tag as the primary category for backward compatibility
                 let primary_category = new_tags
                     .first()
                     .cloned()
                     .unwrap_or_else(|| form_data.category.clone());
 
                 if name_changed {
-                    // 1. Update database first
                     match self.repo.update_kata_full_metadata(
                         kata_id,
                         &new_slug,
@@ -1150,9 +865,7 @@ impl App {
                         form_data.difficulty as i32,
                     ) {
                         Ok(_) => {
-                            // 2. Update tags in DB
                             if let Err(e) = self.repo.set_kata_tags(kata_id, &new_tags) {
-                                // Rollback metadata changes
                                 let _ = self.repo.update_kata_full_metadata(
                                     kata_id,
                                     &original_kata.name,
@@ -1164,10 +877,8 @@ impl App {
                                 return Ok(());
                             }
 
-                            // 3. Update dependencies in DB
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
                             if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
-                                // Rollback ALL database changes
                                 let _ = self.repo.update_kata_full_metadata(
                                     kata_id,
                                     &original_kata.name,
@@ -1180,15 +891,12 @@ impl App {
                                 return Ok(());
                             }
 
-                            // 4. Now rename directory (if this fails, rollback DB)
                             match rename_kata_directory(exercises_dir, &original_slug, &new_slug) {
                                 Ok(_) => {
-                                    // 5. Update manifest in new location
                                     let kata_dir = exercises_dir.join(&new_slug);
                                     if let Err(e) =
                                         update_manifest(&kata_dir, &form_data, &new_slug, &new_tags)
                                     {
-                                        // Rollback: rename directory back and revert ALL database changes
                                         let _ = rename_kata_directory(
                                             exercises_dir,
                                             &new_slug,
@@ -1209,7 +917,6 @@ impl App {
                                         return Ok(());
                                     }
 
-                                    // 6. Update all dependent kata manifests to use new slug
                                     let dependent_kata_ids =
                                         self.repo.get_dependent_katas(kata_id)?;
                                     for dep_kata_id in &dependent_kata_ids {
@@ -1222,14 +929,11 @@ impl App {
                                                 &original_slug,
                                                 &new_slug,
                                             ) {
-                                                // Rollback: rename directory back, revert DB, and rollback any
-                                                // already-updated dependent manifests
                                                 eprintln!("Failed to update dependent manifest for '{}': {}", dep_kata.name, e);
 
-                                                // Try to rollback dependent manifests we already updated
                                                 for rollback_id in &dependent_kata_ids {
                                                     if rollback_id == dep_kata_id {
-                                                        break; // Don't rollback the one that failed
+                                                        break;
                                                     }
                                                     if let Ok(Some(rb_kata)) =
                                                         self.repo.get_kata_by_id(*rollback_id)
@@ -1244,7 +948,6 @@ impl App {
                                                     }
                                                 }
 
-                                                // Rollback renamed kata
                                                 let _ = rename_kata_directory(
                                                     exercises_dir,
                                                     &new_slug,
@@ -1269,7 +972,6 @@ impl App {
                                         }
                                     }
 
-                                    // Success! Return to library
                                     let library = Library::load_with_filter(
                                         &self.repo,
                                         &self.config.library.default_sort,
@@ -1280,7 +982,6 @@ impl App {
                                     eprintln!("Kata '{}' updated successfully!", new_slug);
                                 }
                                 Err(e) => {
-                                    // Rollback ALL database changes
                                     let _ = self.repo.update_kata_full_metadata(
                                         kata_id,
                                         &original_kata.name,
@@ -1293,17 +994,14 @@ impl App {
                                         .repo
                                         .replace_dependencies(kata_id, &original_dependencies);
                                     eprintln!("Failed to rename kata directory: {}", e);
-                                    // Stay on edit screen
                                 }
                             }
                         }
                         Err(e) => {
                             eprintln!("Failed to update database: {}", e);
-                            // Stay on edit screen (nothing to rollback - first operation failed)
                         }
                     }
                 } else {
-                    // Name didn't change, just update metadata
                     match self.repo.update_kata_metadata(
                         kata_id,
                         &form_data.description,
@@ -1311,9 +1009,7 @@ impl App {
                         form_data.difficulty as i32,
                     ) {
                         Ok(_) => {
-                            // Update tags in DB
                             if let Err(e) = self.repo.set_kata_tags(kata_id, &new_tags) {
-                                // Rollback metadata changes
                                 let _ = self.repo.update_kata_metadata(
                                     kata_id,
                                     &original_kata.description,
@@ -1324,10 +1020,8 @@ impl App {
                                 return Ok(());
                             }
 
-                            // Update dependencies
                             let dep_ids = self.resolve_dependency_ids(&form_data.dependencies)?;
                             if let Err(e) = self.repo.replace_dependencies(kata_id, &dep_ids) {
-                                // Rollback metadata changes
                                 let _ = self.repo.update_kata_metadata(
                                     kata_id,
                                     &original_kata.description,
@@ -1339,12 +1033,10 @@ impl App {
                                 return Ok(());
                             }
 
-                            // Update manifest with new tags
                             let kata_dir = exercises_dir.join(&original_slug);
                             if let Err(e) =
                                 update_manifest(&kata_dir, &form_data, &original_slug, &new_tags)
                             {
-                                // Rollback ALL database changes
                                 let _ = self.repo.update_kata_metadata(
                                     kata_id,
                                     &original_kata.description,
@@ -1359,7 +1051,6 @@ impl App {
                                 return Ok(());
                             }
 
-                            // Success! Return to library
                             let library = Library::load_with_filter(
                                 &self.repo,
                                 &self.config.library.default_sort,
@@ -1371,19 +1062,16 @@ impl App {
                         }
                         Err(e) => {
                             eprintln!("Failed to update kata: {}", e);
-                            // Stay on edit screen (nothing to rollback - first operation failed)
                         }
                     }
                 }
             }
             ScreenAction::OpenEditorFile(file_path) => {
-                // Spawn external editor with proper terminal handling
                 use std::io::Write;
                 use std::process::Command;
 
                 let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string());
 
-                // Exit alternate screen and disable raw mode to hand control to editor
                 let mut stdout = std::io::stdout();
                 crossterm::execute!(
                     stdout,
@@ -1396,10 +1084,8 @@ impl App {
                 crossterm::terminal::disable_raw_mode()
                     .context("Failed to disable raw mode before launching editor")?;
 
-                // Launch editor and wait for it to complete
                 let status_result = Command::new(&editor).arg(&file_path).status();
 
-                // Re-enable raw mode and re-enter alternate screen to restore TUI
                 crossterm::terminal::enable_raw_mode()
                     .context("Failed to re-enable raw mode after exiting editor")?;
 
@@ -1412,12 +1098,10 @@ impl App {
                 )
                 .context("Failed to re-enter alternate screen after exiting editor")?;
 
-                // Flush to ensure all commands are executed
                 stdout
                     .flush()
                     .context("Failed to flush stdout after terminal reset")?;
 
-                // Check editor exit status
                 let editor_status =
                     status_result.with_context(|| format!("Failed to launch {}", editor))?;
 
@@ -1428,11 +1112,8 @@ impl App {
                         editor_status.code()
                     );
                 }
-
-                // Stay on edit screen
             }
             ScreenAction::CancelEditKata => {
-                // Return to library
                 let library = Library::load_with_filter(
                     &self.repo,
                     &self.config.library.default_sort,
@@ -1441,11 +1122,22 @@ impl App {
                 )?;
                 self.current_screen = Screen::Library(library);
             }
+            ScreenAction::EditKataByName(name) => {
+                if let Ok(Some(kata)) = self.repo.get_kata_by_name(&name) {
+                    self.execute_action(ScreenAction::OpenEditKata(kata.id))?;
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn handle_settings_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
             ScreenAction::OpenSettings => {
-                // Save current screen before opening settings so we can restore it later
                 let previous = std::mem::replace(
                     &mut self.current_screen,
-                    Screen::Dashboard, // temporary placeholder
+                    Screen::Dashboard,
                 );
                 self.previous_screen_before_settings = Some(Box::new(previous));
 
@@ -1453,51 +1145,55 @@ impl App {
                 self.current_screen = Screen::Settings(settings_screen);
             }
             ScreenAction::CloseSettings => {
-                // Restore previous screen if we have one, otherwise go to dashboard
                 if let Some(previous) = self.previous_screen_before_settings.take() {
                     self.current_screen = *previous;
                 } else {
                     self.refresh_dashboard_screen()?;
                 }
             }
-            ScreenAction::ViewSessionHistory(kata) => {
-                let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
-                self.current_screen = Screen::SessionHistory(session_history);
+            ScreenAction::SaveSettings(config) => {
+                match config.save() {
+                    Ok(_) => {
+                        self.config = config;
+                        self.popup_message = Some(PopupMessage {
+                            title: "Settings Saved".to_string(),
+                            message: "Settings have been saved to ~/.config/kata-sr/config.toml".to_string(),
+                            style: PopupStyle::Success,
+                        });
+                    }
+                    Err(e) => {
+                        self.popup_message = Some(PopupMessage {
+                            title: "Error Saving Settings".to_string(),
+                            message: format!("Failed to save settings:\n\n{}", e),
+                            style: PopupStyle::Error,
+                        });
+                    }
+                }
             }
-            ScreenAction::ViewSessionDetail(session_id) => {
-                let session_detail = SessionDetailScreen::new(session_id, &self.repo)?;
-                self.current_screen = Screen::SessionDetail(session_detail);
-            }
-            ScreenAction::DeleteSession(session_id) => {
-                // Delete the session from the database
-                self.repo.delete_session(session_id)?;
+            _ => {}
+        }
+        Ok(())
+    }
 
-                // Refresh the session history screen to show updated list
-                if let Screen::SessionHistory(ref session_history) = &self.current_screen {
-                    let kata = session_history.kata.clone();
-                    let mut new_session_history = SessionHistoryScreen::new(kata, &self.repo)?;
-                    // Preserve selection, adjusting if we deleted the last item
-                    new_session_history.selected = session_history
-                        .selected
-                        .min(new_session_history.sessions.len().saturating_sub(1));
-                    self.current_screen = Screen::SessionHistory(new_session_history);
-                }
+    fn handle_misc_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
+        match action {
+            ScreenAction::PracticeEditorExited => {
+                self.needs_terminal_clear = true;
             }
-            ScreenAction::BackFromSessionHistory => {
-                self.refresh_dashboard_screen()?;
+            ScreenAction::ViewDetails(kata, in_deck) => {
+                let details = DetailsScreen::new(kata, in_deck);
+                self.current_screen = Screen::Details(details);
             }
-            ScreenAction::BackFromSessionDetail => {
-                // Navigate back to session history
-                // We need to get the kata from the session detail screen
-                if let Screen::SessionDetail(ref session_detail) = &self.current_screen {
-                    let kata = self
-                        .repo
-                        .get_kata_by_id(session_detail.session.kata_id)?
-                        .ok_or_else(|| anyhow::anyhow!("Kata not found"))?;
-                    let session_history = SessionHistoryScreen::new(kata, &self.repo)?;
-                    self.current_screen = Screen::SessionHistory(session_history);
-                }
+            ScreenAction::BackFromDetails => {
+                let library = Library::load_with_filter(
+                    &self.repo,
+                    &self.config.library.default_sort,
+                    self.config.library.default_sort_ascending,
+                    self.library_hide_flagged,
+                )?;
+                self.current_screen = Screen::Library(library);
             }
+            _ => {}
         }
         Ok(())
     }
