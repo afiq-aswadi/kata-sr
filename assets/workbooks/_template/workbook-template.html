@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{WORKBOOK_TITLE}} · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* Subtle paper texture */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+    .section:nth-child(5) { animation-delay: 0.4s; }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow:
+        0 2px 8px var(--shadow),
+        0 8px 24px var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 4px 12px var(--shadow),
+        0 12px 32px rgba(42, 37, 32, 0.12);
+    }
+
+    .exercise-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .exercise-meta {
+      font-size: 13px;
+      color: var(--rust);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--navy);
+      color: white;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+
+    .badge.prereq {
+      background: var(--sage);
+    }
+
+    .badge.kata {
+      background: var(--gold);
+      color: var(--ink);
+    }
+
+    ul {
+      list-style: none;
+      margin: 16px 0;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 8px;
+    }
+
+    ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--rust);
+      font-weight: 500;
+    }
+
+    pre {
+      background: #282a36;
+      border-radius: 6px;
+      padding: 0;
+      overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    pre code {
+      display: block;
+      padding: 20px 24px;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 400;
+      color: #f8f8f2;
+    }
+
+    /* Override highlight.js theme for dark code blocks */
+    .hljs {
+      background: #282a36 !important;
+      color: #f8f8f2 !important;
+    }
+
+    .hljs-comment { color: #6272a4; }
+    .hljs-string { color: #f1fa8c; }
+    .hljs-keyword { color: #ff79c6; }
+    .hljs-function { color: #50fa7b; }
+    .hljs-number { color: #bd93f9; }
+    .hljs-built_in { color: #8be9fd; }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: var(--rust);
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #f8f8f2;
+    }
+
+    .intro-block {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.08), rgba(212, 165, 116, 0.08));
+      border-left: 4px solid var(--sage);
+      padding: 24px 28px;
+      margin: 32px 0;
+      border-radius: 4px;
+    }
+
+    .intro-block h3 {
+      margin-top: 0;
+      color: var(--sage);
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .code-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 768px) {
+      .code-comparison {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 40px;
+      }
+
+      .page {
+        padding: 48px 20px;
+      }
+    }
+
+    .comparison-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .resources a {
+      color: var(--navy);
+      text-decoration: none;
+      border-bottom: 2px solid var(--rust);
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .resources a:hover {
+      color: var(--rust);
+      border-bottom-color: var(--gold);
+    }
+
+    .note {
+      font-size: 14px;
+      color: var(--navy);
+      opacity: 0.7;
+      font-style: italic;
+      margin-top: 16px;
+    }
+
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .goal-item {
+      background: white;
+      padding: 20px;
+      border-radius: 6px;
+      border-left: 3px solid var(--sage);
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="subtitle">{{WORKBOOK_TYPE}} Workbook</div>
+      <h1>{{WORKBOOK_TITLE}}</h1>
+      <p class="summary">{{WORKBOOK_SUMMARY}}</p>
+    </header>
+
+    <!-- INTRODUCTION SECTION (Optional) -->
+    <section class="section">
+      <h2>Introduction</h2>
+      <div class="intro-block">
+        <p>{{INTRODUCTION_TEXT}}</p>
+      </div>
+
+      <!-- Code examples showing motivation -->
+      <h3>Why This Matters</h3>
+      <div class="code-comparison">
+        <div>
+          <div class="comparison-label">❌ Before</div>
+          <pre><code class="language-python">{{BEFORE_CODE}}</code></pre>
+        </div>
+        <div>
+          <div class="comparison-label">✓ After</div>
+          <pre><code class="language-python">{{AFTER_CODE}}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEARNING GOALS -->
+    <section class="section">
+      <h2>Learning Goals</h2>
+      <div class="goals-grid">
+        <!-- Repeat for each goal -->
+        <div class="goal-item">
+          {{LEARNING_GOAL}}
+        </div>
+      </div>
+    </section>
+
+    <!-- PREREQUISITES -->
+    <section class="section">
+      <h2>Prerequisites</h2>
+      <div>
+        <span class="badge prereq">{{PREREQ_1}}</span>
+        <span class="badge prereq">{{PREREQ_2}}</span>
+      </div>
+    </section>
+
+    <!-- EXERCISES -->
+    <section class="section">
+      <h2>Exercises</h2>
+
+      <!-- Repeat for each exercise -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>{{EXERCISE_TITLE}}</h3>
+          <div class="exercise-meta">Exercise {{N}} · {{SLUG}}</div>
+        </div>
+
+        <p>{{EXERCISE_OBJECTIVE}}</p>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>{{ACCEPTANCE_CRITERIA_1}}</li>
+          <li>{{ACCEPTANCE_CRITERIA_2}}</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>{{HINT_1}}</li>
+          <li>{{HINT_2}}</li>
+        </ul>
+
+        <!-- Dependencies if any -->
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: {{DEPENDENCY}}</span>
+        </div>
+
+        <!-- Kata reference -->
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "{{KATA_NAME}}" (or press <code>w</code> then <code>a</code>/<code>p</code>)
+        </div>
+
+        <!-- Code template preview -->
+        <pre><code class="language-python">{{TEMPLATE_CODE}}</code></pre>
+      </article>
+    </section>
+
+    <!-- RESOURCES -->
+    <section class="section resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="{{URL}}" target="_blank" rel="noopener noreferrer">{{RESOURCE_TITLE}}</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    // Initialize syntax highlighting
+    hljs.highlightAll();
+  </script>
+</body>
+</html>

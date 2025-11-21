@@ -30,6 +30,7 @@ pub struct ResultsScreen {
     flag_reason: String,
     flag_cursor_position: usize,
     gave_up: bool,
+    preview_added_to_deck: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -70,6 +71,7 @@ impl ResultsScreen {
             flag_reason: String::new(),
             flag_cursor_position: 0,
             gave_up: false,
+            preview_added_to_deck: false,
         }
     }
 
@@ -88,6 +90,10 @@ impl ResultsScreen {
     /// This ensures the flag popup shows the current flag status.
     pub fn update_kata(&mut self, kata: Kata) {
         self.kata = kata;
+    }
+
+    pub fn mark_preview_added(&mut self) {
+        self.preview_added_to_deck = true;
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
@@ -201,13 +207,21 @@ impl ResultsScreen {
         if is_preview_mode {
             // Preview mode: no rating, just back to library
             let status_text = if self.results.passed {
-                "Tests passed! This was a preview attempt.\nAdd this kata to your deck to track progress and schedule reviews."
+                if self.preview_added_to_deck {
+                    "Tests passed. This kata has been added to your deck."
+                } else {
+                    "Tests passed! This was a preview attempt.\nAdd this kata to your deck to track progress and schedule reviews."
+                }
             } else {
                 "Tests failed. This was a preview attempt.\nFix your implementation and retry, or view the solution."
             };
 
             let actions_text = if self.results.passed {
-                "\n[Esc] Back to library"
+                if self.preview_added_to_deck {
+                    "\n[Esc] Back to library"
+                } else {
+                    "\n[a] Add to deck    [Esc] Back to library"
+                }
             } else {
                 "\n[r] Retry (keep edits)    [g] Give up (view solution)    [Esc] Back to library"
             };
@@ -603,6 +617,9 @@ impl ResultsScreen {
         // In preview mode, if tests passed, just go back to library
         if is_preview_mode && self.results.passed {
             return match code {
+                KeyCode::Char('a') if !self.preview_added_to_deck => {
+                    ResultsAction::AddPreviewToDeck
+                }
                 KeyCode::Esc => ResultsAction::BackToLibrary,
                 _ => ResultsAction::None,
             };
@@ -801,6 +818,7 @@ pub enum ResultsAction {
     GiveUp,
     BackToDashboard,
     BackToLibrary,
+    AddPreviewToDeck,
     StartNextDue,
     ReviewAnother,
     OpenSettings,

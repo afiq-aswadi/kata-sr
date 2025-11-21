@@ -7,8 +7,9 @@
 //! - Database inspection
 
 use crate::core::kata_loader;
+use crate::core::workbook::{generate_workbook_html, load_workbooks};
 use crate::db::repo::KataRepository;
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Subcommand;
 use serde_json;
 
@@ -82,6 +83,13 @@ pub enum DebugOperation {
         #[arg(long)]
         output: Option<String>,
     },
+
+    /// Generate workbook HTML files from manifests
+    GenerateWorkbook {
+        /// Workbook ID to generate (when omitted, generate all)
+        #[arg(long)]
+        topic: Option<String>,
+    },
 }
 
 impl DebugOperation {
@@ -103,6 +111,7 @@ impl DebugOperation {
                 format,
                 output,
             } => export_sessions(repo, kata_name, format, output.as_deref()),
+            DebugOperation::GenerateWorkbook { topic } => generate_workbook_pages(topic.as_deref()),
         }
     }
 }
@@ -309,6 +318,38 @@ fn unflag_kata(repo: &KataRepository, kata_id: i64) -> Result<()> {
     repo.unflag_kata(kata_id).context("Failed to unflag kata")?;
 
     println!("✓ Unflagged kata: {} (ID {})", kata.name, kata_id);
+    Ok(())
+}
+
+fn generate_workbook_pages(topic: Option<&str>) -> Result<()> {
+    let workbooks = load_workbooks().context("Failed to load workbooks")?;
+    if workbooks.is_empty() {
+        bail!("No workbooks found");
+    }
+
+    let mut generated = 0usize;
+    for workbook in workbooks {
+        if let Some(topic_id) = topic {
+            if workbook.meta.id != topic_id {
+                continue;
+            }
+        }
+
+        generate_workbook_html(&workbook).with_context(|| {
+            format!("Failed to generate HTML for workbook {}", workbook.meta.id)
+        })?;
+        println!(
+            "✓ Generated {} → {}",
+            workbook.meta.id,
+            workbook.html_path.display()
+        );
+        generated += 1;
+    }
+
+    if generated == 0 {
+        bail!("No workbook matched the requested topic");
+    }
+
     Ok(())
 }
 

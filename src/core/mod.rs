@@ -15,3 +15,4 @@ pub mod fsrs_optimizer;
 pub mod kata_generator;
 pub mod kata_loader;
 pub mod kata_validation;
+pub mod workbook;

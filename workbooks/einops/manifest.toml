@@ -1,0 +1,81 @@
+[workbook]
+id = "einops_arena"
+title = "Einops Arena: Shape Fluency"
+summary = "A focused arena of exercises to build muscle memory for rearrange, reduce, and einsum in real model settings."
+learning_goals = [
+  "Read and rewrite tensor shapes without guessing",
+  "Flatten and unflatten image patches with channel-first order intact",
+  "Pool and reshape sequences using einops.reduce instead of ad-hoc slicing",
+  "Compute attention logits with einops.einsum and correct scaling",
+]
+prerequisites = ["tensor_slicing", "softmax"]
+resources = [
+  { title = "einops overview", url = "https://einops.rocks/pytorch-examples.html" },
+  { title = "einops cheatsheet", url = "https://einops.rocks/notes/cheatsheet/" },
+]
+kata_namespace = "einops"
+
+[[exercises]]
+slug = "patches"
+title = "Patchify images with rearrange"
+kata = "einops_patches"
+objective = "Turn BCHW images into non-overlapping flattened patches."
+acceptance = [
+  "Output shape is (batch, num_patches, channels * patch_area)",
+  "Patch order does not interleave rows or channels",
+  "patch_size must divide both height and width",
+]
+hints = [
+  "Use both spatial axes in the einops pattern",
+  "Keep channels leading when flattening patches",
+]
+assets = []
+dependencies = []
+
+[[exercises]]
+slug = "segment-mean"
+title = "Sequence pooling with reduce"
+kata = "einops_segment_mean"
+objective = "Average tokens over fixed windows without losing batch or feature dimensions."
+acceptance = [
+  "Sequence length must be divisible by window_size",
+  "Output shape is (batch, segments, dim) with the correct mean per window",
+]
+hints = [
+  "Group the sequence axis as (segments window) in the pattern",
+]
+assets = []
+dependencies = ["patches"]
+
+[[exercises]]
+slug = "split-heads"
+title = "Unmerge attention heads"
+kata = "einops_split_heads"
+objective = "Split a merged hidden dimension into (heads, head_dim) for attention."
+acceptance = [
+  "hidden_dim must be divisible by num_heads",
+  "Output shape is (batch, heads, seq, head_dim) with contiguous per-head blocks",
+]
+hints = [
+  "Do not reorder batch or sequence axes",
+  "Use a named dimension for heads in the pattern",
+]
+assets = []
+dependencies = ["segment-mean"]
+
+[[exercises]]
+slug = "attention-logits"
+title = "Scaled attention logits with einsum"
+kata = "einops_attention_logits"
+objective = "Compute QK^T / sqrt(d_model) using einops.einsum across batch and heads."
+acceptance = [
+  "Output shape is (batch, heads, q_len, k_len)",
+  "Uses sqrt(dim) scaling (no hardcoded constant)",
+  "Matches torch.einsum baseline for the same inputs",
+]
+hints = [
+  "Validate head counts and dimensions before computing logits",
+  "Keep batch and head axes aligned in the pattern",
+]
+assets = []
+dependencies = ["split-heads"]

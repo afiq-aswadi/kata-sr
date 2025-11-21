@@ -101,6 +101,7 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("Tab", "Toggle focus between rating panel and test list"),
             Keybinding::new("o", "Open/close detailed output for selected test"),
             Keybinding::new("f", "Flag/unflag kata as problematic (toggle)"),
+            Keybinding::new("a", "Preview mode: add kata to deck after passing tests"),
             Keybinding::new(
                 "Enter",
                 "Submit rating (before submission) or confirm dashboard navigation (after)",
@@ -123,6 +124,7 @@ pub fn get_keybindings() -> Keybindings {
             Keybinding::new("d", "Remove selected kata from deck (My Deck tab)"),
             Keybinding::new("f", "Flag/unflag kata as problematic (My Deck tab)"),
             Keybinding::new("n", "Create a brand new kata"),
+            Keybinding::new("w", "Open workbook picker"),
             Keybinding::new("Enter", "View kata details (All Katas tab)"),
         ],
     }
@@ -176,8 +178,8 @@ pub fn render_help_screen(frame: &mut Frame) {
             Constraint::Length(5),  // Global (3 items: q, ?, Esc)
             Constraint::Length(9),  // Dashboard
             Constraint::Length(5),  // Practice (3 items)
-            Constraint::Length(10), // Results (9 items)
-            Constraint::Length(10), // Library (8 items)
+            Constraint::Length(12), // Results (includes preview add-to-deck)
+            Constraint::Length(11), // Library (includes workbook picker)
             Constraint::Min(1),     // Spacer
             Constraint::Length(2),  // Footer
         ])

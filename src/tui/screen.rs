@@ -17,6 +17,7 @@ use crate::tui::session_detail::{SessionDetailAction, SessionDetailScreen};
 use crate::tui::session_history::{SessionHistoryAction, SessionHistoryScreen};
 use crate::tui::settings::{SettingsAction, SettingsScreen};
 use crate::tui::startup::{StartupAction, StartupScreen};
+use crate::tui::workbooks::{WorkbookAction, WorkbookScreen};
 
 /// Current screen being displayed in the TUI.
 pub enum Screen {
@@ -36,6 +37,8 @@ pub enum Screen {
     Settings(SettingsScreen),
     /// Library screen for browsing and adding katas
     Library(Library),
+    /// Workbook picker for guided exercise sets
+    Workbooks(WorkbookScreen),
     /// Details screen for viewing kata information
     Details(DetailsScreen),
     /// Create kata screen for generating new kata files
@@ -58,6 +61,14 @@ pub enum ScreenAction {
     StartNextDue,
     OpenLibrary,
     AddKataFromLibrary(String),
+    AddPreviewToDeck(String),
+    OpenWorkbooks,
+    BackFromWorkbooks,
+    OpenWorkbookPage(PathBuf),
+    AddWorkbookExercises {
+        kata_names: Vec<String>,
+        workbook_title: String,
+    },
     BackFromLibrary,
     ViewDetails(crate::core::kata_loader::AvailableKata, bool),
     BackFromDetails,
@@ -125,6 +136,7 @@ impl Screen {
             Screen::Help => keybindings::render_help_screen(frame),
             Screen::Settings(settings_screen) => settings_screen.render(frame),
             Screen::Library(library) => library.render(frame),
+            Screen::Workbooks(workbooks) => workbooks.render(frame),
             Screen::Details(details) => details.render(frame),
             Screen::CreateKata(create_kata) => create_kata.render(frame),
             Screen::EditKata(edit_kata) => edit_kata.render(frame),
@@ -239,6 +251,9 @@ impl Screen {
                     ResultsAction::ReviewAnother => ScreenAction::ReturnToDashboard,
                     ResultsAction::BackToDashboard => ScreenAction::ReturnToDashboard,
                     ResultsAction::BackToLibrary => ScreenAction::OpenLibrary,
+                    ResultsAction::AddPreviewToDeck => {
+                        ScreenAction::AddPreviewToDeck(kata.name.clone())
+                    }
                     ResultsAction::OpenSettings => ScreenAction::OpenSettings,
                     ResultsAction::ToggleFlagWithReason(reason) => ScreenAction::ResultsToggleFlagWithReason(kata.clone(), reason),
                     ResultsAction::None => ScreenAction::None,
@@ -264,7 +279,7 @@ impl Screen {
                         return Ok(ScreenAction::ViewSessionHistory(kata));
                     }
                 }
-                
+
                 let action = library.handle_input(code);
                 Ok(match action {
                     LibraryAction::AddKata(name) => ScreenAction::AddKataFromLibrary(name),
@@ -275,6 +290,7 @@ impl Screen {
                     LibraryAction::ToggleHideFlagged => ScreenAction::LibraryToggleHideFlagged,
                     LibraryAction::ToggleFlagWithReason(kata, reason) => ScreenAction::LibraryToggleFlagWithReason(kata, reason),
                     LibraryAction::Back => ScreenAction::BackFromLibrary,
+                    LibraryAction::OpenWorkbooks => ScreenAction::OpenWorkbooks,
                     LibraryAction::ViewDetails(kata) => {
                         let in_deck = library.kata_ids_in_deck.contains(&kata.name);
                         ScreenAction::ViewDetails(kata, in_deck)
@@ -283,6 +299,24 @@ impl Screen {
                     LibraryAction::EditKataById(kata_id) => ScreenAction::OpenEditKata(kata_id),
                     LibraryAction::EditKataByName(name) => ScreenAction::EditKataByName(name),
                      _ => ScreenAction::None,
+                })
+            }
+            Screen::Workbooks(workbooks) => {
+                let action = workbooks.handle_input(code);
+                Ok(match action {
+                    WorkbookAction::Back => ScreenAction::BackFromWorkbooks,
+                    WorkbookAction::OpenHtml(path) => ScreenAction::OpenWorkbookPage(path),
+                    WorkbookAction::AddExercises {
+                        kata_names,
+                        workbook_title,
+                    } => ScreenAction::AddWorkbookExercises {
+                        kata_names,
+                        workbook_title,
+                    },
+                    WorkbookAction::PreviewFirst(kata) => {
+                        ScreenAction::AttemptKataWithoutDeck(kata)
+                    }
+                    WorkbookAction::None => ScreenAction::None,
                 })
             }
             Screen::Details(details) => {

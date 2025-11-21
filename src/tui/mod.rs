@@ -15,3 +15,4 @@ pub mod session_detail;
 pub mod session_history;
 pub mod settings;
 pub mod startup;
+pub mod workbooks;
