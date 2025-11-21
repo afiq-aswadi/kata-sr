@@ -3,712 +3,872 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Matplotlib Basics: Visualization Fundamentals · Arena Workbook</title>
+  <title>Matplotlib Basics: Visualization Fundamentals · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
   <style>
     :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --border: #1f2937;
-      --accent: #22d3ee;
-      --muted: #94a3b8;
-      --text: #e2e8f0;
-      --pill: #1d4ed8;
-      --pill-text: #e0f2fe;
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
     }
-    * { box-sizing: border-box; }
-    body {
+
+    * {
+      box-sizing: border-box;
       margin: 0;
-      font-family: "Inter", "SF Pro Display", "Segoe UI", sans-serif;
-      background: radial-gradient(120% 80% at 10% 10%, rgba(34,211,238,0.12), rgba(34,211,238,0) 55%), var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      padding: 32px 24px 64px;
+      padding: 0;
     }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
     .page {
-      max-width: 1100px;
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
       margin: 0 auto;
+      padding: 80px 32px;
     }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     h1 {
-      font-size: 32px;
-      margin: 0 0 8px 0;
-      letter-spacing: -0.02em;
-    }
-    .summary {
-      color: var(--muted);
-      max-width: 780px;
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
       margin-bottom: 16px;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 20px;
-    }
-    @media (max-width: 1024px) {
-      .grid { grid-template-columns: 1fr; }
-    }
-    .panel {
-      background: linear-gradient(145deg, rgba(17,24,39,0.9), rgba(15,23,42,0.92));
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px 18px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    }
-    .section-title {
-      font-size: 14px;
-      letter-spacing: 0.08em;
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 10px;
+      margin-bottom: 24px;
     }
-    ul.goals {
-      list-style: disc;
-      padding-left: 18px;
-      margin: 0;
-      color: var(--text);
-    }
-    .pill {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: var(--pill);
-      color: var(--pill-text);
-      font-size: 12px;
-      margin: 4px 6px 4px 0;
-    }
-    .resources ul {
-      padding-left: 16px;
-      margin: 0;
-    }
-    .resources a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-    .resources a:hover { text-decoration: underline; }
-    .exercise {
-      margin-bottom: 14px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      background: linear-gradient(145deg, rgba(30,41,59,0.75), rgba(15,23,42,0.9));
-    }
-    .exercise h3 {
-      margin: 0 0 6px 0;
+
+    .summary {
       font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+    .section:nth-child(5) { animation-delay: 0.4s; }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
       letter-spacing: -0.01em;
     }
-    .ex-meta {
-      color: var(--muted);
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow:
+        0 2px 8px var(--shadow),
+        0 8px 24px var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 4px 12px var(--shadow),
+        0 12px 32px rgba(42, 37, 32, 0.12);
+    }
+
+    .exercise-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .exercise-meta {
       font-size: 13px;
+      color: var(--rust);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--navy);
+      color: white;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+
+    .badge.prereq {
+      background: var(--sage);
+    }
+
+    .badge.kata {
+      background: var(--gold);
+      color: var(--ink);
+    }
+
+    ul {
+      list-style: none;
+      margin: 16px 0;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 24px;
       margin-bottom: 8px;
     }
-    .objective {
-      margin: 8px 0;
+
+    ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--rust);
+      font-weight: 500;
     }
+
     pre {
-      background: #0b1223;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
+      background: #282a36;
+      border-radius: 6px;
+      padding: 0;
       overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    pre code {
+      display: block;
+      padding: 20px 24px;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 400;
+      color: #f8f8f2;
+    }
+
+    .hljs {
+      background: #282a36 !important;
+      color: #f8f8f2 !important;
+    }
+
+    .hljs-comment { color: #6272a4; }
+    .hljs-string { color: #f1fa8c; }
+    .hljs-keyword { color: #ff79c6; }
+    .hljs-function { color: #50fa7b; }
+    .hljs-number { color: #bd93f9; }
+    .hljs-built_in { color: #8be9fd; }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: var(--rust);
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #f8f8f2;
+    }
+
+    .intro-block {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.08), rgba(212, 165, 116, 0.08));
+      border-left: 4px solid var(--sage);
+      padding: 24px 28px;
+      margin: 32px 0;
+      border-radius: 4px;
+    }
+
+    .intro-block h3 {
+      margin-top: 0;
+      color: var(--sage);
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .code-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 768px) {
+      .code-comparison {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 40px;
+      }
+
+      .page {
+        padding: 48px 20px;
+      }
+    }
+
+    .comparison-label {
+      text-align: center;
       font-size: 13px;
-      line-height: 1.5;
-      color: #cbd5e1;
-      margin-top: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      opacity: 0.7;
     }
-    .list {
-      padding-left: 16px;
-      margin: 6px 0;
-      color: var(--text);
+
+    .resources a {
+      color: var(--navy);
+      text-decoration: none;
+      border-bottom: 2px solid var(--rust);
+      transition: all 0.2s ease;
+      font-weight: 500;
     }
-    .list li { margin: 2px 0; }
-    .badges {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 8px;
+
+    .resources a:hover {
+      color: var(--rust);
+      border-bottom-color: var(--gold);
     }
-    .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+    .note {
+      font-size: 14px;
+      color: var(--navy);
+      opacity: 0.7;
+      font-style: italic;
+      margin-top: 16px;
+    }
+
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .goal-item {
+      background: white;
+      padding: 20px;
+      border-radius: 6px;
+      border-left: 3px solid var(--sage);
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .visual-reference {
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .visual-reference img {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .caption {
+      font-size: 14px;
+      color: var(--navy);
+      opacity: 0.7;
+      margin-top: 12px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
   <main class="page">
     <header>
-      <h1>Matplotlib Basics: Visualization Fundamentals</h1>
+      <div class="subtitle">Visualization Workbook</div>
+      <h1>Matplotlib Basics</h1>
       <p class="summary">Build fluency with core matplotlib plotting patterns: scatter, line, bar, heatmaps, and customization.</p>
     </header>
-    <section class="grid">
-      <div>
-        <article class="exercise">
-  <div class="ex-meta">Exercise 1 · scatter · Kata name: matplotlib_scatter</div>
-  <h3>Basic Scatter Plot</h3>
-  <p class="objective">Create a scatter plot from x-y data with custom marker sizes and colors.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Plot displays all data points as circles</li><li>X and Y axes have proper labels</li><li>Figure is displayed with plt.show() or returned as Figure object</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.scatter() with x and y arrays</li><li>Use plt.xlabel() and plt.ylabel() for axis labels</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/scatter_example.png</li></ul>
-</div>
-  
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_scatter" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create a basic scatter plot.&quot;&quot;&quot;
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_scatter_plot(
-    x: np.ndarray,
-    y: np.ndarray,
-    xlabel: str = &quot;X&quot;,
-    ylabel: str = &quot;Y&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a scatter plot with labeled axes.
-
-    Args:
-        x: X-coordinates of points
-        y: Y-coordinates of points
-        xlabel: Label for x-axis
-        ylabel: Label for y-axis
-
-    Returns:
-        Figure object containing the scatter plot
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Create scatter plot with plt.scatter and add labels&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 2 · line · Kata name: matplotlib_line</div>
-  <h3>Line Plot with Multiple Series</h3>
-  <p class="objective">Plot multiple lines on the same axes with different line styles.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>All lines are displayed on the same axes</li><li>Each line has a distinct style (solid, dashed, dotted)</li><li>Legend identifies each series</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.plot() multiple times for multiple lines</li><li>Use the linestyle parameter: &#39;-&#39;, &#39;--&#39;, &#39;:&#39;, &#39;-.&#39;</li><li>Add a legend with plt.legend()</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/line_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">scatter</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_line" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create line plots with multiple series.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_multi_line_plot(
-    x: np.ndarray,
-    y_series: list[np.ndarray],
-    labels: list[str],
-    linestyles: list[str] | None = None
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Plot multiple lines on the same axes.
-
-    Args:
-        x: X-coordinates (shared across all lines)
-        y_series: List of y-coordinate arrays for each line
-        labels: List of labels for each line (for legend)
-        linestyles: Optional list of linestyles (e.g., [&#39;-&#39;, &#39;--&#39;, &#39;:&#39;])
-
-    Returns:
-        Figure object containing the line plots
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Plot each line with plt.plot, use linestyles, add legend&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 3 · bar · Kata name: matplotlib_bar</div>
-  <h3>Bar Chart</h3>
-  <p class="objective">Create a vertical bar chart for categorical data.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Bars are properly positioned on the x-axis</li><li>X-axis tick labels match category names</li><li>Y-axis shows values with proper label</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.bar() with categories and values</li><li>Set x-tick labels with plt.xticks() if needed</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/bar_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">scatter</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_bar" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create bar charts.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_bar_chart(
-    categories: list[str],
-    values: np.ndarray,
-    xlabel: str = &quot;Category&quot;,
-    ylabel: str = &quot;Value&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a vertical bar chart.
-
-    Args:
-        categories: List of category names
-        values: Array of values for each category
-        xlabel: Label for x-axis
-        ylabel: Label for y-axis
-
-    Returns:
-        Figure object containing the bar chart
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.bar with categories and values, add labels&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 4 · histogram · Kata name: matplotlib_histogram</div>
-  <h3>Histogram with Bins</h3>
-  <p class="objective">Plot a histogram showing distribution of data with customizable bins.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Histogram displays frequency distribution correctly</li><li>Number of bins is configurable</li><li>Bars use semi-transparent fill (alpha &lt; 1)</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.hist() with bins parameter</li><li>Use alpha parameter for transparency (e.g., alpha=0.7)</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/histogram_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">bar</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_histogram" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create histograms.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_histogram(
-    data: np.ndarray,
-    bins: int = 10,
-    alpha: float = 0.7,
-    xlabel: str = &quot;Value&quot;,
-    ylabel: str = &quot;Frequency&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a histogram with customizable bins and transparency.
-
-    Args:
-        data: Array of values to plot
-        bins: Number of bins for the histogram
-        alpha: Transparency level (0=transparent, 1=opaque)
-        xlabel: Label for x-axis
-        ylabel: Label for y-axis
-
-    Returns:
-        Figure object containing the histogram
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.hist with bins and alpha parameters, add labels&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 5 · labels-titles · Kata name: matplotlib_labels_titles</div>
-  <h3>Labels, Titles, and Legends</h3>
-  <p class="objective">Add comprehensive labeling to a plot: title, axis labels, and legend.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Plot has a descriptive title</li><li>Both axes have clear labels with units if applicable</li><li>Legend is present and correctly positioned</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.title() for the plot title</li><li>Pass label=&#39;...&#39; to plot functions, then call plt.legend()</li><li>Use loc parameter in legend() for positioning</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/labels_titles_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">line</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_labels_titles" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Add labels, titles, and legends to plots.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_labeled_plot(
-    x: np.ndarray,
-    y_series: list[np.ndarray],
-    labels: list[str],
-    title: str,
-    xlabel: str,
-    ylabel: str,
-    legend_loc: str = &quot;best&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a plot with complete labeling.
-
-    Args:
-        x: X-coordinates (shared across all lines)
-        y_series: List of y-coordinate arrays for each line
-        labels: List of labels for legend
-        title: Plot title
-        xlabel: X-axis label
-        ylabel: Y-axis label
-        legend_loc: Legend location (&#39;best&#39;, &#39;upper right&#39;, etc.)
-
-    Returns:
-        Figure object with title, axis labels, and legend
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Plot lines, add title with plt.title, labels, and legend with loc&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 6 · colors-markers · Kata name: matplotlib_colors_markers</div>
-  <h3>Custom Colors and Markers</h3>
-  <p class="objective">Customize plot appearance with colors, marker styles, and sizes.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Scatter points use custom marker shapes (not default circles)</li><li>Colors are specified explicitly (not default blue)</li><li>Marker sizes vary based on data or are customized</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use marker parameter: &#39;o&#39;, &#39;s&#39;, &#39;^&#39;, &#39;D&#39;, etc.</li><li>Use color parameter with names (&#39;red&#39;) or hex codes</li><li>Use s parameter for marker sizes in scatter()</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/colors_markers_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">scatter</span><span class="pill">labels-titles</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_colors_markers" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Customize colors and markers in plots.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_styled_scatter(
-    x: np.ndarray,
-    y: np.ndarray,
-    color: str = &quot;blue&quot;,
-    marker: str = &quot;o&quot;,
-    size: float | np.ndarray = 50,
-    xlabel: str = &quot;X&quot;,
-    ylabel: str = &quot;Y&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a scatter plot with custom styling.
-
-    Args:
-        x: X-coordinates
-        y: Y-coordinates
-        color: Color (name like &#39;red&#39; or hex like &#39;#FF0000&#39;)
-        marker: Marker style (&#39;o&#39;, &#39;s&#39;, &#39;^&#39;, &#39;D&#39;, etc.)
-        size: Marker size (scalar) or array of sizes
-        xlabel: X-axis label
-        ylabel: Y-axis label
-
-    Returns:
-        Figure object with styled scatter plot
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.scatter with color, marker, and s (size) parameters&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 7 · error-bars · Kata name: matplotlib_error_bars</div>
-  <h3>Error Bars</h3>
-  <p class="objective">Display data with uncertainty using error bars.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Error bars are visible on all data points</li><li>Both x and/or y error bars can be shown</li><li>Error magnitude is customizable</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.errorbar() instead of plt.plot()</li><li>Pass yerr parameter for y-axis error bars</li><li>Use xerr for x-axis errors if needed</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/error_bars_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">line</span><span class="pill">labels-titles</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_error_bars" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create plots with error bars.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_errorbar_plot(
-    x: np.ndarray,
-    y: np.ndarray,
-    yerr: np.ndarray | None = None,
-    xerr: np.ndarray | None = None,
-    xlabel: str = &quot;X&quot;,
-    ylabel: str = &quot;Y&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a plot with error bars.
-
-    Args:
-        x: X-coordinates
-        y: Y-coordinates
-        yerr: Y-axis error bars (optional)
-        xerr: X-axis error bars (optional)
-        xlabel: X-axis label
-        ylabel: Y-axis label
-
-    Returns:
-        Figure object with error bars
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.errorbar with yerr and xerr parameters&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 8 · box-plot · Kata name: matplotlib_box_plot</div>
-  <h3>Box Plot for Distributions</h3>
-  <p class="objective">Create box plots showing quartiles and outliers for multiple datasets.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Box plot shows median, quartiles, and whiskers</li><li>Can display multiple datasets side-by-side</li><li>X-axis labels identify each dataset</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.boxplot() with a list of datasets</li><li>Pass labels parameter for x-tick labels</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/box_plot_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">bar</span><span class="pill">labels-titles</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_box_plot" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create box plots.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_box_plot(
-    datasets: list[np.ndarray],
-    labels: list[str] | None = None,
-    xlabel: str = &quot;Dataset&quot;,
-    ylabel: str = &quot;Value&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a box plot for multiple datasets.
-
-    Args:
-        datasets: List of arrays, one for each box
-        labels: Optional labels for each dataset
-        xlabel: X-axis label
-        ylabel: Y-axis label
-
-    Returns:
-        Figure object with box plot
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.boxplot with labels parameter&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 9 · heatmap · Kata name: matplotlib_heatmap</div>
-  <h3>Heatmap with Colorbar</h3>
-  <p class="objective">Visualize a 2D matrix as a heatmap with color mapping.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Matrix is displayed with color representing values</li><li>Colorbar is shown indicating the scale</li><li>Axes are properly labeled</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.imshow() with a 2D array</li><li>Add colorbar with plt.colorbar()</li><li>Use cmap parameter for color schemes: &#39;viridis&#39;, &#39;plasma&#39;, &#39;hot&#39;</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/heatmap_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">labels-titles</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_heatmap" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create heatmaps.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_heatmap(
-    data: np.ndarray,
-    cmap: str = &quot;viridis&quot;,
-    xlabel: str = &quot;X&quot;,
-    ylabel: str = &quot;Y&quot;
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a heatmap from 2D data.
-
-    Args:
-        data: 2D array to visualize
-        cmap: Colormap name (&#39;viridis&#39;, &#39;plasma&#39;, &#39;hot&#39;, etc.)
-        xlabel: X-axis label
-        ylabel: Y-axis label
-
-    Returns:
-        Figure object with heatmap and colorbar
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.imshow with cmap, then plt.colorbar()&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 10 · contour · Kata name: matplotlib_contour</div>
-  <h3>Contour Plot</h3>
-  <p class="objective">Create contour lines for a 2D function or data grid.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Contour lines are drawn at appropriate levels</li><li>Can use filled contours (contourf) or line contours</li><li>Colorbar shows value mapping</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.contour() for line contours or plt.contourf() for filled</li><li>Pass X, Y, and Z arrays (meshgrid for functions)</li><li>Add plt.colorbar() to show scale</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/contour_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">heatmap</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_contour" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create contour plots.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_contour_plot(
-    X: np.ndarray,
-    Y: np.ndarray,
-    Z: np.ndarray,
-    filled: bool = True,
-    levels: int = 10
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a contour plot.
-
-    Args:
-        X: X-coordinate grid (from np.meshgrid)
-        Y: Y-coordinate grid (from np.meshgrid)
-        Z: Function values at each grid point
-        filled: If True, use filled contours (contourf), else lines (contour)
-        levels: Number of contour levels
-
-    Returns:
-        Figure object with contour plot and colorbar
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.contourf or plt.contour, then plt.colorbar()&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 11 · subplots · Kata name: matplotlib_subplots</div>
-  <h3>Multiple Subplots</h3>
-  <p class="objective">Create a figure with multiple subplots in a grid layout.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Figure contains multiple independent plots</li><li>Subplots are arranged in a grid (e.g., 2x2)</li><li>Each subplot has its own axes and can be customized independently</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.subplots(nrows, ncols) to create figure and axes</li><li>Access each subplot via axes array: axes[i, j]</li><li>Plot on each axis individually: axes[0, 0].plot(...)</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/subplots_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">scatter</span><span class="pill">line</span><span class="pill">bar</span><span class="pill">histogram</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_subplots" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Create figures with multiple subplots.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def create_subplot_grid(
-    nrows: int,
-    ncols: int,
-    plot_data: list[dict]
-) -&gt; plt.Figure:
-    &quot;&quot;&quot;Create a grid of subplots with different plot types.
-
-    Args:
-        nrows: Number of rows in subplot grid
-        ncols: Number of columns in subplot grid
-        plot_data: List of dicts with keys: &#39;row&#39;, &#39;col&#39;, &#39;type&#39;, &#39;data&#39;
-                   type can be: &#39;scatter&#39;, &#39;line&#39;, &#39;bar&#39;, &#39;hist&#39;
-
-    Returns:
-        Figure object with subplots arranged in grid
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Use plt.subplots(nrows, ncols), then plot on axes[row, col]&quot;)
-    # BLANK_END</code></pre>
-</article>
-<article class="exercise">
-  <div class="ex-meta">Exercise 12 · save-figure · Kata name: matplotlib_save_figure</div>
-  <h3>Save Figure to File</h3>
-  <p class="objective">Create a plot and save it to file in multiple formats.</p>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
-  <ul class="list"><li>Figure is saved to disk (PNG, PDF, or SVG)</li><li>File path and format are configurable</li><li>DPI (resolution) can be specified for raster formats</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Hints</div>
-  <ul class="list"><li>Use plt.savefig(filename) before plt.show()</li><li>Specify format with extension: &#39;plot.png&#39;, &#39;plot.pdf&#39;</li><li>Use dpi parameter for resolution (e.g., dpi=300)</li></ul>
-</div>
-  <div>
-  <div class="section-title" style="margin-bottom:4px;">Assets</div>
-  <ul class="list"><li>images/save_figure_example.png</li></ul>
-</div>
-  <div class="badges"><span class="pill">labels-titles</span></div>
-  <div class="note">Add later via TUI: Library → All Katas → "matplotlib_save_figure" (or press w for Workbooks, then a/p).</div>
-  <pre><code>&quot;&quot;&quot;Save figures to file.&quot;&quot;&quot;
-
-import matplotlib.pyplot as plt
-import numpy as np
-from pathlib import Path
-
-
-def save_plot_to_file(
-    x: np.ndarray,
-    y: np.ndarray,
-    filepath: str | Path,
-    dpi: int = 100,
-    title: str = &quot;&quot;
-) -&gt; None:
-    &quot;&quot;&quot;Create a line plot and save to file.
-
-    Args:
-        x: X-coordinates
-        y: Y-coordinates
-        filepath: Path to save file (extension determines format)
-        dpi: Resolution for raster formats (PNG, JPG)
-        title: Optional plot title
-    &quot;&quot;&quot;
-    # BLANK_START
-    raise NotImplementedError(&quot;Create plot, use plt.savefig(filepath, dpi=dpi)&quot;)
-    # BLANK_END</code></pre>
-</article>
+    <section class="section">
+      <h2>Introduction</h2>
+      <div class="intro-block">
+        <p>Matplotlib is Python's fundamental plotting library, used across scientific computing, data analysis, and machine learning. This workbook covers the essential patterns you'll use daily: creating basic plots, customizing appearance, visualizing statistical data, and composing multi-panel figures.</p>
+        <p>Unlike publication-quality plotting (which focuses on fonts, colors, and polish), this workbook teaches the core API and patterns. Master these fundamentals, and you'll be able to quickly visualize data, debug models, and explore datasets.</p>
       </div>
-      <div class="panel">
-        <div class="section-title">Learning goals</div>
-        <ul class="goals"><li>Create and customize basic plot types (scatter, line, bar, histogram)</li><li>Add labels, titles, legends, and styling to plots</li><li>Visualize statistical data with error bars and box plots</li><li>Display 2D data with heatmaps and contour plots</li><li>Create multi-panel figures with subplots and save to file</li></ul>
-        <div class="section-title" style="margin-top:14px;">Prerequisites</div>
-        <div></div>
-        <div class="section-title" style="margin-top:14px;">Resources</div>
-        <div class="resources">
-          <ul><li><a href="https://matplotlib.org/stable/index.html" target="_blank" rel="noreferrer noopener">Matplotlib Documentation</a></li><li><a href="https://matplotlib.org/stable/tutorials/introductory/pyplot.html" target="_blank" rel="noreferrer noopener">Pyplot Tutorial</a></li><li><a href="https://matplotlib.org/stable/gallery/index.html" target="_blank" rel="noreferrer noopener">Gallery Examples</a></li></ul>
+
+      <h3>Why This Matters</h3>
+      <p>Quick, effective visualization is essential for understanding data and debugging models. Matplotlib provides the building blocks for all Python plotting.</p>
+    </section>
+
+    <section class="section">
+      <h2>Learning Goals</h2>
+      <div class="goals-grid">
+        <div class="goal-item">
+          Create and customize basic plot types (scatter, line, bar, histogram)
+        </div>
+        <div class="goal-item">
+          Add labels, titles, legends, and styling to plots
+        </div>
+        <div class="goal-item">
+          Visualize statistical data with error bars and box plots
+        </div>
+        <div class="goal-item">
+          Display 2D data with heatmaps and contour plots
+        </div>
+        <div class="goal-item">
+          Create multi-panel figures with subplots and save to file
         </div>
       </div>
     </section>
+
+    <section class="section">
+      <h2>Prerequisites</h2>
+      <p>None! This workbook assumes only basic Python knowledge. Familiarity with NumPy arrays is helpful but not required.</p>
+    </section>
+
+    <section class="section">
+      <h2>Exercises</h2>
+
+      <!-- Exercise 1: Scatter -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Basic Scatter Plot</h3>
+          <div class="exercise-meta">Exercise 1 · scatter</div>
+        </div>
+
+        <p>Create a scatter plot from x-y data with custom marker sizes and colors.</p>
+
+        <div class="visual-reference">
+          <img src="images/scatter_example.png" alt="Example scatter plot">
+          <p class="caption">Expected output: scatter plot with labeled axes</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Plot displays all data points as circles</li>
+          <li>X and Y axes have proper labels</li>
+          <li>Figure is returned as Figure object</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.scatter() with x and y arrays</li>
+          <li>Use plt.xlabel() and plt.ylabel() for axis labels</li>
+        </ul>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_scatter"
+        </div>
+
+        <pre><code class="language-python">def create_scatter_plot(
+    x: np.ndarray,
+    y: np.ndarray,
+    xlabel: str = "X",
+    ylabel: str = "Y"
+) -> plt.Figure:
+    # BLANK_START
+    raise NotImplementedError
+    # BLANK_END</code></pre>
+      </article>
+
+      <!-- Exercise 2: Line -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Line Plot with Multiple Series</h3>
+          <div class="exercise-meta">Exercise 2 · line</div>
+        </div>
+
+        <p>Plot multiple lines on the same axes with different line styles.</p>
+
+        <div class="visual-reference">
+          <img src="images/line_example.png" alt="Example line plot with multiple series">
+          <p class="caption">Expected output: multiple lines with different styles and legend</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>All lines are displayed on the same axes</li>
+          <li>Each line has a distinct style (solid, dashed, dotted)</li>
+          <li>Legend identifies each series</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.plot() multiple times for multiple lines</li>
+          <li>Use the linestyle parameter: '-', '--', ':', '-.'</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_line"
+        </div>
+      </article>
+
+      <!-- Exercise 3: Bar -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Bar Chart</h3>
+          <div class="exercise-meta">Exercise 3 · bar</div>
+        </div>
+
+        <p>Create a vertical bar chart for categorical data.</p>
+
+        <div class="visual-reference">
+          <img src="images/bar_example.png" alt="Example bar chart">
+          <p class="caption">Expected output: bar chart with category labels</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Bars are properly positioned on the x-axis</li>
+          <li>X-axis tick labels match category names</li>
+          <li>Y-axis shows values with proper label</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.bar() with categories and values</li>
+          <li>Set x-tick labels with plt.xticks() if needed</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_bar"
+        </div>
+      </article>
+
+      <!-- Exercise 4: Histogram -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Histogram with Bins</h3>
+          <div class="exercise-meta">Exercise 4 · histogram</div>
+        </div>
+
+        <p>Plot a histogram showing distribution of data with customizable bins.</p>
+
+        <div class="visual-reference">
+          <img src="images/histogram_example.png" alt="Example histogram">
+          <p class="caption">Expected output: histogram with semi-transparent bars</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Histogram displays frequency distribution correctly</li>
+          <li>Number of bins is configurable</li>
+          <li>Bars use semi-transparent fill (alpha less than 1)</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.hist() with bins parameter</li>
+          <li>Use alpha parameter for transparency (e.g., alpha=0.7)</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: bar</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_histogram"
+        </div>
+      </article>
+
+      <!-- Exercise 5: Labels and Titles -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Labels, Titles, and Legends</h3>
+          <div class="exercise-meta">Exercise 5 · labels-titles</div>
+        </div>
+
+        <p>Add comprehensive labeling to a plot: title, axis labels, and legend.</p>
+
+        <div class="visual-reference">
+          <img src="images/labels_titles_example.png" alt="Example plot with complete labeling">
+          <p class="caption">Expected output: plot with title, axis labels, and legend</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Plot has a descriptive title</li>
+          <li>Both axes have clear labels with units if applicable</li>
+          <li>Legend is present and correctly positioned</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.title() for the plot title</li>
+          <li>Pass label='...' to plot functions, then call plt.legend()</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: line</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_labels_titles"
+        </div>
+      </article>
+
+      <!-- Exercise 6: Colors and Markers -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Custom Colors and Markers</h3>
+          <div class="exercise-meta">Exercise 6 · colors-markers</div>
+        </div>
+
+        <p>Customize plot appearance with colors, marker styles, and sizes.</p>
+
+        <div class="visual-reference">
+          <img src="images/colors_markers_example.png" alt="Example styled scatter plot">
+          <p class="caption">Expected output: scatter plot with custom markers and colors</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Scatter points use custom marker shapes (not default circles)</li>
+          <li>Colors are specified explicitly (not default blue)</li>
+          <li>Marker sizes vary based on data or are customized</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use marker parameter: 'o', 's', '^', 'D', etc.</li>
+          <li>Use color parameter with names ('red') or hex codes</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter, labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_colors_markers"
+        </div>
+      </article>
+
+      <!-- Exercise 7: Error Bars -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Error Bars</h3>
+          <div class="exercise-meta">Exercise 7 · error-bars</div>
+        </div>
+
+        <p>Display data with uncertainty using error bars.</p>
+
+        <div class="visual-reference">
+          <img src="images/error_bars_example.png" alt="Example error bar plot">
+          <p class="caption">Expected output: plot with error bars showing uncertainty</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Error bars are visible on all data points</li>
+          <li>Both x and/or y error bars can be shown</li>
+          <li>Error magnitude is customizable</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.errorbar() instead of plt.plot()</li>
+          <li>Pass yerr parameter for y-axis error bars</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: line, labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_error_bars"
+        </div>
+      </article>
+
+      <!-- Exercise 8: Box Plot -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Box Plot for Distributions</h3>
+          <div class="exercise-meta">Exercise 8 · box-plot</div>
+        </div>
+
+        <p>Create box plots showing quartiles and outliers for multiple datasets.</p>
+
+        <div class="visual-reference">
+          <img src="images/box_plot_example.png" alt="Example box plot">
+          <p class="caption">Expected output: box plot comparing multiple datasets</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Box plot shows median, quartiles, and whiskers</li>
+          <li>Can display multiple datasets side-by-side</li>
+          <li>X-axis labels identify each dataset</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.boxplot() with a list of datasets</li>
+          <li>Pass labels parameter for x-tick labels</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: bar, labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_box_plot"
+        </div>
+      </article>
+
+      <!-- Exercise 9: Heatmap -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Heatmap with Colorbar</h3>
+          <div class="exercise-meta">Exercise 9 · heatmap</div>
+        </div>
+
+        <p>Visualize a 2D matrix as a heatmap with color mapping.</p>
+
+        <div class="visual-reference">
+          <img src="images/heatmap_example.png" alt="Example heatmap">
+          <p class="caption">Expected output: heatmap with colorbar</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Matrix is displayed with color representing values</li>
+          <li>Colorbar is shown indicating the scale</li>
+          <li>Axes are properly labeled</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.imshow() with a 2D array</li>
+          <li>Add colorbar with plt.colorbar()</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_heatmap"
+        </div>
+      </article>
+
+      <!-- Exercise 10: Contour -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Contour Plot</h3>
+          <div class="exercise-meta">Exercise 10 · contour</div>
+        </div>
+
+        <p>Create contour lines for a 2D function or data grid.</p>
+
+        <div class="visual-reference">
+          <img src="images/contour_example.png" alt="Example contour plot">
+          <p class="caption">Expected output: filled contour plot with colorbar</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Contour lines are drawn at appropriate levels</li>
+          <li>Can use filled contours (contourf) or line contours</li>
+          <li>Colorbar shows value mapping</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.contour() for line contours or plt.contourf() for filled</li>
+          <li>Pass X, Y, and Z arrays (meshgrid for functions)</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: heatmap</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_contour"
+        </div>
+      </article>
+
+      <!-- Exercise 11: Subplots -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Multiple Subplots</h3>
+          <div class="exercise-meta">Exercise 11 · subplots</div>
+        </div>
+
+        <p>Create a figure with multiple subplots in a grid layout.</p>
+
+        <div class="visual-reference">
+          <img src="images/subplots_example.png" alt="Example subplot grid">
+          <p class="caption">Expected output: 2x2 grid of different plot types</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Figure contains multiple independent plots</li>
+          <li>Subplots are arranged in a grid (e.g., 2x2)</li>
+          <li>Each subplot has its own axes and can be customized independently</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.subplots(nrows, ncols) to create figure and axes</li>
+          <li>Access each subplot via axes array: axes[i, j]</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter, line, bar, histogram</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_subplots"
+        </div>
+      </article>
+
+      <!-- Exercise 12: Save Figure -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Save Figure to File</h3>
+          <div class="exercise-meta">Exercise 12 · save-figure</div>
+        </div>
+
+        <p>Create a plot and save it to file in multiple formats.</p>
+
+        <div class="visual-reference">
+          <img src="images/save_figure_example.png" alt="Example saved figure">
+          <p class="caption">Expected output: plot saved to disk</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Figure is saved to disk (PNG, PDF, or SVG)</li>
+          <li>File path and format are configurable</li>
+          <li>DPI (resolution) can be specified for raster formats</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.savefig(filename) before plt.show()</li>
+          <li>Specify format with extension: 'plot.png', 'plot.pdf'</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_save_figure"
+        </div>
+      </article>
+
+    </section>
+
+    <section class="section resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://matplotlib.org/stable/index.html" target="_blank" rel="noopener noreferrer">Matplotlib Documentation</a></li>
+        <li><a href="https://matplotlib.org/stable/tutorials/introductory/pyplot.html" target="_blank" rel="noopener noreferrer">Pyplot Tutorial</a></li>
+        <li><a href="https://matplotlib.org/stable/gallery/index.html" target="_blank" rel="noopener noreferrer">Gallery Examples</a></li>
+      </ul>
+    </section>
   </main>
+
+  <script>
+    hljs.highlightAll();
+  </script>
 </body>
 </html>
