@@ -259,6 +259,11 @@ impl Dashboard {
         self.apply_sort();
     }
 
+    /// Cycle to the next heatmap theme
+    pub fn cycle_heatmap_theme(&mut self) {
+        self.heatmap_calendar.cycle_theme();
+    }
+
     pub fn render(&self, frame: &mut Frame) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -332,7 +337,7 @@ impl Dashboard {
 
         // stats summary
         let stats_text = format!(
-            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'h' for history | Press 'd' to remove | Press 'e' to edit | Press 'f' to flag | Press 's' to change sort order | Press 'x' to toggle hide flagged",
+            "Streak: {} days | Reviews today: {} | 7-day success rate: {:.1}%\nPress 'l' to browse library | Press 'h' for history | Press 'd' to remove | Press 'e' to edit | Press 'f' to flag | Press 's' to change sort | Press 't' to change theme | Press 'x' to toggle hide flagged",
             self.stats.streak_days,
             self.stats.total_reviews_today,
             self.stats.success_rate_7d * 100.0
@@ -384,6 +389,10 @@ impl Dashboard {
             }
             KeyCode::Char('s') => {
                 self.cycle_sort_mode();
+                DashboardAction::None
+            }
+            KeyCode::Char('t') => {
+                self.cycle_heatmap_theme();
                 DashboardAction::None
             }
             KeyCode::Char('x') => DashboardAction::ToggleHideFlagged,

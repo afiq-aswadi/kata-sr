@@ -1,4 +1,5 @@
 use crate::db::repo::{DailyCount, KataRepository};
+use crate::tui::heatmap_theme::HeatmapTheme;
 use chrono::{Datelike, Duration, NaiveDate, Utc};
 use ratatui::{
     layout::{Alignment, Rect},
@@ -16,10 +17,20 @@ pub struct HeatmapCalendar {
     end_date: NaiveDate,
     /// Optional cursor position for interactive mode (week_index, day_of_week)
     pub cursor: Option<(usize, usize)>,
+    /// Color theme for the heatmap
+    pub theme: HeatmapTheme,
 }
 
 impl HeatmapCalendar {
     pub fn new(repo: &KataRepository, days: usize) -> anyhow::Result<Self> {
+        Self::new_with_theme(repo, days, HeatmapTheme::default())
+    }
+
+    pub fn new_with_theme(
+        repo: &KataRepository,
+        days: usize,
+        theme: HeatmapTheme,
+    ) -> anyhow::Result<Self> {
         let end_date = Utc::now().date_naive();
         // Go back (days - 1) to include today in the count
         let start_date = end_date - Duration::days((days.saturating_sub(1)) as i64);
@@ -37,7 +48,19 @@ impl HeatmapCalendar {
             start_date,
             end_date,
             cursor: None,
+            theme,
         })
+    }
+
+    /// Change the theme and return self for chaining
+    pub fn with_theme(mut self, theme: HeatmapTheme) -> Self {
+        self.theme = theme;
+        self
+    }
+
+    /// Cycle to the next theme
+    pub fn cycle_theme(&mut self) {
+        self.theme = self.theme.next();
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {
@@ -181,11 +204,11 @@ impl HeatmapCalendar {
             let style = if is_selected {
                 Style::default().fg(Color::Yellow).bg(Color::DarkGray)
             } else if current_date == today {
-                Style::default().fg(Color::Cyan).bg(Color::DarkGray)
+                Style::default().fg(self.theme.color_today()).bg(Color::DarkGray)
             } else if is_past {
-                self.count_to_style_past(count)
+                Style::default().fg(self.theme.color_past(count))
             } else {
-                self.count_to_style_future(count)
+                Style::default().fg(self.theme.color_future(count))
             };
 
             spans.push(Span::styled(cell_text, style));
@@ -211,41 +234,19 @@ impl HeatmapCalendar {
             .unwrap_or(0)
     }
 
-
-    fn count_to_style_past(&self, count: usize) -> Style {
-        let color = match count {
-            0 => Color::DarkGray,
-            1..=2 => Color::Rgb(64, 196, 99),  // Light green
-            3..=5 => Color::Rgb(48, 161, 78),  // Medium green
-            6..=10 => Color::Rgb(33, 110, 57), // Dark green
-            _ => Color::Rgb(25, 90, 45),       // Darker green for 10+
-        };
-        Style::default().fg(color)
-    }
-
-    fn count_to_style_future(&self, count: usize) -> Style {
-        let color = match count {
-            0 => Color::DarkGray,
-            1..=2 => Color::Rgb(158, 158, 255), // Light blue/purple
-            3..=5 => Color::Rgb(128, 128, 255), // Medium blue/purple
-            6..=10 => Color::Rgb(98, 98, 255),  // Dark blue/purple
-            _ => Color::Rgb(68, 68, 255),       // Darker blue for 10+
-        };
-        Style::default().fg(color)
-    }
-
     fn build_legend(&self) -> Line<'_> {
         Line::from(vec![
+            Span::raw(format!("{}: ", self.theme.name())),
             Span::raw("Past: "),
-            Span::styled("1-2 ", Style::default().fg(Color::Rgb(64, 196, 99))),
-            Span::styled("3-5 ", Style::default().fg(Color::Rgb(48, 161, 78))),
-            Span::styled("6+ ", Style::default().fg(Color::Rgb(33, 110, 57))),
+            Span::styled("1-2 ", Style::default().fg(self.theme.color_past(2))),
+            Span::styled("3-5 ", Style::default().fg(self.theme.color_past(5))),
+            Span::styled("6+ ", Style::default().fg(self.theme.color_past(10))),
             Span::raw("| Future: "),
-            Span::styled("1-2 ", Style::default().fg(Color::Rgb(158, 158, 255))),
-            Span::styled("3-5 ", Style::default().fg(Color::Rgb(128, 128, 255))),
-            Span::styled("6+ ", Style::default().fg(Color::Rgb(98, 98, 255))),
+            Span::styled("1-2 ", Style::default().fg(self.theme.color_future(2))),
+            Span::styled("3-5 ", Style::default().fg(self.theme.color_future(5))),
+            Span::styled("6+ ", Style::default().fg(self.theme.color_future(10))),
             Span::raw("| "),
-            Span::styled("Today", Style::default().fg(Color::Cyan)),
+            Span::styled("Today", Style::default().fg(self.theme.color_today())),
         ])
     }
 
