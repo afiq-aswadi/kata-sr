@@ -158,9 +158,11 @@
       padding: 24px;
       margin: 24px 0;
       font-family: 'Fira Code', monospace;
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 13px;
+      line-height: 1.4;
       overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
     }
 
     .intuition {
@@ -525,18 +527,14 @@ Continue until L meets R...
         <div class="visual-box">
 Heights: [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]
 
-         ┌───────────────┐
-         │       3       │
-         │       █       │
-     ┌───┼───┐   █   ┌───┤
-     │ 2 │ 2 │   █   │ 2 │
-     │ █ │ █ │   █   │ █ │
- ┌───┼───┼───┼───█───┼───┼───┐
- │ 1 │ 1 │ 1 │ 1 █ 1 │ 1 │ 1 │
- │ █~│ █~│ █~│ █~█~█~│ █~│ █ │
- └───┴───┴───┴───────┴───┴───┘
+        3|       #
+        2|   # ~ # ~ ~ ~ #
+        1| # ~ # ~ # ~ # # # # #
+         |_________________________
+          0 1 2 3 4 5 6 7 8 9 10 11
 
-Water units: 6 (marked with ~)
+# = bars, ~ = water trapped
+Water units: 6 (at indices 2, 4, 5, 6, 10)
         </div>
 
         <h3>Key Pattern</h3>
