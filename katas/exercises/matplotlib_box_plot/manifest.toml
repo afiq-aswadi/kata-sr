@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_box_plot"
+category = "visualization"
 tags = ["matplotlib", "plotting", "statistics"]
 base_difficulty = 2
 description = """

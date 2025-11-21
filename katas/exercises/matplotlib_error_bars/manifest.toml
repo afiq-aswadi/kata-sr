@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_error_bars"
+category = "visualization"
 tags = ["matplotlib", "plotting", "statistics", "uncertainty"]
 base_difficulty = 2
 description = """

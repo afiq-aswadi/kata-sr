@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_bar"
+category = "visualization"
 tags = ["matplotlib", "plotting", "visualization"]
 base_difficulty = 1
 description = """

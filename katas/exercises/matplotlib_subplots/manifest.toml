@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_subplots"
+category = "visualization"
 tags = ["matplotlib", "plotting", "layout"]
 base_difficulty = 3
 description = """

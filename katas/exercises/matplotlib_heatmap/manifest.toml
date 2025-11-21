@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_heatmap"
+category = "visualization"
 tags = ["matplotlib", "plotting", "2d-visualization"]
 base_difficulty = 2
 description = """

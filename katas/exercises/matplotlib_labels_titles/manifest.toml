@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_labels_titles"
+category = "visualization"
 tags = ["matplotlib", "plotting", "customization"]
 base_difficulty = 2
 description = """

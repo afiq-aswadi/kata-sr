@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_save_figure"
+category = "visualization"
 tags = ["matplotlib", "plotting", "io"]
 base_difficulty = 2
 description = """

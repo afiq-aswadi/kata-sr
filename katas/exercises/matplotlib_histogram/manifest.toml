@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_histogram"
+category = "visualization"
 tags = ["matplotlib", "plotting", "visualization", "statistics"]
 base_difficulty = 2
 description = """

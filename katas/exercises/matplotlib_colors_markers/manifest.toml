@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_colors_markers"
+category = "visualization"
 tags = ["matplotlib", "plotting", "customization"]
 base_difficulty = 2
 description = """

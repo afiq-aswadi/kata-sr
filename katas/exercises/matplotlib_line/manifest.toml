@@ -1,5 +1,6 @@
 [kata]
 name = "matplotlib_line"
+category = "visualization"
 tags = ["matplotlib", "plotting", "visualization"]
 base_difficulty = 2
 description = """
