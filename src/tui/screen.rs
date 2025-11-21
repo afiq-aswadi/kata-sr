@@ -96,32 +96,32 @@ pub enum ScreenAction {
     DeleteSession(i64),     // session_id
     BackFromSessionHistory,
     BackFromSessionDetail,
-    
+
     // Dashboard specific actions that need App handling
     DashboardSelectKata(Kata),
     DashboardRemoveKata(Kata),
     DashboardEditKata(Kata),
     DashboardToggleFlagKata(Kata),
     DashboardToggleHideFlagged,
-    
+
     // Settings specific actions
     SaveSettings(crate::config::AppConfig),
-    
+
     // Practice specific actions
     PracticeEditorExited,
-    
+
     // Results specific actions
     ResultsSolutionViewed(Kata, TestResults),
     ResultsToggleFlagWithReason(Kata, Option<String>),
-    
+
     // Library specific actions
     LibraryToggleFlagKata(Kata),
     LibraryToggleHideFlagged,
     LibraryToggleFlagWithReason(Kata, Option<String>),
-    
+
     // Edit kata by name (needs repo lookup)
     EditKataByName(String),
-    
+
     None,
 }
 
@@ -146,10 +146,10 @@ impl Screen {
     }
 
     pub fn handle_input(
-        &mut self, 
-        code: KeyCode, 
+        &mut self,
+        code: KeyCode,
         dashboard: &mut Dashboard,
-        event_tx: std::sync::mpsc::Sender<crate::tui::app::AppEvent>
+        event_tx: std::sync::mpsc::Sender<crate::tui::app::AppEvent>,
     ) -> anyhow::Result<ScreenAction> {
         match self {
             Screen::Startup(startup_screen) => {
@@ -176,13 +176,15 @@ impl Screen {
                         return Ok(ScreenAction::ViewSessionHistory(kata.clone()));
                     }
                 }
-                
+
                 let action = dashboard.handle_input(code);
                 Ok(match action {
                     DashboardAction::SelectKata(kata) => ScreenAction::StartPractice(kata),
                     DashboardAction::RemoveKata(kata) => ScreenAction::RemoveKataFromDeck(kata),
                     DashboardAction::EditKata(kata) => ScreenAction::OpenEditKata(kata.id),
-                    DashboardAction::ToggleFlagKata(kata) => ScreenAction::DashboardToggleFlagKata(kata),
+                    DashboardAction::ToggleFlagKata(kata) => {
+                        ScreenAction::DashboardToggleFlagKata(kata)
+                    }
                     DashboardAction::ToggleHideFlagged => ScreenAction::DashboardToggleHideFlagged,
                     DashboardAction::None => ScreenAction::None,
                 })
@@ -255,7 +257,9 @@ impl Screen {
                         ScreenAction::AddPreviewToDeck(kata.name.clone())
                     }
                     ResultsAction::OpenSettings => ScreenAction::OpenSettings,
-                    ResultsAction::ToggleFlagWithReason(reason) => ScreenAction::ResultsToggleFlagWithReason(kata.clone(), reason),
+                    ResultsAction::ToggleFlagWithReason(reason) => {
+                        ScreenAction::ResultsToggleFlagWithReason(kata.clone(), reason)
+                    }
                     ResultsAction::None => ScreenAction::None,
                 })
             }
@@ -283,12 +287,18 @@ impl Screen {
                 let action = library.handle_input(code);
                 Ok(match action {
                     LibraryAction::AddKata(name) => ScreenAction::AddKataFromLibrary(name),
-                    LibraryAction::AttemptKata(available_kata) => ScreenAction::AttemptKataWithoutDeck(available_kata),
+                    LibraryAction::AttemptKata(available_kata) => {
+                        ScreenAction::AttemptKataWithoutDeck(available_kata)
+                    }
                     LibraryAction::PracticeKata(kata) => ScreenAction::StartPractice(kata),
                     LibraryAction::RemoveKata(kata) => ScreenAction::RemoveKataFromDeck(kata),
-                    LibraryAction::ToggleFlagKata(kata) => ScreenAction::LibraryToggleFlagKata(kata),
+                    LibraryAction::ToggleFlagKata(kata) => {
+                        ScreenAction::LibraryToggleFlagKata(kata)
+                    }
                     LibraryAction::ToggleHideFlagged => ScreenAction::LibraryToggleHideFlagged,
-                    LibraryAction::ToggleFlagWithReason(kata, reason) => ScreenAction::LibraryToggleFlagWithReason(kata, reason),
+                    LibraryAction::ToggleFlagWithReason(kata, reason) => {
+                        ScreenAction::LibraryToggleFlagWithReason(kata, reason)
+                    }
                     LibraryAction::Back => ScreenAction::BackFromLibrary,
                     LibraryAction::OpenWorkbooks => ScreenAction::OpenWorkbooks,
                     LibraryAction::ViewDetails(kata) => {
@@ -298,7 +308,7 @@ impl Screen {
                     LibraryAction::CreateKata => ScreenAction::OpenCreateKata,
                     LibraryAction::EditKataById(kata_id) => ScreenAction::OpenEditKata(kata_id),
                     LibraryAction::EditKataByName(name) => ScreenAction::EditKataByName(name),
-                     _ => ScreenAction::None,
+                    _ => ScreenAction::None,
                 })
             }
             Screen::Workbooks(workbooks) => {

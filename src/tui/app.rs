@@ -12,25 +12,25 @@ use ratatui::{Frame, Terminal};
 use std::io;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
-use super::screen::{Screen, ScreenAction};
-use super::dashboard::Dashboard;
-use super::library::Library;
-use super::startup::StartupScreen;
-use super::results::ResultsScreen;
-use super::practice::PracticeScreen;
-use super::done::DoneScreen;
-use super::keybindings;
-use super::workbooks::WorkbookScreen;
-use super::session_history::SessionHistoryScreen;
-use super::session_detail::SessionDetailScreen;
 use super::create_kata::CreateKataScreen;
-use super::edit_kata::EditKataScreen;
-use super::settings::SettingsScreen;
+use super::dashboard::Dashboard;
 use super::details::DetailsScreen;
+use super::done::DoneScreen;
+use super::edit_kata::EditKataScreen;
+use super::keybindings;
+use super::library::Library;
+use super::practice::PracticeScreen;
+use super::results::ResultsScreen;
+use super::screen::{Screen, ScreenAction};
+use super::session_detail::SessionDetailScreen;
+use super::session_history::SessionHistoryScreen;
+use super::settings::SettingsScreen;
+use super::startup::StartupScreen;
+use super::workbooks::WorkbookScreen;
 use crate::config::AppConfig;
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
-use crate::db::repo::{Kata, NewKata, NewSession, KataRepository};
+use crate::db::repo::{Kata, KataRepository, NewKata, NewSession};
 use crate::runner::python_runner::TestResults;
 
 /// Style for popup messages.
@@ -320,7 +320,9 @@ impl App {
         }
 
         // extract action from current screen to avoid borrow checker issues
-        let action_result = self.current_screen.handle_input(code, &mut self.dashboard, self.event_tx.clone());
+        let action_result =
+            self.current_screen
+                .handle_input(code, &mut self.dashboard, self.event_tx.clone());
 
         // handle the extracted action (no longer borrowing self.current_screen)
         if let Ok(action) = action_result {
@@ -541,7 +543,7 @@ impl App {
             }
             ScreenAction::ResultsSolutionViewed(kata, results) => {
                 self.needs_terminal_clear = true;
-                
+
                 if kata.id == -1 {
                     // Preview mode: return to library
                     self.execute_action(ScreenAction::OpenLibrary)?;
@@ -561,8 +563,7 @@ impl App {
                 }
 
                 if let Some(fresh_kata) = self.repo.get_kata_by_id(kata_id)? {
-                    let old_screen =
-                        std::mem::replace(&mut self.current_screen, Screen::Dashboard);
+                    let old_screen = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
                     if let Screen::Results(_, mut rs) = old_screen {
                         rs.update_kata(fresh_kata.clone());
                         self.current_screen = Screen::Results(fresh_kata, rs);
@@ -824,7 +825,7 @@ impl App {
             }
             ScreenAction::LibraryToggleHideFlagged => {
                 if let Screen::Library(library) = &self.current_screen {
-                     self.library_hide_flagged = !library.hide_flagged;
+                    self.library_hide_flagged = !library.hide_flagged;
                     let new_library = Library::load_with_filter(
                         &self.repo,
                         &self.config.library.default_sort,
@@ -863,15 +864,15 @@ impl App {
                 self.refresh_dashboard_screen()?;
             }
             ScreenAction::DashboardSelectKata(kata) => {
-                 let practice_screen =
+                let practice_screen =
                     PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
             }
             ScreenAction::DashboardRemoveKata(kata) => {
-                 self.execute_action(ScreenAction::RemoveKataFromDeck(kata))?;
+                self.execute_action(ScreenAction::RemoveKataFromDeck(kata))?;
             }
             ScreenAction::DashboardEditKata(kata) => {
-                 self.execute_action(ScreenAction::OpenEditKata(kata.id))?;
+                self.execute_action(ScreenAction::OpenEditKata(kata.id))?;
             }
             ScreenAction::DashboardToggleFlagKata(kata) => {
                 if kata.is_problematic {
@@ -885,7 +886,7 @@ impl App {
                     self.dashboard_hide_flagged,
                 )?;
                 if let Screen::Practice(_, _) = &self.current_screen {
-                     if let Some(fresh_kata) = self.repo.get_kata_by_id(kata.id)? {
+                    if let Some(fresh_kata) = self.repo.get_kata_by_id(kata.id)? {
                         let old_screen =
                             std::mem::replace(&mut self.current_screen, Screen::Dashboard);
                         if let Screen::Practice(_, ps) = old_screen {
@@ -902,7 +903,7 @@ impl App {
                     self.dashboard_hide_flagged,
                 )?;
                 if let Screen::Done(_) = self.current_screen {
-                     self.refresh_dashboard_screen()?;
+                    self.refresh_dashboard_screen()?;
                 }
             }
             _ => {}
@@ -1346,10 +1347,7 @@ impl App {
     fn handle_settings_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
         match action {
             ScreenAction::OpenSettings => {
-                let previous = std::mem::replace(
-                    &mut self.current_screen,
-                    Screen::Dashboard,
-                );
+                let previous = std::mem::replace(&mut self.current_screen, Screen::Dashboard);
                 self.previous_screen_before_settings = Some(Box::new(previous));
 
                 let settings_screen = SettingsScreen::new(self.config.clone());
@@ -1362,25 +1360,24 @@ impl App {
                     self.refresh_dashboard_screen()?;
                 }
             }
-            ScreenAction::SaveSettings(config) => {
-                match config.save() {
-                    Ok(_) => {
-                        self.config = config;
-                        self.popup_message = Some(PopupMessage {
-                            title: "Settings Saved".to_string(),
-                            message: "Settings have been saved to ~/.config/kata-sr/config.toml".to_string(),
-                            style: PopupStyle::Success,
-                        });
-                    }
-                    Err(e) => {
-                        self.popup_message = Some(PopupMessage {
-                            title: "Error Saving Settings".to_string(),
-                            message: format!("Failed to save settings:\n\n{}", e),
-                            style: PopupStyle::Error,
-                        });
-                    }
+            ScreenAction::SaveSettings(config) => match config.save() {
+                Ok(_) => {
+                    self.config = config;
+                    self.popup_message = Some(PopupMessage {
+                        title: "Settings Saved".to_string(),
+                        message: "Settings have been saved to ~/.config/kata-sr/config.toml"
+                            .to_string(),
+                        style: PopupStyle::Success,
+                    });
                 }
-            }
+                Err(e) => {
+                    self.popup_message = Some(PopupMessage {
+                        title: "Error Saving Settings".to_string(),
+                        message: format!("Failed to save settings:\n\n{}", e),
+                        style: PopupStyle::Error,
+                    });
+                }
+            },
             _ => {}
         }
         Ok(())
