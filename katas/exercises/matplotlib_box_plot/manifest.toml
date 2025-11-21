@@ -1,0 +1,11 @@
+[kata]
+name = "matplotlib_box_plot"
+tags = ["matplotlib", "plotting", "statistics"]
+base_difficulty = 2
+description = """
+Create box plots showing quartiles and outliers.
+
+Learn to visualize distributions with box-and-whisker plots.
+Compare multiple datasets side-by-side.
+"""
+dependencies = ["matplotlib_bar", "matplotlib_labels_titles"]

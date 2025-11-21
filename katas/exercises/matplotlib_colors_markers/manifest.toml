@@ -1,0 +1,11 @@
+[kata]
+name = "matplotlib_colors_markers"
+tags = ["matplotlib", "plotting", "customization"]
+base_difficulty = 2
+description = """
+Customize plot appearance with colors, marker styles, and sizes.
+
+Learn to control visual appearance of scatter plots.
+Use marker shapes and colors for clarity.
+"""
+dependencies = ["matplotlib_scatter", "matplotlib_labels_titles"]

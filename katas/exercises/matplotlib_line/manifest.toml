@@ -1,0 +1,11 @@
+[kata]
+name = "matplotlib_line"
+tags = ["matplotlib", "plotting", "visualization"]
+base_difficulty = 2
+description = """
+Plot multiple line series with different styles.
+
+Learn to overlay multiple lines on one axes.
+Use linestyles and legends for clarity.
+"""
+dependencies = ["matplotlib_scatter"]

@@ -1,0 +1,11 @@
+[kata]
+name = "matplotlib_save_figure"
+tags = ["matplotlib", "plotting", "io"]
+base_difficulty = 2
+description = """
+Save figures to disk in multiple formats.
+
+Learn to export plots to PNG, PDF, and SVG.
+Control resolution (DPI) for raster formats.
+"""
+dependencies = ["matplotlib_labels_titles"]
