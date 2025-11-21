@@ -6,6 +6,7 @@ pub mod done;
 pub mod edit_kata;
 pub mod heatmap;
 pub mod heatmap_calendar;
+pub mod heatmap_theme;
 pub mod keybindings;
 pub mod library;
 pub mod practice;
