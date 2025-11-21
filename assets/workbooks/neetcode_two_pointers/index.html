@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Two Pointers: Efficient Array Problems · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .exercise-num {
+      display: inline-block;
+      background: var(--rust);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-weight: 600;
+      margin-right: 12px;
+      font-size: 14px;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Pattern</div>
+      <h1>Two Pointers</h1>
+      <p class="summary">
+        Master the two-pointer technique for solving array and string problems efficiently.
+        This elegant pattern uses two pointers moving through a data structure to achieve
+        O(n) time complexity with O(1) space—perfect for optimization problems.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Instead of checking every possible pair (O(n²)), we use two pointers to intelligently
+          traverse the array in a single pass (O(n)). The pointers move based on conditions,
+          eliminating the need for nested loops.
+        </p>
+      </div>
+
+      <h3>Visual Pattern</h3>
+      <div class="visual-box">
+Array:  [a, b, c, d, e, f, g]
+         ↑                 ↑
+       left              right
+
+Move pointers inward based on condition:
+• If sum < target  →  left++
+• If sum > target  →  right--
+• If condition met →  process & move both
+      </div>
+
+      <h3>When to Use Two Pointers</h3>
+      <ul>
+        <li><strong>Sorted arrays:</strong> Finding pairs, triplets, or sequences</li>
+        <li><strong>Palindromes:</strong> Comparing characters from both ends</li>
+        <li><strong>Optimization:</strong> Finding min/max with constraints</li>
+        <li><strong>Array partitioning:</strong> Rearranging elements in-place</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Core Pattern: Template</h2>
+      <pre><code class="language-python">def two_pointer_template(arr):
+    left, right = 0, len(arr) - 1
+
+    while left < right:
+        # Calculate current state
+        current = process(arr[left], arr[right])
+
+        # Make decision based on condition
+        if condition_met(current):
+            # Process result
+            result.append(current)
+            left += 1
+            right -= 1
+        elif current < target:
+            left += 1   # Need larger value
+        else:
+            right -= 1  # Need smaller value
+
+    return result</code></pre>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Valid Palindrome</h2>
+      <div class="card">
+        <div class="pattern-title">Basic Two Pointers</div>
+        <h3>Objective</h3>
+        <p>
+          Check if a string is a palindrome using two pointers from both ends.
+          Skip non-alphanumeric characters and ignore case.
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: "A man, a plan, a canal: Panama"
+
+Step 1: "A man, a plan, a canal: Panama"
+         ↑                             ↑
+       left                          right
+       'A' == 'a' ✓ → move both inward
+
+Step 2: "A man, a plan, a canal: Panama"
+           ↑                         ↑
+        'm' == 'm' ✓ → continue...
+
+Result: TRUE (all characters match)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def isPalindrome(s: str) -> bool:
+    left, right = 0, len(s) - 1
+
+    while left < right:
+        # Skip non-alphanumeric
+        while left < right and not s[left].isalnum():
+            left += 1
+        while left < right and not s[right].isalnum():
+            right -= 1
+
+        # Compare characters (case-insensitive)
+        if s[left].lower() != s[right].lower():
+            return False
+
+        left += 1
+        right -= 1
+
+    return True</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Two Sum II (Sorted Array)</h2>
+      <div class="card">
+        <div class="pattern-title">Target Sum with Two Pointers</div>
+        <h3>Objective</h3>
+        <p>
+          Find two numbers in a sorted array that sum to a target value.
+          Return 1-indexed positions.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Why This Works</div>
+          <p>
+            Because the array is sorted: if current sum is too small, we must move
+            the left pointer right (larger values). If too large, move right pointer
+            left (smaller values). This guarantees we'll find the answer in O(n).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Array: [2, 7, 11, 15]  Target: 9
+        ↑          ↑
+        L          R
+
+Step 1: 2 + 15 = 17 > 9  →  R--
+Step 2: [2, 7, 11, 15]
+         ↑      ↑
+        2 + 11 = 13 > 9  →  R--
+
+Step 3: [2, 7, 11, 15]
+         ↑  ↑
+        2 + 7 = 9 ✓  →  return [1, 2]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def twoSum(numbers: List[int], target: int) -> List[int]:
+    left, right = 0, len(numbers) - 1
+
+    while left < right:
+        current_sum = numbers[left] + numbers[right]
+
+        if current_sum == target:
+            return [left + 1, right + 1]  # 1-indexed
+        elif current_sum < target:
+            left += 1   # Need larger sum
+        else:
+            right -= 1  # Need smaller sum
+
+    return []  # No solution found</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Container With Most Water</h2>
+      <div class="card">
+        <div class="pattern-title">Greedy Two Pointers</div>
+        <h3>Objective</h3>
+        <p>
+          Find two lines that form a container with maximum water.
+          Area = min(height[left], height[right]) × (right - left).
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Greedy Insight</div>
+          <p>
+            Start with the widest container. To potentially increase area, we must
+            move the pointer pointing to the shorter line (moving the taller line
+            can only decrease area since width decreases and height is limited by
+            the shorter line).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Heights: [1, 8, 6, 2, 5, 4, 8, 3, 7]
+          ↑                       ↑
+          L                       R
+
+Step 1: Area = min(1, 7) × 8 = 8
+        Move L (shorter line)
+
+Step 2: [1, 8, 6, 2, 5, 4, 8, 3, 7]
+             ↑                  ↑
+        Area = min(8, 7) × 7 = 49 ✓ (max so far)
+
+Continue until L meets R...
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def maxArea(height: List[int]) -> int:
+    left, right = 0, len(height) - 1
+    max_area = 0
+
+    while left < right:
+        # Calculate current area
+        width = right - left
+        current_area = min(height[left], height[right]) * width
+        max_area = max(max_area, current_area)
+
+        # Move pointer pointing to shorter line
+        if height[left] < height[right]:
+            left += 1
+        else:
+            right -= 1
+
+    return max_area</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Trapping Rain Water</h2>
+      <div class="card">
+        <div class="pattern-title">Advanced Two Pointers with Max Tracking</div>
+        <h3>Objective</h3>
+        <p>
+          Calculate total water trapped between bars after rainfall.
+          Water at position i = min(max_left, max_right) - height[i].
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Advanced Insight</div>
+          <p>
+            Track the maximum height seen from both sides. Water is trapped when
+            there are taller bars on both sides. We can calculate water at each
+            position by maintaining max_left and max_right and always moving the
+            pointer with the smaller max height.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Heights: [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]
+
+         ┌───────────────┐
+         │       3       │
+         │       █       │
+     ┌───┼───┐   █   ┌───┤
+     │ 2 │ 2 │   █   │ 2 │
+     │ █ │ █ │   █   │ █ │
+ ┌───┼───┼───┼───█───┼───┼───┐
+ │ 1 │ 1 │ 1 │ 1 █ 1 │ 1 │ 1 │
+ │ █~│ █~│ █~│ █~█~█~│ █~│ █ │
+ └───┴───┴───┴───────┴───┴───┘
+
+Water units: 6 (marked with ~)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def trap(height: List[int]) -> int:
+    if not height:
+        return 0
+
+    left, right = 0, len(height) - 1
+    max_left = height[left]
+    max_right = height[right]
+    water = 0
+
+    while left < right:
+        if max_left < max_right:
+            left += 1
+            max_left = max(max_left, height[left])
+            water += max_left - height[left]
+        else:
+            right -= 1
+            max_right = max(max_right, height[right])
+            water += max_right - height[right]
+
+    return water</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Patterns & Tips</h2>
+      <div class="card">
+        <h3>1. When to Move Which Pointer?</h3>
+        <ul>
+          <li><strong>Too small:</strong> Move left pointer right (increase)</li>
+          <li><strong>Too large:</strong> Move right pointer left (decrease)</li>
+          <li><strong>Equal/Match:</strong> Process and move both</li>
+          <li><strong>Optimization:</strong> Move pointer that limits current value</li>
+        </ul>
+
+        <h3>2. Common Variations</h3>
+        <ul>
+          <li><strong>Start/end:</strong> <code>left=0, right=n-1</code> (most common)</li>
+          <li><strong>Slow/fast:</strong> <code>slow=0, fast=0</code> (both start at beginning)</li>
+          <li><strong>Same direction:</strong> Both pointers move in same direction at different speeds</li>
+        </ul>
+
+        <h3>3. Debugging Tips</h3>
+        <ul>
+          <li>Draw the array and pointer positions at each step</li>
+          <li>Verify the loop condition (<code>left &lt; right</code> vs <code>left &lt;= right</code>)</li>
+          <li>Check off-by-one errors when returning indices</li>
+          <li>Consider edge cases: empty array, single element, all same values</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/28" target="_blank">NeetCode Two Pointers Guide</a></li>
+        <li><a href="https://leetcode.com/tag/two-pointers/" target="_blank">LeetCode Two Pointers Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    // Syntax highlighting
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

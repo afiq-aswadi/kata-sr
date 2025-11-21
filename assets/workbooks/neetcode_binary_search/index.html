@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Binary Search: Logarithmic Time Mastery · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Pattern</div>
+      <h1>Binary Search</h1>
+      <p class="summary">
+        Master binary search patterns from basic sorted arrays to complex search spaces.
+        This powerful technique reduces search time from O(n) to O(log n) by repeatedly
+        dividing the search space in half—the foundation of efficient algorithms.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Binary search exploits sorted order to eliminate half the search space with
+          each comparison. By always checking the middle and deciding which half contains
+          the target, we achieve logarithmic time complexity.
+        </p>
+      </div>
+
+      <h3>Visual Pattern</h3>
+      <div class="visual-box">
+Iteration 1:  [1, 3, 5, 7, 9, 11, 13, 15]  Target: 11
+               L        M           R
+
+               11 > 7 → search right half
+
+Iteration 2:           [9, 11, 13, 15]
+                        L   M       R
+
+                        11 < 13 → search left half
+
+Iteration 3:           [9, 11]
+                        L/M  R
+
+                        11 == 11 → FOUND! ✓
+
+Each step cuts search space in half:
+8 → 4 → 2 → 1  (log₂(8) = 3 steps)
+      </div>
+
+      <h3>When to Use Binary Search</h3>
+      <ul>
+        <li><strong>Sorted arrays:</strong> Classic search in ordered data</li>
+        <li><strong>Search space:</strong> Finding min/max value that satisfies condition</li>
+        <li><strong>Modified arrays:</strong> Rotated, shifted, or partially sorted</li>
+        <li><strong>Matrix search:</strong> Row-wise and column-wise sorted</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Core Pattern: Template</h2>
+      <pre><code class="language-python">def binary_search_template(arr, target):
+    left, right = 0, len(arr) - 1
+
+    while left <= right:
+        mid = left + (right - left) // 2  # Avoid overflow
+
+        if arr[mid] == target:
+            return mid  # Found
+        elif arr[mid] < target:
+            left = mid + 1   # Search right half
+        else:
+            right = mid - 1  # Search left half
+
+    return -1  # Not found</code></pre>
+
+      <div class="intuition">
+        <div class="intuition-title">⚠️ Common Pitfalls</div>
+        <ul>
+          <li><code>while left <= right</code> vs <code>left < right</code> – depends on problem</li>
+          <li><code>mid = (left + right) // 2</code> can overflow in other languages</li>
+          <li><code>left = mid + 1</code> vs <code>left = mid</code> – be consistent!</li>
+          <li>Return value when not found: -1, left, or right?</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Classic Binary Search</h2>
+      <div class="card">
+        <div class="pattern-title">Foundation</div>
+        <h3>Objective</h3>
+        <p>
+          Implement iterative binary search on a sorted array to find a target value.
+          Return the index if found, -1 otherwise.
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Array: [-1, 0, 3, 5, 9, 12]  Target: 9
+
+Step 1: [ -1, 0, 3, 5, 9, 12 ]
+          L        M        R
+          5 < 9 → search right
+
+Step 2:              [ 9, 12 ]
+                      L/M  R
+          9 == 9 → return 4 ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def search(nums: List[int], target: int) -> int:
+    left, right = 0, len(nums) - 1
+
+    while left <= right:
+        mid = left + (right - left) // 2
+
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return -1</code></pre>
+
+        <p><span class="complexity">Time: O(log n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Search in Rotated Sorted Array</h2>
+      <div class="card">
+        <div class="pattern-title">Modified Binary Search</div>
+        <h3>Objective</h3>
+        <p>
+          Search for a target in an array that was sorted but then rotated at some pivot.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Key Insight</div>
+          <p>
+            At least one half (left or right) is always sorted. Identify which half is
+            sorted by comparing mid with boundaries, then check if target lies in that
+            sorted half. If yes, search there; otherwise, search the other half.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Array: [4, 5, 6, 7, 0, 1, 2]  Target: 0
+        L        M        R
+
+Step 1: Left half [4,5,6] is sorted (4 < 7)
+        Target 0 NOT in [4,7] → search right
+
+Step 2:              [0, 1, 2]
+                      L  M  R
+        Right half is sorted
+        Target 0 in [0,2] → search left
+
+Step 3:              [0]
+                     L/M/R
+        Found! Return 4 ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def search(nums: List[int], target: int) -> int:
+    left, right = 0, len(nums) - 1
+
+    while left <= right:
+        mid = left + (right - left) // 2
+
+        if nums[mid] == target:
+            return mid
+
+        # Check which half is sorted
+        if nums[left] <= nums[mid]:  # Left half sorted
+            if nums[left] <= target < nums[mid]:
+                right = mid - 1  # Target in left
+            else:
+                left = mid + 1   # Target in right
+        else:  # Right half sorted
+            if nums[mid] < target <= nums[right]:
+                left = mid + 1   # Target in right
+            else:
+                right = mid - 1  # Target in left
+
+    return -1</code></pre>
+
+        <p><span class="complexity">Time: O(log n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Koko Eating Bananas</h2>
+      <div class="card">
+        <div class="pattern-title">Binary Search on Answer Space</div>
+        <h3>Objective</h3>
+        <p>
+          Find the minimum eating speed k where Koko can eat all bananas in h hours.
+          At speed k, Koko eats k bananas/hour (one pile at a time).
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Paradigm Shift</div>
+          <p>
+            Binary search isn't always on the input array! Here we search on the
+            <strong>answer space</strong> (eating speeds 1 to max(piles)). For each
+            candidate speed, check if it's feasible. Use binary search to find the
+            minimum feasible speed.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Piles: [3, 6, 7, 11]  h: 8 hours
+
+Try k = 6:
+  3/6 = 1 hr, 6/6 = 1 hr, 7/6 = 2 hr, 11/6 = 2 hr
+  Total = 6 hours ≤ 8 ✓ (feasible)
+
+Try k = 3:
+  3/3 = 1 hr, 6/3 = 2 hr, 7/3 = 3 hr, 11/3 = 4 hr
+  Total = 10 hours > 8 ✗ (too slow)
+
+Binary search range [3, 11] → answer: 4
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def minEatingSpeed(piles: List[int], h: int) -> int:
+    def canFinish(speed):
+        hours = 0
+        for pile in piles:
+            hours += (pile + speed - 1) // speed  # Ceiling division
+        return hours <= h
+
+    left, right = 1, max(piles)
+
+    while left < right:
+        mid = left + (right - left) // 2
+
+        if canFinish(mid):
+            right = mid  # Try slower speed
+        else:
+            left = mid + 1  # Need faster speed
+
+    return left</code></pre>
+
+        <p><span class="complexity">Time: O(n log m) | Space: O(1)</span>
+        <br><small>where n = len(piles), m = max(piles)</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Find Minimum in Rotated Array</h2>
+      <div class="card">
+        <div class="pattern-title">Finding Inflection Point</div>
+        <h3>Objective</h3>
+        <p>
+          Find the minimum element in a rotated sorted array.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Trick</div>
+          <p>
+            Compare mid with the right boundary (not left!). If nums[mid] > nums[right],
+            the minimum is in the right half (includes the rotation point). Otherwise,
+            it's in the left half (including mid itself).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Array: [4, 5, 6, 7, 0, 1, 2]
+        L        M        R
+
+Step 1: 7 > 2 → minimum in right half
+                      [0, 1, 2]
+                       L  M  R
+
+Step 2: 1 < 2 → minimum in left half (including mid)
+                       [0, 1]
+                        L  M/R
+
+Step 3: 0 < 1 → minimum in left (mid)
+        Return 0 ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def findMin(nums: List[int]) -> int:
+    left, right = 0, len(nums) - 1
+
+    while left < right:
+        mid = left + (right - left) // 2
+
+        # Compare with right boundary
+        if nums[mid] > nums[right]:
+            left = mid + 1   # Min in right half
+        else:
+            right = mid      # Min in left half (or mid)
+
+    return nums[left]</code></pre>
+
+        <p><span class="complexity">Time: O(log n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Binary Search Variations</h2>
+      <div class="card">
+        <h3>1. Different Return Values</h3>
+        <ul>
+          <li><strong>Exact match:</strong> Return index or -1</li>
+          <li><strong>Lower bound:</strong> First position ≥ target (return <code>left</code>)</li>
+          <li><strong>Upper bound:</strong> First position > target (return <code>left</code>)</li>
+          <li><strong>Closest value:</strong> Check both <code>left</code> and <code>right</code></li>
+        </ul>
+
+        <h3>2. Loop Condition Variations</h3>
+        <pre><code class="language-python"># Pattern 1: left <= right (most common)
+while left <= right:
+    mid = (left + right) // 2
+    # Update: left = mid + 1 or right = mid - 1
+
+# Pattern 2: left < right (no equal)
+while left < right:
+    mid = (left + right) // 2
+    # Update: left = mid + 1 or right = mid
+
+# Pattern 3: left + 1 < right (preserve 2 elements)
+while left + 1 < right:
+    mid = (left + right) // 2
+    # Update: left = mid or right = mid</code></pre>
+
+        <h3>3. Common Applications</h3>
+        <ul>
+          <li><strong>Find peak element:</strong> Compare mid with neighbors</li>
+          <li><strong>Search 2D matrix:</strong> Treat as 1D array</li>
+          <li><strong>Capacity problems:</strong> "Minimize maximum" or "maximize minimum"</li>
+          <li><strong>Time-based lookups:</strong> Find value at or before timestamp</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Debugging Checklist</h2>
+      <div class="card">
+        <h3>Common Issues</h3>
+        <ol>
+          <li><strong>Infinite loop:</strong> Check if left/right always update
+            <ul>
+              <li>Use <code>left = mid + 1</code> and <code>right = mid - 1</code>, OR</li>
+              <li>Use <code>left = mid</code> and <code>right = mid</code> with <code>left < right</code></li>
+            </ul>
+          </li>
+          <li><strong>Off-by-one:</strong> Test with arrays of size 1, 2, 3</li>
+          <li><strong>Wrong boundary:</strong> Verify initial left/right values</li>
+          <li><strong>Mid calculation:</strong> Use <code>left + (right - left) // 2</code> to avoid overflow</li>
+        </ol>
+
+        <h3>Test Cases to Always Check</h3>
+        <ul>
+          <li>Empty array: <code>[]</code></li>
+          <li>Single element: <code>[1]</code></li>
+          <li>Target at boundaries: first or last element</li>
+          <li>Target not in array</li>
+          <li>All elements same: <code>[5, 5, 5, 5]</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/12" target="_blank">NeetCode Binary Search Guide</a></li>
+        <li><a href="https://leetcode.com/discuss/study-guide/786126/Python-Powerful-Ultimate-Binary-Search-Template" target="_blank">Ultimate Binary Search Template</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>
