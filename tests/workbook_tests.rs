@@ -3,9 +3,29 @@
 //! Tests workbook manifest loading, validation, HTML generation, and error handling.
 
 use kata_sr::core::workbook::{generate_workbook_html, load_workbooks, Workbook, WorkbookExercise, WorkbookMeta, WorkbookResource};
+use std::env;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
+
+/// RAII guard that restores the original working directory on drop
+struct WorkingDirGuard {
+    original_dir: PathBuf,
+}
+
+impl WorkingDirGuard {
+    fn new(new_dir: &std::path::Path) -> std::io::Result<Self> {
+        let original_dir = env::current_dir()?;
+        env::set_current_dir(new_dir)?;
+        Ok(Self { original_dir })
+    }
+}
+
+impl Drop for WorkingDirGuard {
+    fn drop(&mut self) {
+        let _ = env::set_current_dir(&self.original_dir);
+    }
+}
 
 /// Helper to create a minimal valid workbook manifest
 fn create_minimal_manifest(kata_name: &str) -> String {
@@ -76,7 +96,7 @@ fn test_workbook_loads_valid_manifest() {
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
     // Load workbooks (need to set working directory)
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let workbooks = load_workbooks().unwrap();
 
     assert_eq!(workbooks.len(), 1);
@@ -102,7 +122,7 @@ id = "test"
 "#;
     fs::write(wb_dir.join("manifest.toml"), invalid_toml).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("failed to parse"));
@@ -123,7 +143,7 @@ fn test_workbook_validates_kata_references() {
     let manifest = create_minimal_manifest("nonexistent_kata");
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
 
     assert!(result.is_err());
@@ -155,7 +175,7 @@ objective = "Learn"
 "#;
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("id cannot be empty"));
@@ -186,7 +206,7 @@ objective = "Learn"
 "#;
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("title cannot be empty"));
@@ -211,7 +231,7 @@ exercises = []
 "#;
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
     assert!(result.is_err());
     assert!(result
@@ -251,7 +271,7 @@ objective = "Learn more"
 "#;
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("duplicate"));
@@ -283,7 +303,7 @@ dependencies = ["nonexistent"]
 "#;
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("unknown slug"));
@@ -317,7 +337,7 @@ objective = "Learn"
         fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
     }
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let result = load_workbooks();
     assert!(result.is_err());
     assert!(result
@@ -419,7 +439,7 @@ fn test_html_escapes_special_characters() {
 #[test]
 fn test_workbook_returns_empty_when_directory_missing() {
     let temp_dir = TempDir::new().unwrap();
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
 
     // No workbooks directory exists
     let workbooks = load_workbooks().unwrap();
@@ -435,7 +455,7 @@ fn test_workbook_skips_non_directory_entries() {
     // Create a regular file (not a directory)
     fs::write(workbooks_dir.join("not_a_workbook.txt"), "test").unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let workbooks = load_workbooks().unwrap();
     assert_eq!(workbooks.len(), 0);
 }
@@ -450,7 +470,7 @@ fn test_workbook_skips_directories_without_manifest() {
     let wb_dir = workbooks_dir.join("incomplete");
     fs::create_dir_all(&wb_dir).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let workbooks = load_workbooks().unwrap();
     assert_eq!(workbooks.len(), 0);
 }
@@ -480,7 +500,7 @@ objective = "Test paths"
 "#;
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let workbooks = load_workbooks().unwrap();
 
     assert_eq!(workbooks.len(), 1);
@@ -531,7 +551,7 @@ dependencies = []
 "#;
     fs::write(wb_dir.join("manifest.toml"), manifest).unwrap();
 
-    std::env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
     let workbooks = load_workbooks().unwrap();
 
     assert_eq!(workbooks.len(), 1);

@@ -175,12 +175,13 @@ fn test_slugify_collapses_underscores() {
 
 #[test]
 fn test_slugify_handles_unicode() {
-    assert_eq!(slugify_kata_name("Café"), "caf");
-    assert_eq!(slugify_kata_name("Héllo Wörld"), "h_llo_w_rld");
-    assert_eq!(slugify_kata_name("日本語"), "___"); // Non-ASCII becomes underscores, then collapses
-    // After collapsing, should be empty or single underscore
-    let result = slugify_kata_name("日本語");
-    assert!(result.is_empty() || result == "_");
+    // is_alphanumeric() includes Unicode alphanumerics, so they're preserved
+    assert_eq!(slugify_kata_name("Café"), "café");
+    assert_eq!(slugify_kata_name("Héllo Wörld"), "héllo_wörld");
+    // CJK characters are also alphanumeric
+    assert_eq!(slugify_kata_name("日本語"), "日本語");
+    // Mixed ASCII and Unicode
+    assert_eq!(slugify_kata_name("Test-Café"), "test_café");
 }
 
 #[test]

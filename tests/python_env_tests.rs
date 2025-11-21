@@ -1,12 +1,35 @@
 //! Python environment setup and error handling tests.
 //!
 //! Tests Python environment initialization, UV detection, and error scenarios.
+//!
+//! Note: These tests modify global process state (working directory) and may have
+//! race conditions when run in parallel. Run with `cargo test --test python_env_tests -- --test-threads=1`
+//! if you encounter failures related to file not found or directory errors.
 
 use kata_sr::python_env::PythonEnv;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
+
+/// RAII guard that restores the original working directory on drop
+struct WorkingDirGuard {
+    original_dir: PathBuf,
+}
+
+impl WorkingDirGuard {
+    fn new(new_dir: &std::path::Path) -> std::io::Result<Self> {
+        let original_dir = env::current_dir()?;
+        env::set_current_dir(new_dir)?;
+        Ok(Self { original_dir })
+    }
+}
+
+impl Drop for WorkingDirGuard {
+    fn drop(&mut self) {
+        let _ = env::set_current_dir(&self.original_dir);
+    }
+}
 
 #[test]
 fn test_setup_fails_without_uv() {
@@ -27,10 +50,9 @@ fn test_setup_fails_without_uv() {
 #[test]
 fn test_setup_creates_venv_if_missing() {
     let temp_dir = TempDir::new().unwrap();
-    let orig_dir = env::current_dir().unwrap();
 
-    // Change to temp directory
-    env::set_current_dir(&temp_dir).unwrap();
+    // Change to temp directory (restored automatically on drop)
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
 
     // Create katas directory structure
     fs::create_dir_all("katas").unwrap();
@@ -52,9 +74,6 @@ fn test_setup_creates_venv_if_missing() {
             }
         }
     }
-
-    // Restore original directory
-    env::set_current_dir(orig_dir).unwrap();
 }
 
 #[test]
@@ -63,8 +82,7 @@ fn test_interpreter_path_resolution() {
     // We can't guarantee the venv exists in all test environments
 
     let temp_dir = TempDir::new().unwrap();
-    let orig_dir = env::current_dir().unwrap();
-    env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
 
     // Create mock venv structure
     fs::create_dir_all("katas/.venv/bin").unwrap();
@@ -102,9 +120,8 @@ fn test_interpreter_path_resolution() {
 
     let result = PythonEnv::setup();
 
-    // Restore
+    // Restore PATH
     env::set_var("PATH", &original_path);
-    env::set_current_dir(orig_dir).unwrap();
 
     if let Ok(env) = result {
         let interp_path = env.interpreter_path();
@@ -116,16 +133,13 @@ fn test_interpreter_path_resolution() {
 #[test]
 fn test_missing_pyproject_toml() {
     let temp_dir = TempDir::new().unwrap();
-    let orig_dir = env::current_dir().unwrap();
-    env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
 
     // Create katas directory but NO pyproject.toml
     fs::create_dir_all("katas").unwrap();
 
     // Setup should fail or handle gracefully
     let result = PythonEnv::setup();
-
-    env::set_current_dir(orig_dir).unwrap();
 
     // This will fail since pyproject.toml is missing and uv sync will complain
     if let Ok(_) = std::process::Command::new("which").arg("uv").output() {
@@ -137,8 +151,7 @@ fn test_missing_pyproject_toml() {
 #[test]
 fn test_corrupt_venv_detection() {
     let temp_dir = TempDir::new().unwrap();
-    let orig_dir = env::current_dir().unwrap();
-    env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
 
     // Create a corrupt venv (directory exists but no python binary)
     fs::create_dir_all("katas/.venv/bin").unwrap();
@@ -167,7 +180,6 @@ fn test_corrupt_venv_detection() {
     let result = PythonEnv::setup();
 
     env::set_var("PATH", &original_path);
-    env::set_current_dir(orig_dir).unwrap();
 
     // Should fail because python binary doesn't exist in .venv/bin/
     assert!(result.is_err());
@@ -177,8 +189,7 @@ fn test_corrupt_venv_detection() {
 fn test_venv_path_construction() {
     // Test that VenvPath is constructed correctly
     let temp_dir = TempDir::new().unwrap();
-    let orig_dir = env::current_dir().unwrap();
-    env::set_current_dir(&temp_dir).unwrap();
+    let _dir_guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
 
     // Create complete mock environment
     fs::create_dir_all("katas/.venv/bin").unwrap();
@@ -216,7 +227,6 @@ fn test_venv_path_construction() {
     let result = PythonEnv::setup();
 
     env::set_var("PATH", &original_path);
-    env::set_current_dir(orig_dir).unwrap();
 
     if let Ok(python_env) = result {
         let venv_path = python_env.venv_path();
