@@ -1,0 +1,125 @@
+CURRENT ARCHITECTURE - Python-Centric Design
+==============================================
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                         TUI Application                             │
+│  ┌──────────────┬──────────────────┬──────────────┬──────────────┐  │
+│  │ Dashboard    │ Practice Screen  │ Create Kata  │ Results      │  │
+│  │ (generic)    │ (hardcoded .py)  │ (Python)     │ (pytest)     │  │
+│  └──────────────┴──────────────────┴──────────────┴──────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+         │                    │                    │
+         │                    │                    │
+         ▼                    ▼                    ▼
+┌─────────────────┐  ┌──────────────────┐  ┌─────────────────────┐
+│ KataRepository  │  │ PracticeScreen   │  │ KataGenerator       │
+│ (generic)       │  │ /tmp/kata_{id}.py│  │ template.py         │
+└─────────────────┘  │ template.py      │  │ test_kata.py        │
+        │            │ test_kata.py     │  │ reference.py        │
+        │            └──────────────────┘  └─────────────────────┘
+        │                    │                    │
+        ▼                    ▼                    ▼
+    ╔═════════════════════════════════════════════════════════════╗
+    ║           CRITICAL COUPLING POINT                            ║
+    ║  run_python_tests(kata_id, template_path) -> TestResults     ║
+    ║           (python_runner.rs - PYTHON ONLY)                  ║
+    ╚═════════════════════════════════════════════════════════════╝
+        │
+        ▼
+┌──────────────────────────────────────┐
+│   Python Environment (python_env.rs) │
+│   ├─ `which uv`                      │
+│   ├─ `katas/.venv` (venv path)      │
+│   ├─ Python interpreter path         │
+│   └─ Environment variables:          │
+│       - KATA_SR_PYTHON               │
+│       - VIRTUAL_ENV                  │
+│       - KATA_SR_KATAS_DIR            │
+└──────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────┐
+│   katas/runner.py (Python Process)   │
+│   ├─ Import user template            │
+│   ├─ Run pytest                      │
+│   └─ Output JSON to stdout           │
+└──────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────┐
+│    katas/.venv/bin/python            │
+│    ├─ pytest                         │
+│    ├─ torch, numpy, einops, etc.    │
+│    └─ (pyproject.toml dependencies) │
+└──────────────────────────────────────┘
+
+
+DATA FLOW DIAGRAM
+=================
+
+User Opens Kata
+      │
+      ▼
+[Practice Screen]
+      │
+      ├─> Read: katas/exercises/{kata_name}/template.py
+      │
+      ├─> Write: /tmp/kata_{id}.py
+      │
+      ├─> [User edits in nvim]
+      │
+      └─> [Trigger: run tests]
+            │
+            ▼
+      [run_python_tests()]
+            │
+            ├─> Spawn: {KATA_SR_PYTHON} -m runner {kata_id} {template_path}
+            │
+            ├─> [katas/runner.py executes]
+            │   ├─> Import katas/exercises/{kata_id}/test_kata.py
+            │   ├─> Run: pytest katas/exercises/{kata_id}/test_*.py
+            │   └─> Return JSON
+            │
+            ▼
+      [Parse JSON TestResults]
+            │
+            ▼
+      [Display in Results Screen]
+
+
+COUPLING MATRIX
+===============
+
+Component              | Python-Specific | Changeable? | Impact
+───────────────────────┼─────────────────┼─────────────┼──────────────────────
+python_env.rs          | YES (CRITICAL)  | NO          | Startup, initialization
+python_runner.rs       | YES (CRITICAL)  | NO          | All test execution
+practice.rs            | YES (HIGH)      | MAYBE       | File paths (.py)
+kata_generator.rs      | YES (HIGH)      | MAYBE       | Kata creation
+main.rs                | YES (MEDIUM)    | YES         | Env var setup order
+config/mod.rs          | NO              | YES         | Already generic
+runner.py              | YES (CRITICAL)  | NO          | Test execution
+pyproject.toml         | YES (MEDIUM)    | YES         | Dependencies only
+kata_loader.rs         | NO              | YES         | Already generic
+manifest format        | NO              | YES         | Just add field
+database schema        | NO (MISSING)    | YES         | Add language column
+───────────────────────┴─────────────────┴─────────────┴──────────────────────
+
+
+HARDCODED STRINGS AND PATHS
+===========================
+
+Location                    | Code                           | Impact
+────────────────────────────┼────────────────────────────────┼──────────────────
+python_env.rs:80            | "katas/.venv"                  | Venv location
+python_env.rs:84            | "uv sync --directory katas/"   | Setup command
+python_env.rs:100           | "katas/.venv/bin/python"       | Interpreter
+practice.rs:32              | "/tmp/kata_{}.py"              | Template path
+practice.rs:38              | "template.py"                  | Template filename
+kata_generator.rs:137       | "template.py"                  | Template file
+kata_generator.rs:169       | "test_kata.py"                 | Test file
+kata_generator.rs:196       | "reference.py"                 | Reference file
+kata_generator.rs:173       | "import pytest"                | Test imports
+python_runner.rs:100-101    | "katas/.venv/bin/python"       | Interpreter fallback
+────────────────────────────┴────────────────────────────────┴──────────────────
+
