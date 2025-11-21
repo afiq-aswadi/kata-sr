@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Binary Search: Logarithmic Time Mastery · Arena Workbook</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --border: #1f2937;
+      --accent: #22d3ee;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+      --pill: #1d4ed8;
+      --pill-text: #e0f2fe;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "SF Pro Display", "Segoe UI", sans-serif;
+      background: radial-gradient(120% 80% at 10% 10%, rgba(34,211,238,0.12), rgba(34,211,238,0) 55%), var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 32px 24px 64px;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 32px;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.02em;
+    }
+    .summary {
+      color: var(--muted);
+      max-width: 780px;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+    }
+    @media (max-width: 1024px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: linear-gradient(145deg, rgba(17,24,39,0.9), rgba(15,23,42,0.92));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    .section-title {
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    ul.goals {
+      list-style: disc;
+      padding-left: 18px;
+      margin: 0;
+      color: var(--text);
+    }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--pill);
+      color: var(--pill-text);
+      font-size: 12px;
+      margin: 4px 6px 4px 0;
+    }
+    .resources ul {
+      padding-left: 16px;
+      margin: 0;
+    }
+    .resources a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .resources a:hover { text-decoration: underline; }
+    .exercise {
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(145deg, rgba(30,41,59,0.75), rgba(15,23,42,0.9));
+    }
+    .exercise h3 {
+      margin: 0 0 6px 0;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+    .ex-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .objective {
+      margin: 8px 0;
+    }
+    pre {
+      background: #0b1223;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      margin-top: 10px;
+    }
+    .list {
+      padding-left: 16px;
+      margin: 6px 0;
+      color: var(--text);
+    }
+    .list li { margin: 2px 0; }
+    .badges {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>NeetCode Binary Search: Logarithmic Time Mastery</h1>
+      <p class="summary">Master binary search patterns from basic sorted arrays to complex search spaces.</p>
+    </header>
+    <section class="grid">
+      <div>
+        <article class="exercise">
+  <div class="ex-meta">Exercise 1 · binary-search · Kata name: neetcode_binary_search</div>
+  <h3>1. Classic Binary Search</h3>
+  <p class="objective">Implement iterative binary search on a sorted array to find a target value.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns correct index if target exists</li><li>Returns -1 if target doesn&#39;t exist</li><li>Uses O(log n) time complexity</li><li>No off-by-one errors with left/right pointers</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Use left=0, right=len-1 (inclusive bounds)</li><li>mid = (left + right) // 2</li><li>Update left=mid+1 or right=mid-1 based on comparison</li></ul>
+</div>
+  
+  
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_binary_search" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Binary Search - LeetCode 704&quot;&quot;&quot;
+
+def search(nums: list[int], target: int) -&gt; int:
+    # TODO: Implement binary search
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 2 · search-2d-matrix · Kata name: neetcode_search_2d_matrix</div>
+  <h3>2. Search 2D Matrix - Binary Search Adaptation</h3>
+  <p class="objective">Search a 2D matrix with sorted rows and columns using binary search.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Correctly handles row and column navigation</li><li>Uses O(log(m*n)) or O(log m + log n) time</li><li>Returns true if target found, false otherwise</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Each row is sorted, first element of row &gt; last element of previous row</li><li>Can treat as 1D sorted array with index mapping</li><li>Or binary search rows first, then binary search within row</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">binary-search</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_search_2d_matrix" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Search a 2D Matrix - LeetCode 74&quot;&quot;&quot;
+
+def search_matrix(matrix: list[list[int]], target: int) -&gt; bool:
+    # TODO: Treat 2D matrix as 1D sorted array
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 3 · koko-bananas · Kata name: neetcode_koko_bananas</div>
+  <h3>3. Koko Eating Bananas - Binary Search on Answer</h3>
+  <p class="objective">Find minimum eating speed using binary search on the answer space.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns minimum k where Koko can finish in h hours</li><li>Uses binary search on k range [1, max(piles)]</li><li>Correctly calculates hours needed for given speed</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Binary search on k (eating speed), not on piles</li><li>For each k, check if Koko can finish in time</li><li>hours_needed = sum(ceil(pile / k) for pile in piles)</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">binary-search</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_koko_bananas" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Koko Eating Bananas - LeetCode 875&quot;&quot;&quot;
+
+def min_eating_speed(piles: list[int], h: int) -&gt; int:
+    # TODO: Use binary search to find minimum eating speed
+    # Search space: 1 to max(piles)
+    # For each speed, calculate if Koko can finish in h hours
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 4 · find-min-rotated · Kata name: neetcode_find_min_rotated</div>
+  <h3>4. Find Minimum in Rotated Sorted Array</h3>
+  <p class="objective">Find minimum element in rotated sorted array using modified binary search.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Handles both rotated and non-rotated arrays</li><li>Uses O(log n) time complexity</li><li>Correctly identifies inflection point</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Compare mid with right boundary to determine sorted half</li><li>If nums[mid] &gt; nums[right], minimum is in right half</li><li>Otherwise, minimum is in left half (including mid)</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">binary-search</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_find_min_rotated" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Find Minimum in Rotated Sorted Array - LeetCode 153&quot;&quot;&quot;
+
+def find_min(nums: list[int]) -&gt; int:
+    # TODO: Binary search for minimum
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 5 · search-rotated · Kata name: neetcode_search_rotated</div>
+  <h3>5. Search in Rotated Sorted Array</h3>
+  <p class="objective">Search for target in rotated sorted array using binary search.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns correct index if target exists</li><li>Returns -1 if target doesn&#39;t exist</li><li>Uses O(log n) time complexity</li><li>Handles all rotation cases</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Identify which half is sorted (compare mid with left)</li><li>Check if target is in sorted half&#39;s range</li><li>If yes, search sorted half; otherwise search other half</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">find-min-rotated</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_search_rotated" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Search in Rotated Sorted Array - LeetCode 33&quot;&quot;&quot;
+
+def search(nums: list[int], target: int) -&gt; int:
+    # TODO: Binary search with rotation check
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 6 · time-map · Kata name: neetcode_time_map</div>
+  <h3>6. Time-Based Key-Value Store</h3>
+  <p class="objective">Implement a time-based key-value store with binary search for timestamp queries.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>set(key, value, timestamp) stores correctly</li><li>get(key, timestamp) returns value at or before timestamp</li><li>Uses binary search for O(log n) get operations</li><li>Returns empty string if no valid timestamp</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Store values for each key as list of (timestamp, value) pairs</li><li>Binary search for largest timestamp &lt;= query timestamp</li><li>rightmost bisect pattern (find last valid element)</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">binary-search</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_time_map" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Time Based Key-Value Store - LeetCode 981&quot;&quot;&quot;
+
+class TimeMap:
+    # TODO: Use a dictionary to store key -&gt; list of (timestamp, value) pairs
+    # For get(), use binary search to find the largest timestamp &lt;= given timestamp
+    # BLANK_START
+    def __init__(self):
+        pass
+
+    def set(self, key: str, value: str, timestamp: int) -&gt; None:
+        pass
+
+    def get(self, key: str, timestamp: int) -&gt; str:
+        pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 7 · median-two-arrays · Kata name: neetcode_median_two_arrays</div>
+  <h3>7. Median of Two Sorted Arrays - Advanced Binary Search</h3>
+  <p class="objective">Find median of two sorted arrays using binary search for O(log(min(m,n))) time.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Handles arrays of different sizes</li><li>Correctly calculates median for odd and even total lengths</li><li>Uses O(log(min(m,n))) time complexity</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Binary search on partition point in smaller array</li><li>Ensure left partition elements &lt;= right partition elements</li><li>Check: maxLeft1 &lt;= minRight2 AND maxLeft2 &lt;= minRight1</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">search-rotated</span><span class="pill">time-map</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_median_two_arrays" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Median of Two Sorted Arrays - LeetCode 4&quot;&quot;&quot;
+
+def find_median_sorted_arrays(nums1: list[int], nums2: list[int]) -&gt; float:
+    # TODO: Use binary search on the smaller array to find the partition point
+    # Ensure left_half and right_half are balanced
+    # Handle even/odd total length cases
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+      </div>
+      <div class="panel">
+        <div class="section-title">Learning goals</div>
+        <ul class="goals"><li>Implement iterative binary search with correct boundary handling</li><li>Apply binary search to rotated and modified arrays</li><li>Use binary search on answer spaces (minimize/maximize problems)</li><li>Recognize when binary search applies to non-obvious problems</li></ul>
+        <div class="section-title" style="margin-top:14px;">Prerequisites</div>
+        <div><span class="pill">neetcode_two_sum</span><span class="pill">neetcode_valid_palindrome</span></div>
+        <div class="section-title" style="margin-top:14px;">Resources</div>
+        <div class="resources">
+          <ul><li><a href="https://neetcode.io/courses/dsa-for-beginners/12" target="_blank" rel="noreferrer noopener">Binary Search Guide</a></li><li><a href="https://leetcode.com/discuss/study-guide/786126/Python-Powerful-Ultimate-Binary-Search-Template" target="_blank" rel="noreferrer noopener">Binary Search Patterns</a></li></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

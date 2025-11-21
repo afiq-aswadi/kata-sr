@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Arrays &amp; Hashing: Foundation Patterns · Arena Workbook</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --border: #1f2937;
+      --accent: #22d3ee;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+      --pill: #1d4ed8;
+      --pill-text: #e0f2fe;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "SF Pro Display", "Segoe UI", sans-serif;
+      background: radial-gradient(120% 80% at 10% 10%, rgba(34,211,238,0.12), rgba(34,211,238,0) 55%), var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 32px 24px 64px;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 32px;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.02em;
+    }
+    .summary {
+      color: var(--muted);
+      max-width: 780px;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+    }
+    @media (max-width: 1024px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: linear-gradient(145deg, rgba(17,24,39,0.9), rgba(15,23,42,0.92));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    .section-title {
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    ul.goals {
+      list-style: disc;
+      padding-left: 18px;
+      margin: 0;
+      color: var(--text);
+    }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--pill);
+      color: var(--pill-text);
+      font-size: 12px;
+      margin: 4px 6px 4px 0;
+    }
+    .resources ul {
+      padding-left: 16px;
+      margin: 0;
+    }
+    .resources a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .resources a:hover { text-decoration: underline; }
+    .exercise {
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(145deg, rgba(30,41,59,0.75), rgba(15,23,42,0.9));
+    }
+    .exercise h3 {
+      margin: 0 0 6px 0;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+    .ex-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .objective {
+      margin: 8px 0;
+    }
+    pre {
+      background: #0b1223;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      margin-top: 10px;
+    }
+    .list {
+      padding-left: 16px;
+      margin: 6px 0;
+      color: var(--text);
+    }
+    .list li { margin: 2px 0; }
+    .badges {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>NeetCode Arrays &amp; Hashing: Foundation Patterns</h1>
+      <p class="summary">Master fundamental array and hashmap patterns that form the basis for all algorithmic problem-solving.</p>
+    </header>
+    <section class="grid">
+      <div>
+        <article class="exercise">
+  <div class="ex-meta">Exercise 1 · contains-duplicate · Kata name: neetcode_contains_duplicate</div>
+  <h3>1. Contains Duplicate - Set Basics</h3>
+  <p class="objective">Determine if an array contains any duplicate values using a set.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns True if duplicates exist, False otherwise</li><li>Uses O(n) time and O(n) space</li><li>Handles empty arrays and single elements</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Use a set to track seen elements</li><li>Check if element exists before adding</li><li>Set lookup is O(1) average case</li></ul>
+</div>
+  
+  
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_contains_duplicate" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Contains Duplicate - LeetCode 217&quot;&quot;&quot;
+
+def contains_duplicate(nums: list[int]) -&gt; bool:
+    # TODO: Use a set to check for duplicates
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 2 · valid-anagram · Kata name: neetcode_valid_anagram</div>
+  <h3>2. Valid Anagram - Frequency Counting</h3>
+  <p class="objective">Check if two strings are anagrams using frequency counting.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns True if strings are anagrams</li><li>Handles strings of different lengths</li><li>Uses O(n) time complexity</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Count character frequencies in both strings</li><li>Use Counter from collections or manual dict</li><li>Compare frequency maps</li></ul>
+</div>
+  
+  
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_valid_anagram" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Valid Anagram - LeetCode 242&quot;&quot;&quot;
+
+def is_anagram(s: str, t: str) -&gt; bool:
+    # TODO: Compare character counts
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 3 · two-sum · Kata name: neetcode_two_sum</div>
+  <h3>3. Two Sum - Classic Hashmap Pattern</h3>
+  <p class="objective">Find two indices where values sum to target using a hashmap.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns [index1, index2] of the two numbers</li><li>Uses O(n) time and O(n) space</li><li>Each input has exactly one solution</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Store complement (target - num) in hashmap</li><li>Check if current number exists in hashmap</li><li>Store index as value in hashmap</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">contains-duplicate</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_two_sum" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Two Sum - LeetCode 1&quot;&quot;&quot;
+
+def two_sum(nums: list[int], target: int) -&gt; list[int]:
+    # TODO: Use a hash map to find complement
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 4 · group-anagrams · Kata name: neetcode_group_anagrams</div>
+  <h3>4. Group Anagrams - Hashmap with Key Generation</h3>
+  <p class="objective">Group strings that are anagrams using hashmap with sorted string keys.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns list of grouped anagrams</li><li>All anagrams are in same group</li><li>Uses O(n*k*log k) time where k is max string length</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Use sorted string as hashmap key</li><li>All anagrams have same sorted representation</li><li>Use defaultdict(list) for cleaner code</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">valid-anagram</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_group_anagrams" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Group Anagrams - LeetCode 49&quot;&quot;&quot;
+
+def group_anagrams(strs: list[str]) -&gt; list[list[str]]:
+    # TODO: Use sorted string or character count as key
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 5 · top-k-frequent · Kata name: neetcode_top_k_frequent</div>
+  <h3>5. Top K Frequent Elements - Frequency + Bucketing</h3>
+  <p class="objective">Find k most frequent elements using bucket sort for O(n) time.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns list of k most frequent elements</li><li>Uses O(n) time complexity (better than O(n log n) sorting)</li><li>Handles ties correctly</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Count frequencies first (Counter or dict)</li><li>Create buckets indexed by frequency</li><li>Iterate from max frequency down to collect k elements</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">valid-anagram</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_top_k_frequent" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Top K Frequent Elements - LeetCode 347&quot;&quot;&quot;
+
+def top_k_frequent(nums: list[int], k: int) -&gt; list[int]:
+    # TODO: Use Counter and heap or bucket sort
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 6 · product-except-self · Kata name: neetcode_product_except_self</div>
+  <h3>6. Product Except Self - Array Manipulation</h3>
+  <p class="objective">Calculate product of array except self without division using prefix/suffix products.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns correct product array</li><li>O(n) time complexity</li><li>O(1) extra space (output array doesn&#39;t count)</li><li>No division operator used</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Two passes: left-to-right for prefix, right-to-left for suffix</li><li>Store prefix products in result array</li><li>Multiply by suffix products in second pass</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">contains-duplicate</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_product_except_self" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Product of Array Except Self - LeetCode 238&quot;&quot;&quot;
+
+def product_except_self(nums: list[int]) -&gt; list[int]:
+    # TODO: Use prefix and suffix products
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 7 · longest-consecutive · Kata name: neetcode_longest_consecutive</div>
+  <h3>7. Longest Consecutive Sequence - Set-Based Search</h3>
+  <p class="objective">Find length of longest consecutive sequence using set for O(n) time.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Returns length of longest consecutive sequence</li><li>Uses O(n) time complexity (no sorting)</li><li>Handles duplicate values correctly</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Convert array to set for O(1) lookups</li><li>Only start counting from sequence starts (num-1 not in set)</li><li>For each start, count consecutive numbers</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">contains-duplicate</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_longest_consecutive" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Longest Consecutive Sequence - LeetCode 128&quot;&quot;&quot;
+
+def longest_consecutive(nums: list[int]) -&gt; int:
+    # TODO: Use a set to check for sequence starts
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+<article class="exercise">
+  <div class="ex-meta">Exercise 8 · encode-decode-strings · Kata name: neetcode_encode_decode_strings</div>
+  <h3>8. Encode and Decode Strings - Protocol Design</h3>
+  <p class="objective">Design a protocol to encode/decode list of strings that may contain any characters.</p>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Acceptance</div>
+  <ul class="list"><li>Encode returns single string</li><li>Decode correctly reconstructs original list</li><li>Handles strings with special characters, empty strings</li><li>Encoding is reversible: decode(encode(strs)) == strs</li></ul>
+</div>
+  <div>
+  <div class="section-title" style="margin-bottom:4px;">Hints</div>
+  <ul class="list"><li>Use length-prefix format: &#39;&lt;length&gt;#&lt;string&gt;&#39;</li><li>Encode: &#39;4#neet4#code&#39; for [&#39;neet&#39;, &#39;code&#39;]</li><li>Decode: read length, then read that many characters</li></ul>
+</div>
+  
+  <div class="badges"><span class="pill">group-anagrams</span></div>
+  <div class="note">Add later via TUI: Library → All Katas → "neetcode_encode_decode_strings" (or press w for Workbooks, then a/p).</div>
+  <pre><code>&quot;&quot;&quot;Encode and Decode Strings - LeetCode 271&quot;&quot;&quot;
+
+def encode(strs: list[str]) -&gt; str:
+    # TODO: Encode list of strings with length prefix
+    # BLANK_START
+    pass
+    # BLANK_END
+
+def decode(s: str) -&gt; list[str]:
+    # TODO: Decode using length prefix
+    # BLANK_START
+    pass
+    # BLANK_END</code></pre>
+</article>
+      </div>
+      <div class="panel">
+        <div class="section-title">Learning goals</div>
+        <ul class="goals"><li>Use hashmaps and sets for O(1) lookups and frequency counting</li><li>Solve array transformation problems efficiently</li><li>Apply frequency counting and bucketing techniques</li><li>Handle 2D array manipulation and traversal patterns</li></ul>
+        <div class="section-title" style="margin-top:14px;">Prerequisites</div>
+        <div></div>
+        <div class="section-title" style="margin-top:14px;">Resources</div>
+        <div class="resources">
+          <ul><li><a href="https://neetcode.io/courses/dsa-for-beginners/2" target="_blank" rel="noreferrer noopener">Arrays &amp; Hashing Guide</a></li><li><a href="https://docs.python.org/3/library/stdtypes.html#dict" target="_blank" rel="noreferrer noopener">Python Dictionary Methods</a></li></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
