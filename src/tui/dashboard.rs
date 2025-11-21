@@ -266,7 +266,7 @@ impl Dashboard {
                 Constraint::Length(3),  // Header
                 Constraint::Min(8),     // Main kata list
                 Constraint::Length(6),  // Future forecast (compact)
-                Constraint::Length(12), // GitHub-style heatmap calendar (7 days + header + legend + borders)
+                Constraint::Length(15), // Enhanced heatmap calendar (7 days + header + legend + selected date info + borders)
                 Constraint::Length(std::cmp::max(
                     3,
                     self.stats.category_breakdown.len() as u16 + 2,
