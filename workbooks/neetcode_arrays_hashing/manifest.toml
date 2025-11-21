@@ -1,0 +1,154 @@
+[workbook]
+id = "neetcode_arrays_hashing"
+title = "NeetCode Arrays & Hashing: Foundation Patterns"
+summary = "Master fundamental array and hashmap patterns that form the basis for all algorithmic problem-solving."
+learning_goals = [
+  "Use hashmaps and sets for O(1) lookups and frequency counting",
+  "Solve array transformation problems efficiently",
+  "Apply frequency counting and bucketing techniques",
+  "Handle 2D array manipulation and traversal patterns",
+]
+prerequisites = []
+resources = [
+  { title = "Arrays & Hashing Guide", url = "https://neetcode.io/courses/dsa-for-beginners/2" },
+  { title = "Python Dictionary Methods", url = "https://docs.python.org/3/library/stdtypes.html#dict" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "contains-duplicate"
+title = "1. Contains Duplicate - Set Basics"
+kata = "neetcode_contains_duplicate"
+objective = "Determine if an array contains any duplicate values using a set."
+acceptance = [
+  "Returns True if duplicates exist, False otherwise",
+  "Uses O(n) time and O(n) space",
+  "Handles empty arrays and single elements",
+]
+hints = [
+  "Use a set to track seen elements",
+  "Check if element exists before adding",
+  "Set lookup is O(1) average case",
+]
+dependencies = []
+
+[[exercises]]
+slug = "valid-anagram"
+title = "2. Valid Anagram - Frequency Counting"
+kata = "neetcode_valid_anagram"
+objective = "Check if two strings are anagrams using frequency counting."
+acceptance = [
+  "Returns True if strings are anagrams",
+  "Handles strings of different lengths",
+  "Uses O(n) time complexity",
+]
+hints = [
+  "Count character frequencies in both strings",
+  "Use Counter from collections or manual dict",
+  "Compare frequency maps",
+]
+dependencies = []
+
+[[exercises]]
+slug = "two-sum"
+title = "3. Two Sum - Classic Hashmap Pattern"
+kata = "neetcode_two_sum"
+objective = "Find two indices where values sum to target using a hashmap."
+acceptance = [
+  "Returns [index1, index2] of the two numbers",
+  "Uses O(n) time and O(n) space",
+  "Each input has exactly one solution",
+]
+hints = [
+  "Store complement (target - num) in hashmap",
+  "Check if current number exists in hashmap",
+  "Store index as value in hashmap",
+]
+dependencies = ["contains-duplicate"]
+
+[[exercises]]
+slug = "group-anagrams"
+title = "4. Group Anagrams - Hashmap with Key Generation"
+kata = "neetcode_group_anagrams"
+objective = "Group strings that are anagrams using hashmap with sorted string keys."
+acceptance = [
+  "Returns list of grouped anagrams",
+  "All anagrams are in same group",
+  "Uses O(n*k*log k) time where k is max string length",
+]
+hints = [
+  "Use sorted string as hashmap key",
+  "All anagrams have same sorted representation",
+  "Use defaultdict(list) for cleaner code",
+]
+dependencies = ["valid-anagram"]
+
+[[exercises]]
+slug = "top-k-frequent"
+title = "5. Top K Frequent Elements - Frequency + Bucketing"
+kata = "neetcode_top_k_frequent"
+objective = "Find k most frequent elements using bucket sort for O(n) time."
+acceptance = [
+  "Returns list of k most frequent elements",
+  "Uses O(n) time complexity (better than O(n log n) sorting)",
+  "Handles ties correctly",
+]
+hints = [
+  "Count frequencies first (Counter or dict)",
+  "Create buckets indexed by frequency",
+  "Iterate from max frequency down to collect k elements",
+]
+dependencies = ["valid-anagram"]
+
+[[exercises]]
+slug = "product-except-self"
+title = "6. Product Except Self - Array Manipulation"
+kata = "neetcode_product_except_self"
+objective = "Calculate product of array except self without division using prefix/suffix products."
+acceptance = [
+  "Returns correct product array",
+  "O(n) time complexity",
+  "O(1) extra space (output array doesn't count)",
+  "No division operator used",
+]
+hints = [
+  "Two passes: left-to-right for prefix, right-to-left for suffix",
+  "Store prefix products in result array",
+  "Multiply by suffix products in second pass",
+]
+dependencies = ["contains-duplicate"]
+
+[[exercises]]
+slug = "longest-consecutive"
+title = "7. Longest Consecutive Sequence - Set-Based Search"
+kata = "neetcode_longest_consecutive"
+objective = "Find length of longest consecutive sequence using set for O(n) time."
+acceptance = [
+  "Returns length of longest consecutive sequence",
+  "Uses O(n) time complexity (no sorting)",
+  "Handles duplicate values correctly",
+]
+hints = [
+  "Convert array to set for O(1) lookups",
+  "Only start counting from sequence starts (num-1 not in set)",
+  "For each start, count consecutive numbers",
+]
+dependencies = ["contains-duplicate"]
+
+[[exercises]]
+slug = "encode-decode-strings"
+title = "8. Encode and Decode Strings - Protocol Design"
+kata = "neetcode_encode_decode_strings"
+objective = "Design a protocol to encode/decode list of strings that may contain any characters."
+acceptance = [
+  "Encode returns single string",
+  "Decode correctly reconstructs original list",
+  "Handles strings with special characters, empty strings",
+  "Encoding is reversible: decode(encode(strs)) == strs",
+]
+hints = [
+  "Use length-prefix format: '<length>#<string>'",
+  "Encode: '4#neet4#code' for ['neet', 'code']",
+  "Decode: read length, then read that many characters",
+]
+dependencies = ["group-anagrams"]

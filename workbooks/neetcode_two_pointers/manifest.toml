@@ -1,0 +1,103 @@
+[workbook]
+id = "neetcode_two_pointers"
+title = "NeetCode Two Pointers: Efficient Array Problems"
+summary = "Master the two-pointer technique for solving array and string problems with O(n) time and O(1) space."
+learning_goals = [
+  "Recognize when two-pointer approach applies to array/string problems",
+  "Implement forward and backward pointer movement strategically",
+  "Solve optimization problems using greedy pointer movement",
+  "Handle edge cases with pointer boundaries and conditions",
+]
+prerequisites = ["neetcode_two_sum", "neetcode_valid_anagram"]
+resources = [
+  { title = "Two Pointers Pattern Guide", url = "https://neetcode.io/courses/dsa-for-beginners/28" },
+  { title = "LeetCode Two Pointers Discussion", url = "https://leetcode.com/tag/two-pointers/" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "valid-palindrome"
+title = "1. Valid Palindrome - Basic Two Pointers"
+kata = "neetcode_valid_palindrome"
+objective = "Check if a string is a palindrome using two pointers from both ends."
+acceptance = [
+  "Handles alphanumeric filtering correctly",
+  "Case-insensitive comparison works",
+  "Empty strings and single characters handled",
+  "O(n) time, O(1) space complexity",
+]
+hints = [
+  "Skip non-alphanumeric characters with continue",
+  "Compare characters from both ends moving inward",
+  "Convert to lowercase for case-insensitive comparison",
+]
+dependencies = []
+
+[[exercises]]
+slug = "two-sum-ii"
+title = "2. Two Sum II - Sorted Array Search"
+kata = "neetcode_two_sum_ii"
+objective = "Find two indices in a SORTED array that sum to target using two pointers."
+acceptance = [
+  "Returns 1-indexed positions [index1, index2]",
+  "Uses O(n) time and O(1) space (no hashmap)",
+  "Handles duplicate values correctly",
+]
+hints = [
+  "Start with left=0, right=len-1",
+  "If sum < target, move left pointer right",
+  "If sum > target, move right pointer left",
+  "Array being sorted is the key insight",
+]
+dependencies = ["valid-palindrome"]
+
+[[exercises]]
+slug = "three-sum"
+title = "3. Three Sum - Extending Two Pointers"
+kata = "neetcode_3sum"
+objective = "Find all unique triplets that sum to zero by fixing one element and using two pointers."
+acceptance = [
+  "Returns all unique triplets (no duplicates)",
+  "Uses O(n²) time complexity",
+  "Handles edge cases with < 3 elements",
+]
+hints = [
+  "Sort the array first",
+  "Fix one element, apply two-sum-ii pattern to remaining array",
+  "Skip duplicates by checking nums[i] == nums[i-1]",
+]
+dependencies = ["two-sum-ii"]
+
+[[exercises]]
+slug = "container-water"
+title = "4. Container With Most Water - Greedy Optimization"
+kata = "neetcode_container_most_water"
+objective = "Find two lines that form a container with maximum water using greedy pointer movement."
+acceptance = [
+  "Returns maximum area possible",
+  "Uses O(n) time complexity",
+  "Correctly calculates area = min(height[l], height[r]) * (r - l)",
+]
+hints = [
+  "Start with widest container (left=0, right=n-1)",
+  "Move the pointer pointing to the shorter line",
+  "Why? Moving the taller line can only decrease area",
+]
+dependencies = ["two-sum-ii"]
+
+[[exercises]]
+slug = "trapping-rain"
+title = "5. Trapping Rain Water - Advanced Two Pointers"
+kata = "neetcode_trapping_rain_water"
+objective = "Calculate total water trapped between bars using two pointers with max height tracking."
+acceptance = [
+  "Correctly sums water at each position",
+  "Handles edge cases with flat terrain and peaks",
+  "Uses O(n) time and O(1) space",
+]
+hints = [
+  "Track max_left and max_right as pointers move",
+  "Water at position i = min(max_left, max_right) - height[i]",
+  "Move pointer with smaller max_height",
+]
+dependencies = ["container-water", "two-sum-ii"]
