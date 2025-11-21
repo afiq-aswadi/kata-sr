@@ -1,0 +1,9 @@
+[kata]
+name = "einops_attention_logits"
+category = "einops"
+base_difficulty = 3
+description = """
+Compute scaled dot-product attention logits using einops.einsum over query and key tensors.
+Return shape should be (batch, heads, q_len, k_len).
+"""
+tags = ["einops", "attention", "tensor"]

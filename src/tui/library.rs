@@ -52,6 +52,8 @@ pub enum LibraryAction {
     ToggleFlagWithReason(Kata, Option<String>),
     /// View detailed information about a kata
     ViewDetails(AvailableKata),
+    /// Open workbook picker
+    OpenWorkbooks,
     /// Return to dashboard
     Back,
     /// Open create kata screen
@@ -747,6 +749,7 @@ impl Library {
                     Line::from(vec![
                         Span::raw("[Tab] Switch tab  "),
                         Span::raw("[n] Create New  "),
+                        Span::raw("[w] Workbooks  "),
                         Span::raw("[Esc] Back"),
                     ])
                 } else {
@@ -759,6 +762,7 @@ impl Library {
                         Span::raw("[f] Flag  "),
                         Span::raw("[x] Toggle hide flagged  "),
                         Span::raw("[n] Create  "),
+                        Span::raw("[w] Workbooks  "),
                         Span::raw("[Esc] Back"),
                     ])
                 }
@@ -810,6 +814,7 @@ impl Library {
                             Span::raw("[j/k] Navigate  "),
                             Span::raw("[a] Add  "),
                             Span::raw("[p] Attempt  "),
+                            Span::raw("[w] Workbooks  "),
                             Span::raw("[/] Search  "),
                             Span::raw("[t] Filter  "),
                             Span::raw("[s] Sort  "),
@@ -822,6 +827,7 @@ impl Library {
                             Span::raw("[Tab] Switch  "),
                             Span::raw("[j/k] Navigate  "),
                             Span::raw("[p] Attempt  "),
+                            Span::raw("[w] Workbooks  "),
                             Span::styled("Already in deck  ", Style::default().fg(Color::Gray)),
                             Span::raw("[/] Search  "),
                             Span::raw("[t] Filter  "),
@@ -979,6 +985,7 @@ impl Library {
                 return LibraryAction::None;
             }
             KeyCode::Char('n') => return LibraryAction::CreateKata,
+            KeyCode::Char('w') => return LibraryAction::OpenWorkbooks,
             KeyCode::Esc => return LibraryAction::Back,
             _ => {}
         }

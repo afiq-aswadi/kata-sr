@@ -12,24 +12,25 @@ use ratatui::{Frame, Terminal};
 use std::io;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
+use super::screen::{Screen, ScreenAction};
+use super::dashboard::Dashboard;
+use super::library::Library;
+use super::startup::StartupScreen;
+use super::results::ResultsScreen;
+use super::practice::PracticeScreen;
+use super::done::DoneScreen;
+use super::keybindings;
+use super::workbooks::WorkbookScreen;
+use super::session_history::SessionHistoryScreen;
+use super::session_detail::SessionDetailScreen;
+use super::create_kata::CreateKataScreen;
+use super::edit_kata::EditKataScreen;
+use super::settings::SettingsScreen;
+use super::details::DetailsScreen;
+use crate::config::AppConfig;
 use crate::core::analytics::Analytics;
 use crate::core::fsrs::{FsrsParams, Rating};
-use crate::db::repo::{Kata, NewKata, NewSession};
-use super::create_kata::CreateKataScreen;
-use super::dashboard::Dashboard;
-use super::details::DetailsScreen;
-use super::done::DoneScreen;
-use super::edit_kata::EditKataScreen;
-use super::keybindings;
-use super::library::Library;
-use super::practice::PracticeScreen;
-use super::results::ResultsScreen;
-use super::session_detail::SessionDetailScreen;
-use super::session_history::SessionHistoryScreen;
-use super::settings::SettingsScreen;
-use super::startup::StartupScreen;
-use crate::config::AppConfig;
-use crate::db::repo::KataRepository;
+use crate::db::repo::{Kata, NewKata, NewSession, KataRepository};
 use crate::runner::python_runner::TestResults;
 
 /// Style for popup messages.
@@ -63,7 +64,11 @@ pub enum AppEvent {
     Quit,
 }
 
-use super::screen::{Screen, ScreenAction};
+enum KataAddOutcome {
+    Added(Kata),
+    AlreadyInDeck(Kata),
+    Missing,
+}
 
 /// Main application state and event loop coordinator.
 ///
@@ -251,6 +256,38 @@ impl App {
         }
     }
 
+    fn add_kata_to_deck(&self, kata_name: &str) -> anyhow::Result<KataAddOutcome> {
+        if let Some(existing) = self.repo.get_kata_by_name(kata_name)? {
+            return Ok(KataAddOutcome::AlreadyInDeck(existing));
+        }
+
+        let available_katas = crate::core::kata_loader::load_available_katas()?;
+        let available_kata = match available_katas.iter().find(|k| k.name == kata_name) {
+            Some(k) => k,
+            None => return Ok(KataAddOutcome::Missing),
+        };
+
+        let new_kata = NewKata {
+            name: available_kata.name.clone(),
+            category: available_kata.category.clone(),
+            description: available_kata.description.clone(),
+            base_difficulty: available_kata.base_difficulty,
+            parent_kata_id: None,
+            variation_params: None,
+        };
+
+        let created_id = self
+            .repo
+            .create_kata(&new_kata, Utc::now())
+            .context("Failed to add kata to deck")?;
+        let created = self
+            .repo
+            .get_kata_by_id(created_id)?
+            .context("Failed to load kata after creation")?;
+
+        Ok(KataAddOutcome::Added(created))
+    }
+
     /// Renders the current screen.
     ///
     /// Delegates to the appropriate screen's render method.
@@ -326,9 +363,10 @@ impl App {
     /// Executes a screen action, handling all state transitions.
     fn execute_action(&mut self, action: ScreenAction) -> anyhow::Result<()> {
         match action {
-            // Practice Init
+            // Practice Init & Workbooks
             ScreenAction::StartPractice(_)
             | ScreenAction::AttemptKataWithoutDeck(_)
+            | ScreenAction::OpenWorkbooks
             | ScreenAction::StartNextDue
             | ScreenAction::RetryKata(_) => {
                 self.handle_practice_init_action(action)?;
@@ -345,6 +383,10 @@ impl App {
             // Library
             ScreenAction::OpenLibrary
             | ScreenAction::AddKataFromLibrary(_)
+            | ScreenAction::AddPreviewToDeck(_)
+            | ScreenAction::BackFromWorkbooks
+            | ScreenAction::OpenWorkbookPage(_)
+            | ScreenAction::AddWorkbookExercises { .. }
             | ScreenAction::BackFromLibrary
             | ScreenAction::RemoveKataFromDeck(_)
             | ScreenAction::LibraryToggleFlagKata(_)
@@ -411,6 +453,10 @@ impl App {
                 let practice_screen =
                     PracticeScreen::new(kata.clone(), self.config.editor.clone())?;
                 self.current_screen = Screen::Practice(kata, practice_screen);
+            }
+            ScreenAction::OpenWorkbooks => {
+                let workbooks = WorkbookScreen::load()?;
+                self.current_screen = Screen::Workbooks(workbooks);
             }
             ScreenAction::AttemptKataWithoutDeck(available_kata) => {
                 let preview_kata = Kata {
@@ -546,43 +592,200 @@ impl App {
                 self.current_screen = Screen::Library(library);
             }
             ScreenAction::AddKataFromLibrary(kata_name) => {
-                let available_katas = crate::core::kata_loader::load_available_katas()?;
-                if let Some(available_kata) = available_katas.iter().find(|k| k.name == kata_name) {
-                    let new_kata = NewKata {
-                        name: available_kata.name.clone(),
-                        category: available_kata.category.clone(),
-                        description: available_kata.description.clone(),
-                        base_difficulty: available_kata.base_difficulty,
-                        parent_kata_id: None,
-                        variation_params: None,
-                    };
-
-                    self.repo.create_kata(&new_kata, Utc::now())?;
-
-                    match &mut self.current_screen {
-                        Screen::Library(library) => {
-                            library.mark_as_added(&kata_name);
-                            self.needs_terminal_clear = true;
+                match self.add_kata_to_deck(&kata_name)? {
+                    KataAddOutcome::Added(_) => {
+                        // update library state if on library screen, or navigate back if on details
+                        match &mut self.current_screen {
+                            Screen::Library(library) => {
+                                library.mark_as_added(&kata_name);
+                                // Force terminal clear to prevent display corruption
+                                self.needs_terminal_clear = true;
+                            }
+                            Screen::Details(_) => {
+                                // navigate back to library with updated state
+                                let library = Library::load_with_filter(
+                                    &self.repo,
+                                    &self.config.library.default_sort,
+                                    self.config.library.default_sort_ascending,
+                                    self.library_hide_flagged,
+                                )?;
+                                self.current_screen = Screen::Library(library);
+                                // Force terminal clear to prevent display corruption
+                                self.needs_terminal_clear = true;
+                            }
+                            _ => {}
                         }
-                        Screen::Details(_) => {
-                            let library = Library::load_with_filter(
-                                &self.repo,
-                                &self.config.library.default_sort,
-                                self.config.library.default_sort_ascending,
-                                self.library_hide_flagged,
-                            )?;
-                            self.current_screen = Screen::Library(library);
-                            self.needs_terminal_clear = true;
-                        }
-                        _ => {}
+
+                        // reload dashboard so counts are updated (preserve hide_flagged state)
+                        self.dashboard = Dashboard::load_with_filter(
+                            &self.repo,
+                            self.config.display.heatmap_days,
+                            self.dashboard_hide_flagged,
+                        )?;
                     }
-
-                    self.dashboard = Dashboard::load_with_filter(
-                        &self.repo,
-                        self.config.display.heatmap_days,
-                        self.dashboard_hide_flagged,
-                    )?;
+                    KataAddOutcome::AlreadyInDeck(_) => {}
+                    KataAddOutcome::Missing => {
+                        self.popup_message = Some(PopupMessage {
+                            title: "Kata Not Found".to_string(),
+                            message: format!(
+                                "Could not find kata '{}' in katas/exercises.",
+                                kata_name
+                            ),
+                            style: PopupStyle::Error,
+                        });
+                    }
                 }
+            }
+            ScreenAction::AddPreviewToDeck(kata_name) => {
+                match self.add_kata_to_deck(&kata_name)? {
+                    KataAddOutcome::Added(_) => {
+                        // Mark state on results screen so we hide the add prompt
+                        if let Screen::Results(_, results_screen) = &mut self.current_screen {
+                            results_screen.mark_preview_added();
+                        }
+                        self.popup_message = Some(PopupMessage {
+                            title: "Added to Deck".to_string(),
+                            message: format!(
+                                "Kata '{}' is now in your deck and will be scheduled.",
+                                kata_name
+                            ),
+                            style: PopupStyle::Success,
+                        });
+                        self.dashboard = Dashboard::load_with_filter(
+                            &self.repo,
+                            self.config.display.heatmap_days,
+                            self.dashboard_hide_flagged,
+                        )?;
+                    }
+                    KataAddOutcome::AlreadyInDeck(_) => {
+                        if let Screen::Results(_, results_screen) = &mut self.current_screen {
+                            results_screen.mark_preview_added();
+                        }
+                        self.popup_message = Some(PopupMessage {
+                            title: "Already in Deck".to_string(),
+                            message: format!(
+                                "Kata '{}' was already present in your deck.",
+                                kata_name
+                            ),
+                            style: PopupStyle::Success,
+                        });
+                    }
+                    KataAddOutcome::Missing => {
+                        self.popup_message = Some(PopupMessage {
+                            title: "Kata Not Found".to_string(),
+                            message: format!(
+                                "Could not find kata '{}' in katas/exercises.",
+                                kata_name
+                            ),
+                            style: PopupStyle::Error,
+                        });
+                    }
+                }
+            }
+            ScreenAction::OpenWorkbookPage(path) => {
+                let result = if cfg!(target_os = "windows") {
+                    std::process::Command::new("cmd")
+                        .args(["/C", "start"])
+                        .arg(path.to_string_lossy().to_string())
+                        .spawn()
+                } else if cfg!(target_os = "macos") {
+                    std::process::Command::new("open").arg(&path).spawn()
+                } else {
+                    std::process::Command::new("xdg-open").arg(&path).spawn()
+                };
+
+                match result {
+                    Ok(_) => {
+                        self.popup_message = Some(PopupMessage {
+                            title: "Opened Workbook".to_string(),
+                            message: format!("Opened {}", path.display()),
+                            style: PopupStyle::Success,
+                        });
+                    }
+                    Err(e) => {
+                        self.popup_message = Some(PopupMessage {
+                            title: "Failed to Open Workbook".to_string(),
+                            message: format!("Could not open {}: {}", path.display(), e),
+                            style: PopupStyle::Error,
+                        });
+                    }
+                }
+            }
+            ScreenAction::AddWorkbookExercises {
+                kata_names,
+                workbook_title,
+            } => {
+                use std::collections::HashSet;
+
+                let mut seen = HashSet::new();
+                let mut added = Vec::new();
+                let mut existing = Vec::new();
+                let mut missing = Vec::new();
+
+                for name in kata_names {
+                    if !seen.insert(name.clone()) {
+                        continue;
+                    }
+                    match self.add_kata_to_deck(&name)? {
+                        KataAddOutcome::Added(created) => {
+                            added.push(created.name.clone());
+                        }
+                        KataAddOutcome::AlreadyInDeck(kata) => {
+                            existing.push(kata.name.clone());
+                        }
+                        KataAddOutcome::Missing => {
+                            missing.push(name.clone());
+                        }
+                    }
+                }
+
+                // Best-effort state refresh
+                self.dashboard = Dashboard::load_with_filter(
+                    &self.repo,
+                    self.config.display.heatmap_days,
+                    self.dashboard_hide_flagged,
+                )?;
+                if let Screen::Library(library) = &mut self.current_screen {
+                    for name in &added {
+                        library.mark_as_added(name);
+                    }
+                    library.refresh_deck(&self.repo)?;
+                }
+
+                let mut message_lines = Vec::new();
+                if !added.is_empty() {
+                    message_lines.push(format!("Added: {}", added.join(", ")));
+                }
+                if !existing.is_empty() {
+                    message_lines.push(format!("Already in deck: {}", existing.join(", ")));
+                }
+                if !missing.is_empty() {
+                    message_lines.push(format!("Missing: {}", missing.join(", ")));
+                }
+                if message_lines.is_empty() {
+                    message_lines.push("No exercises were processed.".to_string());
+                }
+
+                let style = if missing.is_empty() {
+                    PopupStyle::Success
+                } else {
+                    PopupStyle::Error
+                };
+
+                self.popup_message = Some(PopupMessage {
+                    title: format!("Workbook • {}", workbook_title),
+                    message: message_lines.join("\n"),
+                    style,
+                });
+            }
+            ScreenAction::BackFromWorkbooks => {
+                let library = Library::load_with_filter(
+                    &self.repo,
+                    &self.config.library.default_sort,
+                    self.config.library.default_sort_ascending,
+                    self.library_hide_flagged,
+                )?;
+                self.current_screen = Screen::Library(library);
             }
             ScreenAction::BackFromLibrary => {
                 self.refresh_dashboard_screen()?;

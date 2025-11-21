@@ -1,0 +1,9 @@
+[kata]
+name = "einops_split_heads"
+category = "einops"
+base_difficulty = 2
+description = """
+Split a merged hidden dimension into (heads, head_dim) using einops.rearrange.
+Return tensor should be shaped (batch, heads, seq, head_dim).
+"""
+tags = ["einops", "attention", "tensor"]

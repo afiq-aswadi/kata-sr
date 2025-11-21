@@ -1,0 +1,9 @@
+[kata]
+name = "einops_segment_mean"
+category = "einops"
+base_difficulty = 2
+description = """
+Compute fixed-width segment means along the sequence dimension using einops.reduce.
+The sequence length must be divisible by the window size.
+"""
+tags = ["einops", "sequence", "pooling"]

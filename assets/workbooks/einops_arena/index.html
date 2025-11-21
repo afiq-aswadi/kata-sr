@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Einops Arena: Shape Fluency · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+    .section:nth-child(5) { animation-delay: 0.4s; }
+    .section:nth-child(6) { animation-delay: 0.5s; }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow:
+        0 2px 8px var(--shadow),
+        0 8px 24px var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 4px 12px var(--shadow),
+        0 12px 32px rgba(42, 37, 32, 0.12);
+    }
+
+    .exercise-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .exercise-meta {
+      font-size: 13px;
+      color: var(--rust);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--navy);
+      color: white;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+
+    .badge.prereq {
+      background: var(--sage);
+    }
+
+    .badge.kata {
+      background: var(--gold);
+      color: var(--ink);
+    }
+
+    ul {
+      list-style: none;
+      margin: 16px 0;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 8px;
+    }
+
+    ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--rust);
+      font-weight: 500;
+    }
+
+    pre {
+      background: #282a36;
+      border-radius: 6px;
+      padding: 0;
+      overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    pre code {
+      display: block;
+      padding: 20px 24px;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 400;
+      color: #f8f8f2;
+    }
+
+    .hljs {
+      background: #282a36 !important;
+      color: #f8f8f2 !important;
+    }
+
+    .hljs-comment { color: #6272a4; }
+    .hljs-string { color: #f1fa8c; }
+    .hljs-keyword { color: #ff79c6; }
+    .hljs-function { color: #50fa7b; }
+    .hljs-number { color: #bd93f9; }
+    .hljs-built_in { color: #8be9fd; }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: var(--rust);
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #f8f8f2;
+    }
+
+    .intro-block {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.08), rgba(212, 165, 116, 0.08));
+      border-left: 4px solid var(--sage);
+      padding: 24px 28px;
+      margin: 32px 0;
+      border-radius: 4px;
+    }
+
+    .intro-block h3 {
+      margin-top: 0;
+      color: var(--sage);
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .code-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 768px) {
+      .code-comparison {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 40px;
+      }
+
+      .page {
+        padding: 48px 20px;
+      }
+    }
+
+    .comparison-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .resources a {
+      color: var(--navy);
+      text-decoration: none;
+      border-bottom: 2px solid var(--rust);
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .resources a:hover {
+      color: var(--rust);
+      border-bottom-color: var(--gold);
+    }
+
+    .note {
+      font-size: 14px;
+      color: var(--navy);
+      opacity: 0.7;
+      font-style: italic;
+      margin-top: 16px;
+    }
+
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .goal-item {
+      background: white;
+      padding: 20px;
+      border-radius: 6px;
+      border-left: 3px solid var(--sage);
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="subtitle">Tensor Operations</div>
+      <h1>Einops Arena: Shape Fluency</h1>
+      <p class="summary">A focused arena of exercises to build muscle memory for rearrange, reduce, and einsum in real model settings.</p>
+    </header>
+
+    <section class="section">
+      <h2>Introduction</h2>
+      <div class="intro-block">
+        <p>Einops is a library that makes tensor shape manipulation explicit and readable. Instead of memorizing the arcane rules of reshape, transpose, and view, you write operations that say exactly what you mean.</p>
+        <p style="margin-top: 12px;">The philosophy: <strong>shape transformations should be self-documenting.</strong> When you read einops code, you immediately understand what dimensions are being manipulated and how.</p>
+      </div>
+
+      <h3>The Problem with Traditional Reshaping</h3>
+      <p>Standard PyTorch/NumPy reshaping is error-prone and cryptic:</p>
+
+      <pre><code class="language-python"># What does this do? Good luck figuring it out.
+x = x.reshape(batch, -1, num_heads, head_dim).transpose(1, 2)
+
+# Wait, was it transpose(1, 2) or transpose(2, 1)?
+# Which dimension is which again?</code></pre>
+
+      <p>Common bugs include:</p>
+      <ul>
+        <li>Forgetting the order of dimensions after transpose</li>
+        <li>Using -1 in reshape and getting unexpected shapes</li>
+        <li>Mixing up height/width with channels</li>
+        <li>Channel-first vs channel-last confusion</li>
+      </ul>
+
+      <h3>The Einops Solution</h3>
+      <p>With einops, operations are explicit about axes:</p>
+
+      <div class="code-comparison">
+        <div>
+          <div class="comparison-label">❌ Traditional</div>
+          <pre><code class="language-python"># Image to patches
+b, c, h, w = images.shape
+p = patch_size
+images = images.reshape(
+    b, c, h//p, p, w//p, p
+)
+images = images.transpose(
+    0, 2, 4, 1, 3, 5
+)
+patches = images.reshape(
+    b, (h//p)*(w//p), c*p*p
+)</code></pre>
+        </div>
+        <div>
+          <div class="comparison-label">✓ Einops</div>
+          <pre><code class="language-python"># Same operation, readable
+patches = rearrange(
+    images,
+    'b c (h p1) (w p2) -> b (h w) (c p1 p2)',
+    p1=patch_size,
+    p2=patch_size
+)</code></pre>
+        </div>
+      </div>
+
+      <p>The einops version:</p>
+      <ul>
+        <li>Documents the transformation in the operation itself</li>
+        <li>No mental arithmetic to track dimension order</li>
+        <li>Catches shape mismatches at runtime with clear errors</li>
+        <li>Works identically across PyTorch, NumPy, TensorFlow, JAX</li>
+      </ul>
+
+      <h3>Three Core Operations</h3>
+
+      <p><strong>rearrange:</strong> Reshape and transpose in one operation</p>
+      <pre><code class="language-python">from einops import rearrange
+
+# Split heads
+x = rearrange(x, 'b n (h d) -> b h n d', h=num_heads)
+
+# Flatten spatial dimensions
+x = rearrange(x, 'b c h w -> b (h w) c')</code></pre>
+
+      <p><strong>reduce:</strong> Aggregation with explicit reduction axes</p>
+      <pre><code class="language-python">from einops import reduce
+
+# Global average pooling
+x = reduce(x, 'b c h w -> b c', 'mean')
+
+# Pool sequence in windows
+x = reduce(x, 'b (n w) d -> b n d', 'mean', w=window_size)</code></pre>
+
+      <p><strong>einsum:</strong> Einstein summation with named axes</p>
+      <pre><code class="language-python">from einops import einsum
+
+# Attention scores (more readable than torch.einsum)
+scores = einsum(query, key, 'b h n d, b h m d -> b h n m')</code></pre>
+    </section>
+
+    <section class="section">
+      <h2>Learning Goals</h2>
+      <div class="goals-grid">
+        <div class="goal-item">
+          Read and write tensor shapes without guessing or print statements
+        </div>
+        <div class="goal-item">
+          Flatten and unflatten image patches while preserving channel order
+        </div>
+        <div class="goal-item">
+          Pool and reshape sequences using reduce instead of manual slicing
+        </div>
+        <div class="goal-item">
+          Compute attention logits with einsum and proper scaling
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Prerequisites</h2>
+      <div>
+        <span class="badge prereq">tensor_slicing</span>
+        <span class="badge prereq">softmax</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercises</h2>
+
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Patchify images with rearrange</h3>
+          <div class="exercise-meta">Exercise 1 · patches</div>
+        </div>
+
+        <p>Turn BCHW images into non-overlapping flattened patches. This is the core operation for Vision Transformers (ViT), which treat images as sequences of patches.</p>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Output shape is (batch, num_patches, channels * patch_area)</li>
+          <li>Patch order does not interleave rows or channels</li>
+          <li>patch_size must divide both height and width</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use both spatial axes in the einops pattern</li>
+          <li>Keep channels leading when flattening patches</li>
+        </ul>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "einops_patches" (or press <code>w</code> then <code>a</code>/<code>p</code>)
+        </div>
+
+        <pre><code class="language-python">"""Convert images into flattened patches with einops."""
+
+import torch
+from einops import rearrange
+from jaxtyping import Float
+
+
+def image_to_patches(
+    images: Float[torch.Tensor, "batch channels height width"],
+    patch_size: int,
+) -> Float[torch.Tensor, "batch num_patches patch_dim"]:
+    """Split images into non-overlapping flattened patches.
+
+    Args:
+        images: input tensor shaped (batch, channels, height, width).
+        patch_size: edge length of each square patch. Both height and width
+            must be divisible by patch_size.
+
+    Returns:
+        Tensor of shape (batch, num_patches, channels * patch_size * patch_size).
+    """
+    assert patch_size > 0
+    batch, channels, height, width = images.shape
+    assert height % patch_size == 0
+    assert width % patch_size == 0
+
+    # BLANK_START
+    ...
+    # BLANK_END</code></pre>
+      </article>
+
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Sequence pooling with reduce</h3>
+          <div class="exercise-meta">Exercise 2 · segment-mean</div>
+        </div>
+
+        <p>Average tokens over fixed windows without losing batch or feature dimensions. This pattern appears in hierarchical models and sequence compression.</p>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Sequence length must be divisible by window_size</li>
+          <li>Output shape is (batch, segments, dim) with the correct mean per window</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Group the sequence axis as (segments window) in the pattern</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: patches</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "einops_segment_mean" (or press <code>w</code> then <code>a</code>/<code>p</code>)
+        </div>
+
+        <pre><code class="language-python">"""Segment-wise mean pooling with einops.reduce."""
+
+import torch
+from einops import reduce
+from jaxtyping import Float
+
+
+def segment_mean(
+    tokens: Float[torch.Tensor, "batch seq dim"],
+    window_size: int,
+) -> Float[torch.Tensor, "batch segments dim"]:
+    """Compute mean over non-overlapping windows along sequence."""
+    assert window_size > 0
+    batch, seq, _ = tokens.shape
+    assert seq % window_size == 0
+
+    # BLANK_START
+    ...
+    # BLANK_END</code></pre>
+      </article>
+
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Unmerge attention heads</h3>
+          <div class="exercise-meta">Exercise 3 · split-heads</div>
+        </div>
+
+        <p>Split a merged hidden dimension into (heads, head_dim) for attention. This is one of the most common operations in transformer implementations.</p>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>hidden_dim must be divisible by num_heads</li>
+          <li>Output shape is (batch, heads, seq, head_dim) with contiguous per-head blocks</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Do not reorder batch or sequence axes</li>
+          <li>Use a named dimension for heads in the pattern</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: segment-mean</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "einops_split_heads" (or press <code>w</code> then <code>a</code>/<code>p</code>)
+        </div>
+
+        <pre><code class="language-python">"""Split merged attention heads with einops."""
+
+import torch
+from einops import rearrange
+from jaxtyping import Float
+
+
+def split_heads(
+    hidden: Float[torch.Tensor, "batch seq hidden_dim"],
+    num_heads: int,
+) -> Float[torch.Tensor, "batch heads seq head_dim"]:
+    """Reshape merged heads into (heads, head_dim)."""
+    assert num_heads > 0
+    _, _, hidden_dim = hidden.shape
+    assert hidden_dim % num_heads == 0
+
+    # BLANK_START
+    ...
+    # BLANK_END</code></pre>
+      </article>
+
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Scaled attention logits with einsum</h3>
+          <div class="exercise-meta">Exercise 4 · attention-logits</div>
+        </div>
+
+        <p>Compute QK^T / sqrt(d_model) using einops.einsum across batch and heads. This is the core attention computation used in every transformer.</p>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Output shape is (batch, heads, q_len, k_len)</li>
+          <li>Uses sqrt(dim) scaling (no hardcoded constant)</li>
+          <li>Matches torch.einsum baseline for the same inputs</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Validate head counts and dimensions before computing logits</li>
+          <li>Keep batch and head axes aligned in the pattern</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: split-heads</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "einops_attention_logits" (or press <code>w</code> then <code>a</code>/<code>p</code>)
+        </div>
+
+        <pre><code class="language-python">"""Scaled dot-product attention logits with einops."""
+
+import math
+
+import torch
+from einops import einsum
+from jaxtyping import Float
+
+
+def scaled_attention_logits(
+    query: Float[torch.Tensor, "batch heads q_len dim"],
+    key: Float[torch.Tensor, "batch heads k_len dim"],
+) -> Float[torch.Tensor, "batch heads q_len k_len"]:
+    """Compute attention logits with sqrt(dim) scaling."""
+    assert query.shape[0] == key.shape[0]
+    assert query.shape[1] == key.shape[1]
+    assert query.shape[3] == key.shape[3]
+
+    # BLANK_START
+    ...
+    # BLANK_END</code></pre>
+      </article>
+    </section>
+
+    <section class="section resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://einops.rocks/pytorch-examples.html" target="_blank" rel="noopener noreferrer">Einops Overview and PyTorch Examples</a></li>
+        <li><a href="https://einops.rocks/api/rearrange/" target="_blank" rel="noopener noreferrer">rearrange API Reference</a></li>
+        <li><a href="https://einops.rocks/api/reduce/" target="_blank" rel="noopener noreferrer">reduce API Reference</a></li>
+        <li><a href="https://einops.rocks/api/einsum/" target="_blank" rel="noopener noreferrer">einsum API Reference</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    hljs.highlightAll();
+  </script>
+</body>
+</html>

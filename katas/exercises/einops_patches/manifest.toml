@@ -1,0 +1,9 @@
+[kata]
+name = "einops_patches"
+category = "einops"
+base_difficulty = 2
+description = """
+Reshape images into non-overlapping flattened patches using einops.rearrange.
+Each patch must be flattened while preserving channel-first ordering.
+"""
+tags = ["einops", "vision", "tensor"]
