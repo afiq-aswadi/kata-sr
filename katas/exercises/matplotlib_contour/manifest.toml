@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_contour"
+category = "visualization"
+tags = ["matplotlib", "plotting", "2d-visualization"]
+base_difficulty = 3
+description = """
+Create contour lines or filled contours for 2D functions.
+
+Learn to visualize level sets of 2D data.
+Use both line and filled contours with colorbars.
+"""
+dependencies = ["matplotlib_heatmap"]

@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_labels_titles"
+category = "visualization"
+tags = ["matplotlib", "plotting", "customization"]
+base_difficulty = 2
+description = """
+Add comprehensive labeling: title, axis labels, and legend.
+
+Learn to make plots readable and self-explanatory.
+Position legends appropriately.
+"""
+dependencies = ["matplotlib_line"]

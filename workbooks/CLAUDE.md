@@ -23,7 +23,9 @@ workbooks/
     │   ├── workbook-template.html      # HTML template
     │   └── README.md                   # Template usage guide
     └── <workbook-namespace>/
-        └── index.html                  # The workbook page
+        ├── index.html                  # The workbook page
+        └── images/                     # (Optional) Reference plots/diagrams
+            └── *.png
 ```
 
 **Important**: The manifest lives in `workbooks/` but the HTML page lives in `assets/workbooks/`. This separation keeps kata metadata close to kata files while keeping web assets organized.
@@ -62,7 +64,7 @@ hints = [
   "Helpful hint without giving away the solution",
 ]
 dependencies = ["other_exercise_slug"]  # Within this workbook
-assets = []  # For future use (diagrams, etc.)
+assets = []  # Optional: ["images/example.png"] for reference plots/diagrams
 ```
 
 ### Step 2: Create the HTML Page
@@ -98,6 +100,71 @@ Avoid:
 - Assuming too much knowledge
 - Walls of text without code
 - Overexplaining trivial concepts
+
+### Step 3.5: Including Plots and Visualizations
+
+For workbooks where visual output is essential (matplotlib, plotting libraries, architecture diagrams):
+
+**Directory Structure:**
+```
+assets/workbooks/<namespace>/
+├── index.html
+└── images/
+    ├── scatter_example.png
+    ├── heatmap_example.png
+    └── subplot_example.png
+```
+
+**When to Include Visuals:**
+- Plot-focused workbooks (matplotlib, seaborn, plotly)
+- Architecture diagrams (transformer blocks, network layers)
+- Visual comparisons (before/after transformations)
+- Examples where output is inherently visual
+
+**Manifest Integration:**
+```toml
+[[exercises]]
+slug = "scatter-plot"
+title = "Create Basic Scatter Plot"
+kata = "matplotlib_scatter"
+objective = "Plot x-y data with markers and labels."
+assets = ["images/scatter_example.png"]  # Relative to workbook directory
+```
+
+**HTML Embedding:**
+```html
+<div class="visual-reference">
+  <img src="images/scatter_example.png"
+       alt="Example scatter plot with labeled axes"
+       style="max-width: 100%; border-radius: 8px; margin: 16px 0;">
+  <p class="caption">Expected output: scatter plot with proper axis labels</p>
+</div>
+```
+
+**Workflow:**
+1. Create a script to generate reference plots (e.g., `generate_plots.py`)
+2. Save images to `assets/workbooks/<namespace>/images/`
+3. Use descriptive filenames matching exercise slugs
+4. Reference in manifest `assets` field
+5. Embed in HTML template with `<img>` tags
+6. Include alt text for accessibility
+7. Add captions explaining what to observe
+
+**Image Guidelines:**
+- **Format**: PNG for plots (crisp text), SVG for diagrams (scalable)
+- **Size**: Keep under 200KB per image, resize if needed
+- **Dimensions**: Max 800px wide (responsive design)
+- **Naming**: `<exercise_slug>_example.png` or `<concept>_diagram.png`
+- **Purpose**: Show expected output, not decorative
+- **Captions**: Explain what makes the plot correct/good
+
+**Best Practices:**
+- Only include images that clarify concepts
+- Don't rely solely on images (text should stand alone)
+- Show minimal, focused examples (not busy/cluttered plots)
+- For comparisons, use side-by-side layout
+- Keep visual style consistent across workbook
+- Optimize file sizes (compress PNGs)
 
 ### Step 4: Design Exercise Progression
 

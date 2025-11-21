@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Matplotlib Basics: Visualization Fundamentals · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+    .section:nth-child(5) { animation-delay: 0.4s; }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow:
+        0 2px 8px var(--shadow),
+        0 8px 24px var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 4px 12px var(--shadow),
+        0 12px 32px rgba(42, 37, 32, 0.12);
+    }
+
+    .exercise-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .exercise-meta {
+      font-size: 13px;
+      color: var(--rust);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--navy);
+      color: white;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+
+    .badge.prereq {
+      background: var(--sage);
+    }
+
+    .badge.kata {
+      background: var(--gold);
+      color: var(--ink);
+    }
+
+    ul {
+      list-style: none;
+      margin: 16px 0;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 8px;
+    }
+
+    ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--rust);
+      font-weight: 500;
+    }
+
+    pre {
+      background: #282a36;
+      border-radius: 6px;
+      padding: 0;
+      overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    pre code {
+      display: block;
+      padding: 20px 24px;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 400;
+      color: #f8f8f2;
+    }
+
+    .hljs {
+      background: #282a36 !important;
+      color: #f8f8f2 !important;
+    }
+
+    .hljs-comment { color: #6272a4; }
+    .hljs-string { color: #f1fa8c; }
+    .hljs-keyword { color: #ff79c6; }
+    .hljs-function { color: #50fa7b; }
+    .hljs-number { color: #bd93f9; }
+    .hljs-built_in { color: #8be9fd; }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: var(--rust);
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #f8f8f2;
+    }
+
+    .intro-block {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.08), rgba(212, 165, 116, 0.08));
+      border-left: 4px solid var(--sage);
+      padding: 24px 28px;
+      margin: 32px 0;
+      border-radius: 4px;
+    }
+
+    .intro-block h3 {
+      margin-top: 0;
+      color: var(--sage);
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .code-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 768px) {
+      .code-comparison {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 40px;
+      }
+
+      .page {
+        padding: 48px 20px;
+      }
+    }
+
+    .comparison-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .resources a {
+      color: var(--navy);
+      text-decoration: none;
+      border-bottom: 2px solid var(--rust);
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .resources a:hover {
+      color: var(--rust);
+      border-bottom-color: var(--gold);
+    }
+
+    .note {
+      font-size: 14px;
+      color: var(--navy);
+      opacity: 0.7;
+      font-style: italic;
+      margin-top: 16px;
+    }
+
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .goal-item {
+      background: white;
+      padding: 20px;
+      border-radius: 6px;
+      border-left: 3px solid var(--sage);
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .visual-reference {
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .visual-reference img {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .caption {
+      font-size: 14px;
+      color: var(--navy);
+      opacity: 0.7;
+      margin-top: 12px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="subtitle">Visualization Workbook</div>
+      <h1>Matplotlib Basics</h1>
+      <p class="summary">Build fluency with core matplotlib plotting patterns: scatter, line, bar, heatmaps, and customization.</p>
+    </header>
+
+    <section class="section">
+      <h2>Introduction</h2>
+      <div class="intro-block">
+        <p>Matplotlib is Python's fundamental plotting library, used across scientific computing, data analysis, and machine learning. This workbook covers the essential patterns you'll use daily: creating basic plots, customizing appearance, visualizing statistical data, and composing multi-panel figures.</p>
+        <p>Unlike publication-quality plotting (which focuses on fonts, colors, and polish), this workbook teaches the core API and patterns. Master these fundamentals, and you'll be able to quickly visualize data, debug models, and explore datasets.</p>
+      </div>
+
+      <h3>Why This Matters</h3>
+      <p>Quick, effective visualization is essential for understanding data and debugging models. Matplotlib provides the building blocks for all Python plotting.</p>
+    </section>
+
+    <section class="section">
+      <h2>Learning Goals</h2>
+      <div class="goals-grid">
+        <div class="goal-item">
+          Create and customize basic plot types (scatter, line, bar, histogram)
+        </div>
+        <div class="goal-item">
+          Add labels, titles, legends, and styling to plots
+        </div>
+        <div class="goal-item">
+          Visualize statistical data with error bars and box plots
+        </div>
+        <div class="goal-item">
+          Display 2D data with heatmaps and contour plots
+        </div>
+        <div class="goal-item">
+          Create multi-panel figures with subplots and save to file
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Prerequisites</h2>
+      <p>None! This workbook assumes only basic Python knowledge. Familiarity with NumPy arrays is helpful but not required.</p>
+    </section>
+
+    <section class="section">
+      <h2>Exercises</h2>
+
+      <!-- Exercise 1: Scatter -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Basic Scatter Plot</h3>
+          <div class="exercise-meta">Exercise 1 · scatter</div>
+        </div>
+
+        <p>Create a scatter plot from x-y data with custom marker sizes and colors.</p>
+
+        <div class="visual-reference">
+          <img src="images/scatter_example.png" alt="Example scatter plot">
+          <p class="caption">Expected output: scatter plot with labeled axes</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Plot displays all data points as circles</li>
+          <li>X and Y axes have proper labels</li>
+          <li>Figure is returned as Figure object</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.scatter() with x and y arrays</li>
+          <li>Use plt.xlabel() and plt.ylabel() for axis labels</li>
+        </ul>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_scatter"
+        </div>
+
+        <pre><code class="language-python">def create_scatter_plot(
+    x: np.ndarray,
+    y: np.ndarray,
+    xlabel: str = "X",
+    ylabel: str = "Y"
+) -> plt.Figure:
+    # BLANK_START
+    raise NotImplementedError
+    # BLANK_END</code></pre>
+      </article>
+
+      <!-- Exercise 2: Line -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Line Plot with Multiple Series</h3>
+          <div class="exercise-meta">Exercise 2 · line</div>
+        </div>
+
+        <p>Plot multiple lines on the same axes with different line styles.</p>
+
+        <div class="visual-reference">
+          <img src="images/line_example.png" alt="Example line plot with multiple series">
+          <p class="caption">Expected output: multiple lines with different styles and legend</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>All lines are displayed on the same axes</li>
+          <li>Each line has a distinct style (solid, dashed, dotted)</li>
+          <li>Legend identifies each series</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.plot() multiple times for multiple lines</li>
+          <li>Use the linestyle parameter: '-', '--', ':', '-.'</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_line"
+        </div>
+      </article>
+
+      <!-- Exercise 3: Bar -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Bar Chart</h3>
+          <div class="exercise-meta">Exercise 3 · bar</div>
+        </div>
+
+        <p>Create a vertical bar chart for categorical data.</p>
+
+        <div class="visual-reference">
+          <img src="images/bar_example.png" alt="Example bar chart">
+          <p class="caption">Expected output: bar chart with category labels</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Bars are properly positioned on the x-axis</li>
+          <li>X-axis tick labels match category names</li>
+          <li>Y-axis shows values with proper label</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.bar() with categories and values</li>
+          <li>Set x-tick labels with plt.xticks() if needed</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_bar"
+        </div>
+      </article>
+
+      <!-- Exercise 4: Histogram -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Histogram with Bins</h3>
+          <div class="exercise-meta">Exercise 4 · histogram</div>
+        </div>
+
+        <p>Plot a histogram showing distribution of data with customizable bins.</p>
+
+        <div class="visual-reference">
+          <img src="images/histogram_example.png" alt="Example histogram">
+          <p class="caption">Expected output: histogram with semi-transparent bars</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Histogram displays frequency distribution correctly</li>
+          <li>Number of bins is configurable</li>
+          <li>Bars use semi-transparent fill (alpha less than 1)</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.hist() with bins parameter</li>
+          <li>Use alpha parameter for transparency (e.g., alpha=0.7)</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: bar</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_histogram"
+        </div>
+      </article>
+
+      <!-- Exercise 5: Labels and Titles -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Labels, Titles, and Legends</h3>
+          <div class="exercise-meta">Exercise 5 · labels-titles</div>
+        </div>
+
+        <p>Add comprehensive labeling to a plot: title, axis labels, and legend.</p>
+
+        <div class="visual-reference">
+          <img src="images/labels_titles_example.png" alt="Example plot with complete labeling">
+          <p class="caption">Expected output: plot with title, axis labels, and legend</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Plot has a descriptive title</li>
+          <li>Both axes have clear labels with units if applicable</li>
+          <li>Legend is present and correctly positioned</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.title() for the plot title</li>
+          <li>Pass label='...' to plot functions, then call plt.legend()</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: line</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_labels_titles"
+        </div>
+      </article>
+
+      <!-- Exercise 6: Colors and Markers -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Custom Colors and Markers</h3>
+          <div class="exercise-meta">Exercise 6 · colors-markers</div>
+        </div>
+
+        <p>Customize plot appearance with colors, marker styles, and sizes.</p>
+
+        <div class="visual-reference">
+          <img src="images/colors_markers_example.png" alt="Example styled scatter plot">
+          <p class="caption">Expected output: scatter plot with custom markers and colors</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Scatter points use custom marker shapes (not default circles)</li>
+          <li>Colors are specified explicitly (not default blue)</li>
+          <li>Marker sizes vary based on data or are customized</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use marker parameter: 'o', 's', '^', 'D', etc.</li>
+          <li>Use color parameter with names ('red') or hex codes</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter, labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_colors_markers"
+        </div>
+      </article>
+
+      <!-- Exercise 7: Error Bars -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Error Bars</h3>
+          <div class="exercise-meta">Exercise 7 · error-bars</div>
+        </div>
+
+        <p>Display data with uncertainty using error bars.</p>
+
+        <div class="visual-reference">
+          <img src="images/error_bars_example.png" alt="Example error bar plot">
+          <p class="caption">Expected output: plot with error bars showing uncertainty</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Error bars are visible on all data points</li>
+          <li>Both x and/or y error bars can be shown</li>
+          <li>Error magnitude is customizable</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.errorbar() instead of plt.plot()</li>
+          <li>Pass yerr parameter for y-axis error bars</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: line, labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_error_bars"
+        </div>
+      </article>
+
+      <!-- Exercise 8: Box Plot -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Box Plot for Distributions</h3>
+          <div class="exercise-meta">Exercise 8 · box-plot</div>
+        </div>
+
+        <p>Create box plots showing quartiles and outliers for multiple datasets.</p>
+
+        <div class="visual-reference">
+          <img src="images/box_plot_example.png" alt="Example box plot">
+          <p class="caption">Expected output: box plot comparing multiple datasets</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Box plot shows median, quartiles, and whiskers</li>
+          <li>Can display multiple datasets side-by-side</li>
+          <li>X-axis labels identify each dataset</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.boxplot() with a list of datasets</li>
+          <li>Pass labels parameter for x-tick labels</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: bar, labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_box_plot"
+        </div>
+      </article>
+
+      <!-- Exercise 9: Heatmap -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Heatmap with Colorbar</h3>
+          <div class="exercise-meta">Exercise 9 · heatmap</div>
+        </div>
+
+        <p>Visualize a 2D matrix as a heatmap with color mapping.</p>
+
+        <div class="visual-reference">
+          <img src="images/heatmap_example.png" alt="Example heatmap">
+          <p class="caption">Expected output: heatmap with colorbar</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Matrix is displayed with color representing values</li>
+          <li>Colorbar is shown indicating the scale</li>
+          <li>Axes are properly labeled</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.imshow() with a 2D array</li>
+          <li>Add colorbar with plt.colorbar()</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_heatmap"
+        </div>
+      </article>
+
+      <!-- Exercise 10: Contour -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Contour Plot</h3>
+          <div class="exercise-meta">Exercise 10 · contour</div>
+        </div>
+
+        <p>Create contour lines for a 2D function or data grid.</p>
+
+        <div class="visual-reference">
+          <img src="images/contour_example.png" alt="Example contour plot">
+          <p class="caption">Expected output: filled contour plot with colorbar</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Contour lines are drawn at appropriate levels</li>
+          <li>Can use filled contours (contourf) or line contours</li>
+          <li>Colorbar shows value mapping</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.contour() for line contours or plt.contourf() for filled</li>
+          <li>Pass X, Y, and Z arrays (meshgrid for functions)</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: heatmap</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_contour"
+        </div>
+      </article>
+
+      <!-- Exercise 11: Subplots -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Multiple Subplots</h3>
+          <div class="exercise-meta">Exercise 11 · subplots</div>
+        </div>
+
+        <p>Create a figure with multiple subplots in a grid layout.</p>
+
+        <div class="visual-reference">
+          <img src="images/subplots_example.png" alt="Example subplot grid">
+          <p class="caption">Expected output: 2x2 grid of different plot types</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Figure contains multiple independent plots</li>
+          <li>Subplots are arranged in a grid (e.g., 2x2)</li>
+          <li>Each subplot has its own axes and can be customized independently</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.subplots(nrows, ncols) to create figure and axes</li>
+          <li>Access each subplot via axes array: axes[i, j]</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: scatter, line, bar, histogram</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_subplots"
+        </div>
+      </article>
+
+      <!-- Exercise 12: Save Figure -->
+      <article class="card">
+        <div class="exercise-header">
+          <h3>Save Figure to File</h3>
+          <div class="exercise-meta">Exercise 12 · save-figure</div>
+        </div>
+
+        <p>Create a plot and save it to file in multiple formats.</p>
+
+        <div class="visual-reference">
+          <img src="images/save_figure_example.png" alt="Example saved figure">
+          <p class="caption">Expected output: plot saved to disk</p>
+        </div>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">What you'll implement:</h4>
+        <ul>
+          <li>Figure is saved to disk (PNG, PDF, or SVG)</li>
+          <li>File path and format are configurable</li>
+          <li>DPI (resolution) can be specified for raster formats</li>
+        </ul>
+
+        <h4 style="font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--navy);">Hints:</h4>
+        <ul>
+          <li>Use plt.savefig(filename) before plt.show()</li>
+          <li>Specify format with extension: 'plot.png', 'plot.pdf'</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <span class="badge">depends on: labels-titles</span>
+        </div>
+
+        <div class="note">
+          Practice this in the TUI: Library → All Katas → "matplotlib_save_figure"
+        </div>
+      </article>
+
+    </section>
+
+    <section class="section resources">
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://matplotlib.org/stable/index.html" target="_blank" rel="noopener noreferrer">Matplotlib Documentation</a></li>
+        <li><a href="https://matplotlib.org/stable/tutorials/introductory/pyplot.html" target="_blank" rel="noopener noreferrer">Pyplot Tutorial</a></li>
+        <li><a href="https://matplotlib.org/stable/gallery/index.html" target="_blank" rel="noopener noreferrer">Gallery Examples</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    hljs.highlightAll();
+  </script>
+</body>
+</html>

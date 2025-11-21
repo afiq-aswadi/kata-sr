@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_scatter"
+category = "visualization"
+tags = ["matplotlib", "plotting", "visualization"]
+base_difficulty = 1
+description = """
+Create a basic scatter plot from x-y data.
+
+Learn the fundamental scatter plot API in matplotlib.
+Add axis labels to make the plot readable.
+"""
+dependencies = []

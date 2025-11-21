@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_subplots"
+category = "visualization"
+tags = ["matplotlib", "plotting", "layout"]
+base_difficulty = 3
+description = """
+Create a figure with multiple subplots in a grid layout.
+
+Learn to organize multiple plots in one figure.
+Access and customize individual subplot axes.
+"""
+dependencies = ["matplotlib_scatter", "matplotlib_line", "matplotlib_bar", "matplotlib_histogram"]

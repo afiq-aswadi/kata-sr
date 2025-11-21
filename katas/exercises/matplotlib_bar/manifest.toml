@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_bar"
+category = "visualization"
+tags = ["matplotlib", "plotting", "visualization"]
+base_difficulty = 1
+description = """
+Create a vertical bar chart for categorical data.
+
+Learn to display categorical data with bars.
+Position bars correctly and label axes.
+"""
+dependencies = ["matplotlib_scatter"]

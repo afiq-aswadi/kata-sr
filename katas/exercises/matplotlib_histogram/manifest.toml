@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_histogram"
+category = "visualization"
+tags = ["matplotlib", "plotting", "visualization", "statistics"]
+base_difficulty = 2
+description = """
+Plot a histogram showing data distribution.
+
+Learn to visualize frequency distributions with bins.
+Use transparency (alpha) for overlapping data.
+"""
+dependencies = ["matplotlib_bar"]

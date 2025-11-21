@@ -1,0 +1,12 @@
+[kata]
+name = "matplotlib_error_bars"
+category = "visualization"
+tags = ["matplotlib", "plotting", "statistics", "uncertainty"]
+base_difficulty = 2
+description = """
+Display data with uncertainty using error bars.
+
+Learn to visualize measurement uncertainty.
+Show both x and y error bars.
+"""
+dependencies = ["matplotlib_line", "matplotlib_labels_titles"]

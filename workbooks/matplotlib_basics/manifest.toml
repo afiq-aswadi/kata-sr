@@ -1,0 +1,230 @@
+[workbook]
+id = "matplotlib_basics"
+title = "Matplotlib Basics: Visualization Fundamentals"
+summary = "Build fluency with core matplotlib plotting patterns: scatter, line, bar, heatmaps, and customization."
+learning_goals = [
+  "Create and customize basic plot types (scatter, line, bar, histogram)",
+  "Add labels, titles, legends, and styling to plots",
+  "Visualize statistical data with error bars and box plots",
+  "Display 2D data with heatmaps and contour plots",
+  "Create multi-panel figures with subplots and save to file",
+]
+prerequisites = []
+resources = [
+  { title = "Matplotlib Documentation", url = "https://matplotlib.org/stable/index.html" },
+  { title = "Pyplot Tutorial", url = "https://matplotlib.org/stable/tutorials/introductory/pyplot.html" },
+  { title = "Gallery Examples", url = "https://matplotlib.org/stable/gallery/index.html" },
+]
+kata_namespace = "matplotlib"
+
+[[exercises]]
+slug = "scatter"
+title = "Basic Scatter Plot"
+kata = "matplotlib_scatter"
+objective = "Create a scatter plot from x-y data with custom marker sizes and colors."
+acceptance = [
+  "Plot displays all data points as circles",
+  "X and Y axes have proper labels",
+  "Figure is displayed with plt.show() or returned as Figure object",
+]
+hints = [
+  "Use plt.scatter() with x and y arrays",
+  "Use plt.xlabel() and plt.ylabel() for axis labels",
+]
+assets = ["images/scatter_example.png"]
+dependencies = []
+
+[[exercises]]
+slug = "line"
+title = "Line Plot with Multiple Series"
+kata = "matplotlib_line"
+objective = "Plot multiple lines on the same axes with different line styles."
+acceptance = [
+  "All lines are displayed on the same axes",
+  "Each line has a distinct style (solid, dashed, dotted)",
+  "Legend identifies each series",
+]
+hints = [
+  "Use plt.plot() multiple times for multiple lines",
+  "Use the linestyle parameter: '-', '--', ':', '-.'",
+  "Add a legend with plt.legend()",
+]
+assets = ["images/line_example.png"]
+dependencies = ["scatter"]
+
+[[exercises]]
+slug = "bar"
+title = "Bar Chart"
+kata = "matplotlib_bar"
+objective = "Create a vertical bar chart for categorical data."
+acceptance = [
+  "Bars are properly positioned on the x-axis",
+  "X-axis tick labels match category names",
+  "Y-axis shows values with proper label",
+]
+hints = [
+  "Use plt.bar() with categories and values",
+  "Set x-tick labels with plt.xticks() if needed",
+]
+assets = ["images/bar_example.png"]
+dependencies = ["scatter"]
+
+[[exercises]]
+slug = "histogram"
+title = "Histogram with Bins"
+kata = "matplotlib_histogram"
+objective = "Plot a histogram showing distribution of data with customizable bins."
+acceptance = [
+  "Histogram displays frequency distribution correctly",
+  "Number of bins is configurable",
+  "Bars use semi-transparent fill (alpha < 1)",
+]
+hints = [
+  "Use plt.hist() with bins parameter",
+  "Use alpha parameter for transparency (e.g., alpha=0.7)",
+]
+assets = ["images/histogram_example.png"]
+dependencies = ["bar"]
+
+[[exercises]]
+slug = "labels-titles"
+title = "Labels, Titles, and Legends"
+kata = "matplotlib_labels_titles"
+objective = "Add comprehensive labeling to a plot: title, axis labels, and legend."
+acceptance = [
+  "Plot has a descriptive title",
+  "Both axes have clear labels with units if applicable",
+  "Legend is present and correctly positioned",
+]
+hints = [
+  "Use plt.title() for the plot title",
+  "Pass label='...' to plot functions, then call plt.legend()",
+  "Use loc parameter in legend() for positioning",
+]
+assets = ["images/labels_titles_example.png"]
+dependencies = ["line"]
+
+[[exercises]]
+slug = "colors-markers"
+title = "Custom Colors and Markers"
+kata = "matplotlib_colors_markers"
+objective = "Customize plot appearance with colors, marker styles, and sizes."
+acceptance = [
+  "Scatter points use custom marker shapes (not default circles)",
+  "Colors are specified explicitly (not default blue)",
+  "Marker sizes vary based on data or are customized",
+]
+hints = [
+  "Use marker parameter: 'o', 's', '^', 'D', etc.",
+  "Use color parameter with names ('red') or hex codes",
+  "Use s parameter for marker sizes in scatter()",
+]
+assets = ["images/colors_markers_example.png"]
+dependencies = ["scatter", "labels-titles"]
+
+[[exercises]]
+slug = "error-bars"
+title = "Error Bars"
+kata = "matplotlib_error_bars"
+objective = "Display data with uncertainty using error bars."
+acceptance = [
+  "Error bars are visible on all data points",
+  "Both x and/or y error bars can be shown",
+  "Error magnitude is customizable",
+]
+hints = [
+  "Use plt.errorbar() instead of plt.plot()",
+  "Pass yerr parameter for y-axis error bars",
+  "Use xerr for x-axis errors if needed",
+]
+assets = ["images/error_bars_example.png"]
+dependencies = ["line", "labels-titles"]
+
+[[exercises]]
+slug = "box-plot"
+title = "Box Plot for Distributions"
+kata = "matplotlib_box_plot"
+objective = "Create box plots showing quartiles and outliers for multiple datasets."
+acceptance = [
+  "Box plot shows median, quartiles, and whiskers",
+  "Can display multiple datasets side-by-side",
+  "X-axis labels identify each dataset",
+]
+hints = [
+  "Use plt.boxplot() with a list of datasets",
+  "Pass labels parameter for x-tick labels",
+]
+assets = ["images/box_plot_example.png"]
+dependencies = ["bar", "labels-titles"]
+
+[[exercises]]
+slug = "heatmap"
+title = "Heatmap with Colorbar"
+kata = "matplotlib_heatmap"
+objective = "Visualize a 2D matrix as a heatmap with color mapping."
+acceptance = [
+  "Matrix is displayed with color representing values",
+  "Colorbar is shown indicating the scale",
+  "Axes are properly labeled",
+]
+hints = [
+  "Use plt.imshow() with a 2D array",
+  "Add colorbar with plt.colorbar()",
+  "Use cmap parameter for color schemes: 'viridis', 'plasma', 'hot'",
+]
+assets = ["images/heatmap_example.png"]
+dependencies = ["labels-titles"]
+
+[[exercises]]
+slug = "contour"
+title = "Contour Plot"
+kata = "matplotlib_contour"
+objective = "Create contour lines for a 2D function or data grid."
+acceptance = [
+  "Contour lines are drawn at appropriate levels",
+  "Can use filled contours (contourf) or line contours",
+  "Colorbar shows value mapping",
+]
+hints = [
+  "Use plt.contour() for line contours or plt.contourf() for filled",
+  "Pass X, Y, and Z arrays (meshgrid for functions)",
+  "Add plt.colorbar() to show scale",
+]
+assets = ["images/contour_example.png"]
+dependencies = ["heatmap"]
+
+[[exercises]]
+slug = "subplots"
+title = "Multiple Subplots"
+kata = "matplotlib_subplots"
+objective = "Create a figure with multiple subplots in a grid layout."
+acceptance = [
+  "Figure contains multiple independent plots",
+  "Subplots are arranged in a grid (e.g., 2x2)",
+  "Each subplot has its own axes and can be customized independently",
+]
+hints = [
+  "Use plt.subplots(nrows, ncols) to create figure and axes",
+  "Access each subplot via axes array: axes[i, j]",
+  "Plot on each axis individually: axes[0, 0].plot(...)",
+]
+assets = ["images/subplots_example.png"]
+dependencies = ["scatter", "line", "bar", "histogram"]
+
+[[exercises]]
+slug = "save-figure"
+title = "Save Figure to File"
+kata = "matplotlib_save_figure"
+objective = "Create a plot and save it to file in multiple formats."
+acceptance = [
+  "Figure is saved to disk (PNG, PDF, or SVG)",
+  "File path and format are configurable",
+  "DPI (resolution) can be specified for raster formats",
+]
+hints = [
+  "Use plt.savefig(filename) before plt.show()",
+  "Specify format with extension: 'plot.png', 'plot.pdf'",
+  "Use dpi parameter for resolution (e.g., dpi=300)",
+]
+assets = ["images/save_figure_example.png"]
+dependencies = ["labels-titles"]
