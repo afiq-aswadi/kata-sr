@@ -9,8 +9,6 @@ use std::collections::{HashMap, HashSet};
 use anyhow::Result;
 use chrono::Utc;
 use crossterm::event::KeyCode;
-use fuzzy_matcher::skim::SkimMatcherV2;
-use fuzzy_matcher::FuzzyMatcher;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -555,7 +553,7 @@ impl Library {
         };
 
         // Position indicator: showing item X of Y total
-        let position_info = if self.filtered_available_katas.len() > 0 {
+        let position_info = if !self.filtered_available_katas.is_empty() {
             format!(
                 " [{}/{}]{} ",
                 self.all_selected + 1,
@@ -663,7 +661,7 @@ impl Library {
         };
 
         // Position indicator: showing item X of Y total
-        let position_info = if self.available_categories.len() > 0 {
+        let position_info = if !self.available_categories.is_empty() {
             format!(
                 " [{}/{}]{} ",
                 self.category_selected_index + 1,
@@ -1154,7 +1152,7 @@ impl Library {
 
     fn handle_search_input(&mut self, code: KeyCode) -> LibraryAction {
         match code {
-            KeyCode::Char(c) if c == '\u{15}' => {
+            KeyCode::Char('\u{15}') => {
                 // Ctrl+U - clear input buffer (Unix convention)
                 self.search_query.clear();
                 self.apply_filters();
@@ -1222,31 +1220,26 @@ impl Library {
         // Start with all katas
         let mut filtered = self.all_available_katas.clone();
 
-        // Apply search filter with fuzzy matching
+        // Apply search filter with case-insensitive substring matching
         if !self.search_query.is_empty() {
-            let matcher = SkimMatcherV2::default();
-            let query = &self.search_query;
+            let query = self.search_query.to_lowercase();
 
-            // Filter and score
-            let mut scored: Vec<(AvailableKata, i64)> = filtered
-                .into_iter()
-                .filter_map(|kata| {
-                    let name_score = matcher.fuzzy_match(&kata.name, query).unwrap_or(0);
-                    let desc_score = matcher.fuzzy_match(&kata.description, query).unwrap_or(0);
-                    let max_score = name_score.max(desc_score);
+            filtered.retain(|kata| {
+                let name_lower = kata.name.to_lowercase();
+                let desc_lower = kata.description.to_lowercase();
+                let category_lower = kata.category.to_lowercase();
 
-                    if max_score > 0 {
-                        Some((kata, max_score))
-                    } else {
-                        None
-                    }
-                })
-                .collect();
+                // Check if any tags match
+                let tags_match = kata
+                    .tags
+                    .iter()
+                    .any(|tag| tag.to_lowercase().contains(&query));
 
-            // Sort by score (highest first)
-            scored.sort_by(|a, b| b.1.cmp(&a.1));
-
-            filtered = scored.into_iter().map(|(kata, _)| kata).collect();
+                name_lower.contains(&query)
+                    || desc_lower.contains(&query)
+                    || category_lower.contains(&query)
+                    || tags_match
+            });
         }
 
         // Apply category filter - check if any of the kata's tags match any of the selected categories
