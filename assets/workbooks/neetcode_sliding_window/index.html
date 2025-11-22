@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Sliding Window: Subarray Optimization · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Pattern</div>
+      <h1>Sliding Window</h1>
+      <p class="summary">
+        Master the sliding window technique for efficient subarray and substring problems.
+        Transform O(n²) brute force solutions into elegant O(n) algorithms by maintaining
+        a dynamic window with two pointers.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Instead of recalculating from scratch for each subarray, maintain a "window" that
+          slides through the data. Add new elements on the right, remove old elements on the
+          left. This reuses previous computation, reducing time from O(n²) to O(n).
+        </p>
+      </div>
+
+      <h3>Visual: Sliding Window</h3>
+      <div class="visual-box">
+Array: [a, b, c, d, e, f]
+
+Fixed Window (size=3):
+[a, b, c] → result
+    [b, c, d] → result
+        [c, d, e] → result
+            [d, e, f] → result
+
+Variable Window:
+[a] → expand → [a, b] → expand → [a, b, c]
+                  ↓ condition violated
+                shrink → [b, c] → expand → [b, c, d]
+      </div>
+
+      <h3>When to Use Sliding Window</h3>
+      <ul>
+        <li><strong>Contiguous subarrays/substrings:</strong> Problems ask about sequences</li>
+        <li><strong>Optimization:</strong> Find max/min length, max/min sum</li>
+        <li><strong>Pattern matching:</strong> Find substring with certain properties</li>
+        <li><strong>Brute force is O(n²):</strong> Likely can optimize with sliding window</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Best Time to Buy/Sell Stock</h2>
+      <div class="card">
+        <div class="pattern-title">Basic Expanding Window</div>
+        <h3>Objective</h3>
+        <p>
+          Find maximum profit from buying and selling stock once (buy low, sell high).
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Prices: [7, 1, 5, 3, 6, 4]
+
+Track min_price and max_profit:
+
+Day 0: price=7, min=7, profit=0
+Day 1: price=1, min=1, profit=0
+Day 2: price=5, min=1, profit=5-1=4 ✓
+Day 3: price=3, min=1, profit=4
+Day 4: price=6, min=1, profit=6-1=5 ✓ (best)
+Day 5: price=4, min=1, profit=5
+
+Max profit: 5 (buy at 1, sell at 6)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def maxProfit(prices: List[int]) -> int:
+    min_price = float('inf')
+    max_profit = 0
+
+    for price in prices:
+        # Update minimum price seen so far
+        min_price = min(min_price, price)
+        # Calculate profit if selling today
+        profit = price - min_price
+        # Update maximum profit
+        max_profit = max(max_profit, profit)
+
+    return max_profit</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Longest Substring Without Repeating</h2>
+      <div class="card">
+        <div class="pattern-title">Variable Window with Set</div>
+        <h3>Objective</h3>
+        <p>
+          Find the length of the longest substring without repeating characters.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Pattern</div>
+          <p>
+            Use a set to track characters in the current window. Expand right to add
+            characters. When a duplicate is found, shrink left until duplicate is removed.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+String: "abcabcbb"
+
+Window: "abc" → max_len=3
+         L  R
+
+Add 'a': duplicate! Shrink until 'a' removed
+Window: "bca" → still max_len=3
+           L R
+
+Add 'b': duplicate! Shrink until 'b' removed
+Window: "cab" → still max_len=3
+            LR
+
+Result: 3
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def lengthOfLongestSubstring(s: str) -> int:
+    char_set = set()
+    left = 0
+    max_length = 0
+
+    for right in range(len(s)):
+        # Shrink window until no duplicate
+        while s[right] in char_set:
+            char_set.remove(s[left])
+            left += 1
+
+        char_set.add(s[right])
+        max_length = max(max_length, right - left + 1)
+
+    return max_length</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(min(n, m))</span>
+        <br><small>m = size of character set</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Longest Repeating Character Replacement</h2>
+      <div class="card">
+        <div class="pattern-title">Window with Frequency Count</div>
+        <h3>Objective</h3>
+        <p>
+          Find longest substring with same character after k replacements.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Trick</div>
+          <p>
+            Window is valid if: <code>window_size - max_freq ≤ k</code>. This means we can
+            replace the non-max-frequency characters (at most k of them) to make all characters
+            the same.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+String: "AABABBA", k=1
+
+Window: "AAB" (size=3, max_freq=2, need=1) ✓
+         L R
+
+Window: "AABA" (size=4, max_freq=3, need=1) ✓
+         L  R
+
+Window: "AABAB" (size=5, max_freq=3, need=2) ✗ invalid!
+         L   R
+
+Shrink: "ABAB" (size=4, max_freq=2, need=2) ✗
+          L  R
+
+Max length found: 4
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def characterReplacement(s: str, k: int) -> int:
+    count = {}
+    left = 0
+    max_length = 0
+    max_freq = 0
+
+    for right in range(len(s)):
+        count[s[right]] = count.get(s[right], 0) + 1
+        max_freq = max(max_freq, count[s[right]])
+
+        # Window is invalid if we need > k replacements
+        while (right - left + 1) - max_freq > k:
+            count[s[left]] -= 1
+            left += 1
+
+        max_length = max(max_length, right - left + 1)
+
+    return max_length</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span>
+        <br><small>Space is O(1) because only 26 letters</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Permutation in String</h2>
+      <div class="card">
+        <div class="pattern-title">Fixed-Size Window</div>
+        <h3>Objective</h3>
+        <p>
+          Check if s2 contains a permutation of s1 using fixed-size sliding window.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Fixed Window Insight</div>
+          <p>
+            Since permutations have same length and same character frequencies, we maintain
+            a fixed-size window (len(s1)) and compare frequency maps as we slide.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+s1: "ab"  freq: {a:1, b:1}
+s2: "eidbaooo"
+
+Window size: 2
+
+"ei" → {e:1, i:1} ✗
+ "id" → {i:1, d:1} ✗
+  "db" → {d:1, b:1} ✗
+   "ba" → {b:1, a:1} ✓ Match!
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">from collections import Counter
+
+def checkInclusion(s1: str, s2: str) -> bool:
+    if len(s1) > len(s2):
+        return False
+
+    s1_count = Counter(s1)
+    window_count = Counter(s2[:len(s1)])
+
+    if window_count == s1_count:
+        return True
+
+    for i in range(len(s1), len(s2)):
+        # Add new character to window
+        window_count[s2[i]] += 1
+        # Remove old character from window
+        left_char = s2[i - len(s1)]
+        window_count[left_char] -= 1
+        if window_count[left_char] == 0:
+            del window_count[left_char]
+
+        if window_count == s1_count:
+            return True
+
+    return False</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Minimum Window Substring</h2>
+      <div class="card">
+        <div class="pattern-title">Advanced Variable Window</div>
+        <h3>Objective</h3>
+        <p>
+          Find the smallest window in s that contains all characters of t (with frequencies).
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Two-Phase Strategy</div>
+          <p>
+            Phase 1: Expand right until window is valid (contains all of t).
+            Phase 2: Contract left while valid, updating minimum window.
+            This ensures we find the smallest valid window.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+s: "ADOBECODEBANC", t: "ABC"
+
+Expand: "ADOBEC" → valid! (has A,B,C)
+Contract: "DOBEC" → invalid (no A)
+         "ADOBEC" → min_window
+
+Continue: "ADOBECODEBA" → valid!
+Contract: "ODEBANC" → valid!
+         "DEBANC" → valid!
+         "EBANC" → valid!
+         "BANC" → valid! ✓ (smallest)
+         "ANC" → invalid
+
+Result: "BANC"
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">from collections import Counter
+
+def minWindow(s: str, t: str) -> str:
+    if not s or not t:
+        return ""
+
+    t_count = Counter(t)
+    required = len(t_count)
+    formed = 0
+    window_count = {}
+
+    left = 0
+    min_len = float('inf')
+    min_left = 0
+
+    for right in range(len(s)):
+        char = s[right]
+        window_count[char] = window_count.get(char, 0) + 1
+
+        if char in t_count and window_count[char] == t_count[char]:
+            formed += 1
+
+        # Contract window while valid
+        while formed == required:
+            # Update result
+            if right - left + 1 < min_len:
+                min_len = right - left + 1
+                min_left = left
+
+            # Try to shrink
+            char = s[left]
+            window_count[char] -= 1
+            if char in t_count and window_count[char] < t_count[char]:
+                formed -= 1
+            left += 1
+
+    return "" if min_len == float('inf') else s[min_left:min_left + min_len]</code></pre>
+
+        <p><span class="complexity">Time: O(|s| + |t|) | Space: O(|s| + |t|)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Sliding Window Patterns Summary</h2>
+      <div class="card">
+        <h3>1. Window Types</h3>
+        <ul>
+          <li><strong>Fixed Size:</strong> Window size known (permutation, max of k elements)</li>
+          <li><strong>Variable Size:</strong> Expand/shrink based on condition (longest substring)</li>
+          <li><strong>Expanding Only:</strong> Never shrink (stock profit)</li>
+        </ul>
+
+        <h3>2. Common Tracking Structures</h3>
+        <ul>
+          <li><strong>Set:</strong> Track unique elements (no duplicates)</li>
+          <li><strong>Dict/Counter:</strong> Track frequencies (character counts)</li>
+          <li><strong>Variables:</strong> Track sum, max, min (simple aggregates)</li>
+          <li><strong>Deque:</strong> Track order for min/max in window</li>
+        </ul>
+
+        <h3>3. Template Pattern</h3>
+        <pre><code class="language-python"># Variable window template
+def sliding_window(arr):
+    left = 0
+    result = 0
+    window_data = {}  # or set, or variables
+
+    for right in range(len(arr)):
+        # Expand: add arr[right] to window
+        update_window_data(arr[right])
+
+        # Shrink: while window invalid
+        while window_invalid():
+            remove_from_window(arr[left])
+            left += 1
+
+        # Update result with current window
+        result = max(result, right - left + 1)
+
+    return result
+
+# Fixed window template
+def fixed_window(arr, k):
+    window = initialize_window(arr[:k])
+    result = [process(window)]
+
+    for i in range(k, len(arr)):
+        remove(window, arr[i - k])  # Remove left
+        add(window, arr[i])         # Add right
+        result.append(process(window))
+
+    return result</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/29" target="_blank">NeetCode Sliding Window Guide</a></li>
+        <li><a href="https://leetcode.com/tag/sliding-window/" target="_blank">LeetCode Sliding Window Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>
