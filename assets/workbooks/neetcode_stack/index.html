@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Stack: LIFO Patterns and Monotonic Stacks · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Pattern</div>
+      <h1>Stack</h1>
+      <p class="summary">
+        Master stack patterns from basic parentheses matching to advanced monotonic stacks.
+        The Last-In-First-Out (LIFO) structure enables elegant solutions to parsing,
+        validation, and optimization problems.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Stacks reverse the order of processing. The last element pushed is the first
+          popped. This makes them perfect for matching pairs (parentheses), tracking
+          state (min/max), and maintaining order constraints (monotonic stacks).
+        </p>
+      </div>
+
+      <h3>Visual: Stack Operations</h3>
+      <div class="visual-box">
+push(1)    push(2)    push(3)    pop()
+  |          |          |          |
+  v          v          v          v
+
+  []         [1]      [1,2]    [1,2,3]    [1,2]
+             ↑        ↑  ↑      ↑  ↑  ↑    ↑  ↑
+           bottom         top
+
+Last In, First Out (LIFO)
+      </div>
+
+      <h3>When to Use Stacks</h3>
+      <ul>
+        <li><strong>Matching pairs:</strong> Parentheses, brackets, tags</li>
+        <li><strong>Parsing:</strong> Expression evaluation, syntax checking</li>
+        <li><strong>Next greater/smaller:</strong> Monotonic stacks</li>
+        <li><strong>Backtracking:</strong> Track exploration state</li>
+        <li><strong>Undo operations:</strong> History tracking</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Valid Parentheses</h2>
+      <div class="card">
+        <div class="pattern-title">Basic Stack Matching</div>
+        <h3>Objective</h3>
+        <p>
+          Check if parentheses are balanced using a stack to match opening/closing pairs.
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: "({[]})"
+
+Step 1: '(' → push '('           stack: ['(']
+Step 2: '{' → push '{'           stack: ['(', '{']
+Step 3: '[' → push '['           stack: ['(', '{', '[']
+Step 4: ']' → pop, matches '['   stack: ['(', '{']
+Step 5: '}' → pop, matches '{'   stack: ['(']
+Step 6: ')' → pop, matches '('   stack: []
+
+Empty stack → Valid! ✓
+
+Counter-example: "([)]"
+  '(' → push    stack: ['(']
+  '[' → push    stack: ['(', '[']
+  ')' → ERROR! Top is '[', not '('  → Invalid ✗
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def isValid(s: str) -> bool:
+    stack = []
+    pairs = {'(': ')', '{': '}', '[': ']'}
+
+    for char in s:
+        if char in pairs:  # Opening bracket
+            stack.append(char)
+        else:  # Closing bracket
+            if not stack or pairs[stack.pop()] != char:
+                return False
+
+    return len(stack) == 0</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Min Stack</h2>
+      <div class="card">
+        <div class="pattern-title">Stack with O(1) Operations</div>
+        <h3>Objective</h3>
+        <p>
+          Design a stack that supports push, pop, top, and getMin() all in O(1) time.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Two-Stack Trick</div>
+          <p>
+            Maintain two stacks: one for values, one for minimums. The min stack
+            tracks the minimum value at each level. When we pop, both stacks pop.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Operations:     push(-2)  push(0)  push(-3)  getMin  pop   getMin
+
+Main stack:     [-2]      [-2,0]   [-2,0,-3]           [-2,0]
+Min stack:      [-2]      [-2,-2]  [-2,-2,-3]          [-2,-2]
+getMin():                                     -3               -2
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">class MinStack:
+    def __init__(self):
+        self.stack = []
+        self.min_stack = []
+
+    def push(self, val: int) -> None:
+        self.stack.append(val)
+        # Track minimum at this level
+        min_val = min(val, self.min_stack[-1] if self.min_stack else val)
+        self.min_stack.append(min_val)
+
+    def pop(self) -> None:
+        self.stack.pop()
+        self.min_stack.pop()
+
+    def top(self) -> int:
+        return self.stack[-1]
+
+    def getMin(self) -> int:
+        return self.min_stack[-1]</code></pre>
+
+        <p><span class="complexity">All operations: O(1) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Daily Temperatures</h2>
+      <div class="card">
+        <div class="pattern-title">Monotonic Stack</div>
+        <h3>Objective</h3>
+        <p>
+          Find how many days until a warmer temperature using a monotonic decreasing stack.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Monotonic Pattern</div>
+          <p>
+            Store indices in stack (not values!). Pop indices while current temperature
+            is warmer. For each popped index, we've found its answer: current_i - popped_i.
+            The stack maintains decreasing temperatures.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Temps: [73, 74, 75, 71, 69, 72, 76, 73]
+Index:   0   1   2   3   4   5   6   7
+
+i=0: 73 → push 0                    stack: [0]
+i=1: 74 > 73 → pop 0 (ans[0]=1)     stack: [1]
+i=2: 75 > 74 → pop 1 (ans[1]=1)     stack: [2]
+i=3: 71 < 75 → push 3               stack: [2,3]
+i=4: 69 < 71 → push 4               stack: [2,3,4]
+i=5: 72 > 69,71 → pop 4,3           stack: [2,5]
+     ans[4]=1, ans[3]=2
+i=6: 76 > 72,75 → pop 5,2           stack: [6]
+     ans[5]=1, ans[2]=4
+i=7: 73 < 76 → push 7               stack: [6,7]
+
+Result: [1, 1, 4, 2, 1, 1, 0, 0]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def dailyTemperatures(temperatures: List[int]) -> List[int]:
+    result = [0] * len(temperatures)
+    stack = []  # Stores indices
+
+    for i, temp in enumerate(temperatures):
+        # Pop indices while current temp is warmer
+        while stack and temperatures[stack[-1]] < temp:
+            prev_i = stack.pop()
+            result[prev_i] = i - prev_i
+
+        stack.append(i)
+
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(n)</span>
+        <br><small>Each element pushed/popped exactly once</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Largest Rectangle in Histogram</h2>
+      <div class="card">
+        <div class="pattern-title">Advanced Monotonic Stack</div>
+        <h3>Objective</h3>
+        <p>
+          Find the largest rectangle area in a histogram using monotonic increasing stack.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Insight</div>
+          <p>
+            Maintain a stack of increasing bar heights. When we encounter a shorter bar,
+            pop taller bars and calculate their max rectangle area. Width extends from
+            current position back to the last smaller bar.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Heights: [2, 1, 5, 6, 2, 3]
+
+        6
+        █
+    5   █
+    █   █       3
+    █   █   2   █
+2   █   █   █   █
+█   █   █   █   █
+█ 1 █   █   █   █
+0 1 2 3 4 5
+
+Max rectangle: height=5, width=2 → area=10
+(bars at indices 2 and 3)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def largestRectangleArea(heights: List[int]) -> int:
+    stack = []  # Store indices
+    max_area = 0
+
+    for i, h in enumerate(heights):
+        # Pop while current height is smaller
+        while stack and heights[stack[-1]] > h:
+            height = heights[stack.pop()]
+            # Width: from current pos to last smaller bar
+            width = i if not stack else i - stack[-1] - 1
+            max_area = max(max_area, height * width)
+
+        stack.append(i)
+
+    # Process remaining bars
+    while stack:
+        height = heights[stack.pop()]
+        width = len(heights) if not stack else len(heights) - stack[-1] - 1
+        max_area = max(max_area, height * width)
+
+    return max_area</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Stack Patterns Summary</h2>
+      <div class="card">
+        <h3>1. Basic Stack (Matching)</h3>
+        <ul>
+          <li>Parentheses validation</li>
+          <li>HTML/XML tag matching</li>
+          <li>Expression parsing</li>
+        </ul>
+
+        <h3>2. Monotonic Stack</h3>
+        <ul>
+          <li><strong>Decreasing:</strong> Next greater element, daily temperatures</li>
+          <li><strong>Increasing:</strong> Next smaller element, largest rectangle</li>
+          <li>Store <strong>indices</strong> (not values!) for distance calculations</li>
+        </ul>
+
+        <h3>3. Stack with Extra Info</h3>
+        <ul>
+          <li>Min/Max stack: Track extrema at each level</li>
+          <li>Custom data: Store tuples (value, metadata)</li>
+        </ul>
+
+        <h3>4. Common Patterns</h3>
+        <pre><code class="language-python"># Pattern: Monotonic stack
+stack = []
+for i, val in enumerate(arr):
+    while stack and condition(arr[stack[-1]], val):
+        process(stack.pop())
+    stack.append(i)
+
+# Pattern: Matching pairs
+stack = []
+for char in s:
+    if is_opening(char):
+        stack.append(char)
+    else:
+        if not stack or not matches(stack[-1], char):
+            return False
+        stack.pop()
+return len(stack) == 0</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/6" target="_blank">NeetCode Stack Guide</a></li>
+        <li><a href="https://leetcode.com/tag/stack/" target="_blank">LeetCode Stack Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>
