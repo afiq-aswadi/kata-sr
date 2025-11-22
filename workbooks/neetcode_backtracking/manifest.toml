@@ -1,0 +1,151 @@
+[workbook]
+id = "neetcode_backtracking"
+title = "NeetCode Backtracking: Exhaustive Search with Pruning"
+summary = "Master backtracking for combinatorial problems with decision trees."
+learning_goals = [
+  "Implement backtracking with choice, constraint, and goal",
+  "Use visited sets and path tracking",
+  "Prune invalid branches early",
+  "Generate all subsets, permutations, and combinations",
+]
+prerequisites = ["neetcode_generate_parentheses"]
+resources = [
+  { title = "Backtracking", url = "https://neetcode.io/courses/dsa-for-beginners/26" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "subsets"
+title = "1. Subsets - Basic Backtracking"
+kata = "neetcode_subsets"
+objective = "Generate all possible subsets (power set) of distinct integers."
+acceptance = [
+  "Returns all subsets including empty set",
+  "No duplicate subsets",
+  "Uses backtracking or iterative approach",
+]
+hints = [
+  "For each element, choose to include it or not",
+  "Backtrack: add element, recurse, remove element",
+  "Base case: current subset is complete",
+]
+dependencies = []
+
+[[exercises]]
+slug = "combination-sum"
+title = "2. Combination Sum - Unbounded Backtracking"
+kata = "neetcode_combination_sum"
+objective = "Find all combinations that sum to target (elements can be reused)."
+acceptance = [
+  "Returns all unique combinations",
+  "Elements can be used multiple times",
+  "No duplicate combinations",
+]
+hints = [
+  "Sort candidates first",
+  "At each step, include current or skip to next",
+  "Prune when sum exceeds target",
+]
+dependencies = ["subsets"]
+
+[[exercises]]
+slug = "permutations"
+title = "3. Permutations - Full Arrangements"
+kata = "neetcode_permutations"
+objective = "Generate all possible permutations of distinct integers."
+acceptance = [
+  "Returns all permutations",
+  "Each permutation has all elements",
+  "No duplicates",
+]
+hints = [
+  "Use backtracking with visited array/set",
+  "At each position, try all unvisited elements",
+  "Base case: when path length == n",
+]
+dependencies = ["subsets"]
+
+[[exercises]]
+slug = "subsets-ii"
+title = "4. Subsets II - With Duplicates"
+kata = "neetcode_subsets_ii"
+objective = "Generate subsets from array with duplicate elements."
+acceptance = [
+  "Returns all unique subsets",
+  "Handles duplicate elements correctly",
+  "No duplicate subsets in result",
+]
+hints = [
+  "Sort array first",
+  "Skip duplicates at same recursion level",
+  "if i > start and nums[i] == nums[i-1]: continue",
+]
+dependencies = ["subsets", "combination-sum"]
+
+[[exercises]]
+slug = "combination-sum-ii"
+title = "5. Combination Sum II - With Duplicates, No Reuse"
+kata = "neetcode_combination_sum_ii"
+objective = "Find combinations summing to target (with duplicates, each used once)."
+acceptance = [
+  "Returns all unique combinations",
+  "Each element used at most once",
+  "Handles duplicates in input",
+]
+hints = [
+  "Sort candidates",
+  "Skip duplicates at same level",
+  "Move to next index after including element",
+]
+dependencies = ["combination-sum", "subsets-ii"]
+
+[[exercises]]
+slug = "letter-combinations"
+title = "6. Letter Combinations of Phone Number"
+kata = "neetcode_letter_combinations"
+objective = "Generate all letter combinations from phone digits."
+acceptance = [
+  "Returns all possible combinations",
+  "Maps digits to letters (2-9)",
+  "Uses backtracking",
+]
+hints = [
+  "Create digit-to-letters mapping",
+  "Backtrack through each digit",
+  "Add letter, recurse, remove letter",
+]
+dependencies = ["permutations"]
+
+[[exercises]]
+slug = "n-queens"
+title = "7. N-Queens - Constraint Satisfaction"
+kata = "neetcode_n_queens"
+objective = "Place n queens on n×n chessboard with no attacks."
+acceptance = [
+  "Returns all valid placements",
+  "No two queens attack each other",
+  "Uses backtracking with constraints",
+]
+hints = [
+  "Place queen row by row",
+  "Track columns, diagonals, anti-diagonals",
+  "Prune invalid placements early",
+]
+dependencies = ["permutations", "combination-sum"]
+
+[[exercises]]
+slug = "palindrome-partition"
+title = "8. Palindrome Partitioning"
+kata = "neetcode_palindrome_partition"
+objective = "Partition string into all possible palindrome substrings."
+acceptance = [
+  "Returns all palindrome partitions",
+  "Each partition contains only palindromes",
+  "Uses backtracking with palindrome check",
+]
+hints = [
+  "Try all possible cut positions",
+  "Check if substring is palindrome",
+  "Backtrack with valid palindromes",
+]
+dependencies = ["subsets", "combination-sum"]
