@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeetCode 1-D DP: Sequential Decision Problems</title>
+    <style>
+        :root {
+            --cream: #FAF8F3;
+            --dark-cream: #F5F1E8;
+            --brown: #4A3F35;
+            --light-brown: #8B7355;
+            --accent: #D4A574;
+            --code-bg: #FFF9F0;
+            --border: #E8DCC8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(to bottom, var(--cream) 0%, var(--dark-cream) 100%);
+            color: var(--brown);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--cream);
+            padding: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(74, 63, 53, 0.15);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 1.5rem,
+                    rgba(212, 165, 116, 0.03) 1.5rem,
+                    rgba(212, 165, 116, 0.03) calc(1.5rem + 1px)
+                );
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--brown);
+            margin-bottom: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--light-brown);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--brown);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--brown);
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .visual-box {
+            background: var(--code-bg);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+            max-width: 100%;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border-left: 4px solid var(--accent);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block code {
+            color: var(--brown);
+        }
+
+        .keyword { color: #8B4513; font-weight: bold; }
+        .function { color: #6B4423; }
+        .string { color: #A0826D; }
+        .comment { color: #B8A890; font-style: italic; }
+        .number { color: #D4A574; }
+
+        .intuition {
+            background: linear-gradient(135deg, #FFF9F0 0%, #FAF8F3 100%);
+            border-left: 5px solid var(--accent);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: inset 0 1px 3px rgba(212, 165, 116, 0.1);
+        }
+
+        .intuition::before {
+            content: '💡 Intuition';
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .complexity {
+            background: var(--dark-cream);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .exercise-header {
+            background: linear-gradient(to right, var(--accent), var(--light-brown));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            margin: 2rem 0 1.5rem 0;
+        }
+
+        .exercise-header h2 {
+            color: white;
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--code-bg);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .back-link:hover {
+            background: var(--light-brown);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NeetCode 1-D DP</h1>
+        <p class="subtitle">Sequential Decision Problems: Master Dynamic Programming</p>
+
+        <div class="section">
+            <h2>Overview</h2>
+            <p>
+                Dynamic Programming (DP) is a powerful technique for solving optimization problems with
+                overlapping subproblems and optimal substructure. This workbook focuses on 1-D DP problems
+                where the state can be represented with a single index.
+            </p>
+
+            <h3>Core DP Concepts</h3>
+            <ul>
+                <li><strong>Optimal Substructure:</strong> Optimal solution contains optimal solutions to subproblems</li>
+                <li><strong>Overlapping Subproblems:</strong> Same subproblems are solved multiple times</li>
+                <li><strong>Memoization (Top-Down):</strong> Recursion + caching results</li>
+                <li><strong>Tabulation (Bottom-Up):</strong> Iteratively fill table from base cases</li>
+            </ul>
+
+            <h3>Common 1-D DP Patterns</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Problem Type</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Fibonacci-like</strong></td>
+                        <td>Combine previous states</td>
+                        <td>Climbing Stairs, Decode Ways</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Decision (Take/Skip)</strong></td>
+                        <td>Maximize/minimize with constraints</td>
+                        <td>House Robber, Coin Change</td>
+                    </tr>
+                    <tr>
+                        <td><strong>String DP</strong></td>
+                        <td>Segment/validate strings</td>
+                        <td>Word Break, Palindrome</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kadane's Variants</strong></td>
+                        <td>Subarray optimization</td>
+                        <td>Max Product Subarray</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Subsequence</strong></td>
+                        <td>Find optimal subsequence</td>
+                        <td>Longest Increasing Subsequence</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>DP Problem-Solving Framework</h3>
+            <div class="visual-box">Step 1: Identify if DP applies
+  - Optimization problem (max/min/count)?
+  - Can break into smaller overlapping subproblems?
+  - Optimal substructure exists?
+
+Step 2: Define state
+  - What index/parameter uniquely identifies a subproblem?
+  - dp[i] represents what?
+
+Step 3: Write recurrence relation
+  - How does dp[i] relate to previous states?
+  - What are the base cases?
+
+Step 4: Implement
+  - Top-down (memoization) or bottom-up (tabulation)?
+  - Can optimize space (rolling array)?
+
+Step 5: Analyze complexity
+  - Time: usually O(n) or O(n²) for 1-D DP
+  - Space: O(n) or O(1) with optimization</div>
+        </div>
+
+        <!-- Exercise 1: Climbing Stairs -->
+        <div class="exercise-header">
+            <h2>Exercise 1: Climbing Stairs - DP Fundamentals</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Count ways to climb n stairs, taking 1 or 2 steps at a time.</p>
+
+            <h3>Problem</h3>
+            <p>
+                You are climbing a staircase with n steps. Each time you can climb 1 or 2 steps.
+                How many distinct ways can you climb to the top?
+            </p>
+
+            <div class="visual-box">Example: n = 3
+
+Stairs:  [1] [2] [3]
+
+Ways to reach step 3:
+1. Take 1 step + 1 step + 1 step
+2. Take 1 step + 2 steps
+3. Take 2 steps + 1 step
+
+Total: 3 ways
+
+Recurrence:
+ways(3) = ways(2) + ways(1)
+        = 2 + 1
+        = 3</div>
+
+            <div class="intuition">
+                This is the classic DP introduction problem. The key insight:
+                <br><br>
+                To reach step n, you must have come from either step (n-1) or step (n-2).
+                <br><br>
+                <strong>Recurrence:</strong> ways(n) = ways(n-1) + ways(n-2)
+                <br>
+                <strong>Base cases:</strong> ways(1) = 1, ways(2) = 2
+                <br><br>
+                This is actually the Fibonacci sequence!
+            </div>
+
+            <h3>Solution - Space Optimized O(1)</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">climbStairs</span>(n):
+    <span class="keyword">if</span> n <= <span class="number">2</span>:
+        <span class="keyword">return</span> n
+
+    <span class="comment"># Only need to track last two values</span>
+    prev2 = <span class="number">1</span>  <span class="comment"># ways(1)</span>
+    prev1 = <span class="number">2</span>  <span class="comment"># ways(2)</span>
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">3</span>, n + <span class="number">1</span>):
+        curr = prev1 + prev2
+        prev2 = prev1
+        prev1 = curr
+
+    <span class="keyword">return</span> prev1</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n) - single pass through n steps<br>
+                • Space: O(1) - only two variables
+            </div>
+        </div>
+
+        <!-- Exercise 2: Min Cost Stairs -->
+        <div class="exercise-header">
+            <h2>Exercise 2: Min Cost Climbing Stairs</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find minimum cost to reach top where each step has a cost.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given an array cost where cost[i] is the cost of ith step on a staircase.
+                You can start from step 0 or 1. Find minimum cost to reach the top (past last step).
+            </p>
+
+            <div class="visual-box">Example: cost = [10, 15, 20]
+
+Step costs: [10, 15, 20]
+             ↑   ↑   ↑
+           step0 step1 step2  →  top (step 3)
+
+Option 1: Start at step 1 (cost 15), take 2 steps to top
+  Total: 15
+
+Option 2: Start at step 0 (cost 10), take 2 steps to step 2 (cost 20), take 1 step
+  Total: 10 + 20 = 30
+
+Minimum: 15</div>
+
+            <div class="intuition">
+                This extends Climbing Stairs by adding costs. The recurrence:
+                <br><br>
+                <strong>dp[i] = cost[i] + min(dp[i-1], dp[i-2])</strong>
+                <br><br>
+                Meaning: to reach step i, pay cost[i] and take the cheaper path from (i-1) or (i-2).
+                <br><br>
+                Base cases: dp[0] = cost[0], dp[1] = cost[1] (can start at either)
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">minCostClimbingStairs</span>(cost):
+    n = <span class="function">len</span>(cost)
+
+    prev2 = cost[<span class="number">0</span>]
+    prev1 = cost[<span class="number">1</span>]
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">2</span>, n):
+        curr = cost[i] + <span class="function">min</span>(prev1, prev2)
+        prev2 = prev1
+        prev1 = curr
+
+    <span class="comment"># To reach top, take final step from n-1 or n-2</span>
+    <span class="keyword">return</span> <span class="function">min</span>(prev1, prev2)</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n)<br>
+                • Space: O(1)
+            </div>
+        </div>
+
+        <!-- Exercise 3: House Robber -->
+        <div class="exercise-header">
+            <h2>Exercise 3: House Robber - Non-Adjacent Selection</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Maximize loot without robbing adjacent houses.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given an array representing amount of money in each house, find the maximum amount you can rob
+                without robbing two adjacent houses.
+            </p>
+
+            <div class="visual-box">Example: nums = [2, 7, 9, 3, 1]
+
+Houses:  [2] [7] [9] [3] [1]
+          0   1   2   3   4
+
+Decision at each house: rob it or skip it
+
+At house 2 (value 9):
+  - Rob it: 9 + max from houses [0,1] = 9 + 2 = 11
+  - Skip it: max from houses [0,1,2] = 7
+
+Choose: rob (11 > 7)
+
+Final: Rob houses 0, 2, 4 → 2 + 9 + 1 = 12</div>
+
+            <div class="intuition">
+                At each house, you have two choices:
+                <ol>
+                    <li><strong>Rob it:</strong> get value[i] + dp[i-2] (can't use i-1)</li>
+                    <li><strong>Skip it:</strong> get dp[i-1] (carry forward previous max)</li>
+                </ol>
+                <strong>Recurrence:</strong> dp[i] = max(nums[i] + dp[i-2], dp[i-1])
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">rob</span>(nums):
+    <span class="keyword">if not</span> nums:
+        <span class="keyword">return</span> <span class="number">0</span>
+    <span class="keyword">if</span> <span class="function">len</span>(nums) == <span class="number">1</span>:
+        <span class="keyword">return</span> nums[<span class="number">0</span>]
+
+    prev2 = nums[<span class="number">0</span>]
+    prev1 = <span class="function">max</span>(nums[<span class="number">0</span>], nums[<span class="number">1</span>])
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">2</span>, <span class="function">len</span>(nums)):
+        curr = <span class="function">max</span>(nums[i] + prev2, prev1)
+        prev2 = prev1
+        prev1 = curr
+
+    <span class="keyword">return</span> prev1</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n)<br>
+                • Space: O(1)
+            </div>
+        </div>
+
+        <!-- Exercise 4: House Robber II -->
+        <div class="exercise-header">
+            <h2>Exercise 4: House Robber II - Circular Array</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> House Robber with houses in a circle (first and last are adjacent).</p>
+
+            <h3>Problem</h3>
+            <p>
+                Same as House Robber, but houses are arranged in a circle. The first and last houses
+                are adjacent, so you cannot rob both.
+            </p>
+
+            <div class="visual-box">Example: nums = [2, 3, 2]
+
+Circular arrangement:
+    [2]
+   /   \
+ [3]   [2]
+
+Constraint: Can't rob both first and last
+
+Solution:
+- Case 1: Rob houses [0, n-2] (exclude last) → [2, 3] → 3
+- Case 2: Rob houses [1, n-1] (exclude first) → [3, 2] → 3
+
+Maximum: 3</div>
+
+            <div class="intuition">
+                The key insight: you can't rob both house 0 and house n-1.
+                <br><br>
+                Solution: run House Robber algorithm twice:
+                <ol>
+                    <li>On houses [0, n-2] (rob first, can't rob last)</li>
+                    <li>On houses [1, n-1] (rob last, can't rob first)</li>
+                </ol>
+                Return the maximum of both cases.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">rob</span>(nums):
+    <span class="keyword">if</span> <span class="function">len</span>(nums) == <span class="number">1</span>:
+        <span class="keyword">return</span> nums[<span class="number">0</span>]
+
+    <span class="keyword">def</span> <span class="function">rob_linear</span>(houses):
+        prev2, prev1 = <span class="number">0</span>, <span class="number">0</span>
+        <span class="keyword">for</span> house <span class="keyword">in</span> houses:
+            curr = <span class="function">max</span>(house + prev2, prev1)
+            prev2, prev1 = prev1, curr
+        <span class="keyword">return</span> prev1
+
+    <span class="comment"># Case 1: exclude last house</span>
+    case1 = <span class="function">rob_linear</span>(nums[:-<span class="number">1</span>])
+
+    <span class="comment"># Case 2: exclude first house</span>
+    case2 = <span class="function">rob_linear</span>(nums[<span class="number">1</span>:])
+
+    <span class="keyword">return</span> <span class="function">max</span>(case1, case2)</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n) - two passes<br>
+                • Space: O(1)
+            </div>
+        </div>
+
+        <!-- Exercise 7: Decode Ways -->
+        <div class="exercise-header">
+            <h2>Exercise 7: Decode Ways - String DP</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Count ways to decode digit string where A=1, B=2, ..., Z=26.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given a string of digits, count the number of ways to decode it. Letters are encoded
+                as numbers: A=1, B=2, ..., Z=26.
+            </p>
+
+            <div class="visual-box">Example: s = "226"
+
+Decodings:
+1. "2" "2" "6"  → "B B F"
+2. "22" "6"     → "V F"
+3. "2" "26"     → "B Z"
+
+Total: 3 ways
+
+Recurrence:
+dp[i] = ways to decode s[0:i]
+  - If s[i-1] is '1'-'9': add dp[i-1] (single digit decode)
+  - If s[i-2:i] is '10'-'26': add dp[i-2] (two digit decode)</div>
+
+            <div class="intuition">
+                Similar to Climbing Stairs, but with validation:
+                <br><br>
+                At each position, you can decode:
+                <ul>
+                    <li>One digit (if 1-9): dp[i-1]</li>
+                    <li>Two digits (if 10-26): dp[i-2]</li>
+                </ul>
+                Edge cases: '0' cannot be decoded alone, '30', '40', etc. are invalid.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">numDecodings</span>(s):
+    <span class="keyword">if not</span> s <span class="keyword">or</span> s[<span class="number">0</span>] == <span class="string">'0'</span>:
+        <span class="keyword">return</span> <span class="number">0</span>
+
+    n = <span class="function">len</span>(s)
+    prev2 = <span class="number">1</span>  <span class="comment"># dp[0] = 1 (empty string)</span>
+    prev1 = <span class="number">1</span>  <span class="comment"># dp[1] = 1 (first char if valid)</span>
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">1</span>, n):
+        curr = <span class="number">0</span>
+
+        <span class="comment"># Single digit decode (1-9)</span>
+        <span class="keyword">if</span> s[i] != <span class="string">'0'</span>:
+            curr += prev1
+
+        <span class="comment"># Two digit decode (10-26)</span>
+        two_digit = <span class="function">int</span>(s[i<span class="number">-1</span>:i<span class="number">+1</span>])
+        <span class="keyword">if</span> <span class="number">10</span> <= two_digit <= <span class="number">26</span>:
+            curr += prev2
+
+        prev2 = prev1
+        prev1 = curr
+
+    <span class="keyword">return</span> prev1</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n)<br>
+                • Space: O(1)
+            </div>
+        </div>
+
+        <!-- Exercise 8: Coin Change -->
+        <div class="exercise-header">
+            <h2>Exercise 8: Coin Change - Unbounded Knapsack</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find minimum coins to make amount (unbounded knapsack).</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given an array of coin denominations and an amount, find the minimum number of coins
+                needed to make that amount. You can use each coin unlimited times.
+            </p>
+
+            <div class="visual-box">Example: coins = [1, 2, 5], amount = 11
+
+DP table:
+amount:  0  1  2  3  4  5  6  7  8  9  10  11
+coins:   0  1  1  2  2  1  2  2  3  3   2   3
+
+For amount = 11:
+  - Use coin 1: 1 + dp[10] = 1 + 2 = 3 ✓
+  - Use coin 2: 1 + dp[9]  = 1 + 3 = 4
+  - Use coin 5: 1 + dp[6]  = 1 + 2 = 3 ✓
+
+Minimum: 3 coins (5 + 5 + 1)</div>
+
+            <div class="intuition">
+                This is the classic unbounded knapsack pattern.
+                <br><br>
+                For each amount, try using each coin and take the minimum:
+                <br><br>
+                <strong>dp[amount] = min(dp[amount], 1 + dp[amount - coin])</strong>
+                <br><br>
+                Initialize dp with infinity (impossible amounts), except dp[0] = 0.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">coinChange</span>(coins, amount):
+    <span class="comment"># Initialize dp array with infinity</span>
+    dp = [<span class="function">float</span>(<span class="string">'inf'</span>)] * (amount + <span class="number">1</span>)
+    dp[<span class="number">0</span>] = <span class="number">0</span>  <span class="comment"># Base case: 0 coins for amount 0</span>
+
+    <span class="keyword">for</span> amt <span class="keyword">in</span> <span class="function">range</span>(<span class="number">1</span>, amount + <span class="number">1</span>):
+        <span class="keyword">for</span> coin <span class="keyword">in</span> coins:
+            <span class="keyword">if</span> amt >= coin:
+                dp[amt] = <span class="function">min</span>(dp[amt], <span class="number">1</span> + dp[amt - coin])
+
+    <span class="keyword">return</span> dp[amount] <span class="keyword">if</span> dp[amount] != <span class="function">float</span>(<span class="string">'inf'</span>) <span class="keyword">else</span> <span class="number">-1</span></code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(amount × coins)<br>
+                • Space: O(amount)
+            </div>
+        </div>
+
+        <!-- Exercise 9: Max Product Subarray -->
+        <div class="exercise-header">
+            <h2>Exercise 9: Maximum Product Subarray - Kadane's Variant</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find contiguous subarray with maximum product.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given an integer array, find a contiguous subarray that has the largest product,
+                and return the product.
+            </p>
+
+            <div class="visual-box">Example: nums = [2, 3, -2, 4]
+
+Subarrays and products:
+[2]           → 2
+[2,3]         → 6  ✓ (maximum)
+[2,3,-2]      → -12
+[2,3,-2,4]    → -48
+[3]           → 3
+[3,-2]        → -6
+[3,-2,4]      → -24
+[-2]          → -2
+[-2,4]        → -8
+[4]           → 4
+
+Maximum: 6</div>
+
+            <div class="intuition">
+                The challenge: negative numbers can flip max to min and vice versa.
+                <br><br>
+                Solution: track both <strong>max_product</strong> and <strong>min_product</strong> at each position.
+                <ul>
+                    <li>If current number is positive: max stays max, min stays min</li>
+                    <li>If current number is negative: max becomes min, min becomes max (they flip!)</li>
+                </ul>
+                At each step, update both and track global maximum.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">maxProduct</span>(nums):
+    <span class="keyword">if not</span> nums:
+        <span class="keyword">return</span> <span class="number">0</span>
+
+    result = max_prod = min_prod = nums[<span class="number">0</span>]
+
+    <span class="keyword">for</span> num <span class="keyword">in</span> nums[<span class="number">1</span>:]:
+        <span class="comment"># When multiplying by negative, max becomes min</span>
+        candidates = [num, max_prod * num, min_prod * num]
+
+        max_prod = <span class="function">max</span>(candidates)
+        min_prod = <span class="function">min</span>(candidates)
+
+        result = <span class="function">max</span>(result, max_prod)
+
+    <span class="keyword">return</span> result</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n)<br>
+                • Space: O(1)
+            </div>
+        </div>
+
+        <!-- Exercise 10: Word Break -->
+        <div class="exercise-header">
+            <h2>Exercise 10: Word Break - String Segmentation</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Check if string can be segmented into dictionary words.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given a string s and a dictionary of words, return true if s can be segmented into
+                a space-separated sequence of dictionary words.
+            </p>
+
+            <div class="visual-box">Example: s = "leetcode", wordDict = ["leet", "code"]
+
+Check all possible segmentations:
+"leetcode"
+  |
+  "leet" + "code"  ✓ (both in dictionary)
+
+DP progression:
+dp[0] = True (empty string)
+dp[4] = True (can form "leet")
+dp[8] = True (can form "leet" + "code")
+
+Result: True</div>
+
+            <div class="intuition">
+                <strong>dp[i]</strong> = can we segment s[0:i]?
+                <br><br>
+                For each position i, check all words ending at i:
+                <ul>
+                    <li>If word matches s[i-len(word):i]</li>
+                    <li>And dp[i-len(word)] is True</li>
+                    <li>Then dp[i] = True</li>
+                </ul>
+                Use a set for O(1) word lookup.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">wordBreak</span>(s, wordDict):
+    word_set = <span class="function">set</span>(wordDict)
+    dp = [<span class="keyword">False</span>] * (<span class="function">len</span>(s) + <span class="number">1</span>)
+    dp[<span class="number">0</span>] = <span class="keyword">True</span>  <span class="comment"># Empty string</span>
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">1</span>, <span class="function">len</span>(s) + <span class="number">1</span>):
+        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="function">range</span>(i):
+            <span class="comment"># Check if s[j:i] is a word and s[0:j] can be segmented</span>
+            <span class="keyword">if</span> dp[j] <span class="keyword">and</span> s[j:i] <span class="keyword">in</span> word_set:
+                dp[i] = <span class="keyword">True</span>
+                <span class="keyword">break</span>
+
+    <span class="keyword">return</span> dp[<span class="function">len</span>(s)]</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n² × m) where m is avg word length<br>
+                • Space: O(n)
+            </div>
+        </div>
+
+        <!-- Exercise 11: Longest Increasing Subsequence -->
+        <div class="exercise-header">
+            <h2>Exercise 11: Longest Increasing Subsequence - LIS Pattern</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find length of longest strictly increasing subsequence.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given an integer array, return the length of the longest strictly increasing subsequence.
+                A subsequence is a sequence derived by deleting elements without changing order.
+            </p>
+
+            <div class="visual-box">Example: nums = [10, 9, 2, 5, 3, 7, 101, 18]
+
+Longest Increasing Subsequence: [2, 3, 7, 101] or [2, 5, 7, 101]
+Length: 4
+
+DP approach:
+dp[i] = length of LIS ending at index i
+
+For index 5 (value 7):
+  - Check all j < 5 where nums[j] < 7
+  - nums[2]=2: dp[5] = dp[2] + 1 = 2
+  - nums[3]=5: dp[5] = dp[3] + 1 = 3
+  - nums[4]=3: dp[5] = dp[4] + 1 = 3
+  - Maximum: dp[5] = 3</div>
+
+            <div class="intuition">
+                <strong>dp[i]</strong> = length of LIS ending at index i
+                <br><br>
+                For each position i, check all previous positions j where nums[j] < nums[i]:
+                <br>
+                <strong>dp[i] = max(dp[j] + 1)</strong> for all valid j
+                <br><br>
+                The final answer is max(dp).
+                <br><br>
+                Time: O(n²). There's also an O(n log n) solution using binary search + patience sorting.
+            </div>
+
+            <h3>Solution - O(n²) DP</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">lengthOfLIS</span>(nums):
+    <span class="keyword">if not</span> nums:
+        <span class="keyword">return</span> <span class="number">0</span>
+
+    n = <span class="function">len</span>(nums)
+    dp = [<span class="number">1</span>] * n  <span class="comment"># Each element is LIS of length 1</span>
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">1</span>, n):
+        <span class="keyword">for</span> j <span class="keyword">in</span> <span class="function">range</span>(i):
+            <span class="keyword">if</span> nums[j] < nums[i]:
+                dp[i] = <span class="function">max</span>(dp[i], dp[j] + <span class="number">1</span>)
+
+    <span class="keyword">return</span> <span class="function">max</span>(dp)</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n²)<br>
+                • Space: O(n)
+            </div>
+        </div>
+
+        <!-- Exercise 12: Partition Equal Subset Sum -->
+        <div class="exercise-header">
+            <h2>Exercise 12: Partition Equal Subset Sum - 0/1 Knapsack</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Check if array can be partitioned into two equal-sum subsets.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given an array of positive integers, return true if you can partition the array into
+                two subsets such that the sum of elements in both subsets is equal.
+            </p>
+
+            <div class="visual-box">Example: nums = [1, 5, 11, 5]
+
+Total sum = 22
+Target = 11
+
+Can we make sum 11?
+  - Subset 1: [1, 5, 5] → 11 ✓
+  - Subset 2: [11] → 11 ✓
+
+Result: True
+
+DP: Can we achieve each sum from 0 to target using subsets?
+dp[0] = True (empty subset)
+dp[1] = True (using [1])
+dp[5] = True (using [5])
+dp[6] = True (using [1,5])
+dp[11] = True ✓</div>
+
+            <div class="intuition">
+                Reduce to: can we find a subset with sum = total_sum / 2?
+                <br><br>
+                This is the classic 0/1 knapsack problem:
+                <ul>
+                    <li>For each number, decide to include it or not</li>
+                    <li>dp[sum] = can we achieve this sum?</li>
+                    <li>Process backwards to avoid using same element twice</li>
+                </ul>
+                If total sum is odd, immediately return False.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">canPartition</span>(nums):
+    total = <span class="function">sum</span>(nums)
+
+    <span class="comment"># Odd sum can't be split equally</span>
+    <span class="keyword">if</span> total % <span class="number">2</span>:
+        <span class="keyword">return</span> <span class="keyword">False</span>
+
+    target = total // <span class="number">2</span>
+    dp = [<span class="keyword">False</span>] * (target + <span class="number">1</span>)
+    dp[<span class="number">0</span>] = <span class="keyword">True</span>  <span class="comment"># Can always make 0</span>
+
+    <span class="keyword">for</span> num <span class="keyword">in</span> nums:
+        <span class="comment"># Iterate backwards to avoid using same element twice</span>
+        <span class="keyword">for</span> s <span class="keyword">in</span> <span class="function">range</span>(target, num - <span class="number">1</span>, <span class="number">-1</span>):
+            dp[s] = dp[s] <span class="keyword">or</span> dp[s - num]
+
+    <span class="keyword">return</span> dp[target]</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n × sum/2)<br>
+                • Space: O(sum/2)
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Summary</h2>
+            <p>
+                You've now mastered the core 1-D dynamic programming patterns! You can:
+            </p>
+            <ul>
+                <li>✓ Identify problems with optimal substructure and overlapping subproblems</li>
+                <li>✓ Write recurrence relations for Fibonacci-like, decision, and string DP problems</li>
+                <li>✓ Implement both top-down (memoization) and bottom-up (tabulation) approaches</li>
+                <li>✓ Optimize space complexity using rolling arrays or constant variables</li>
+                <li>✓ Apply DP to climbing stairs, house robber, coin change, word break, LIS, and knapsack problems</li>
+            </ul>
+            <p>
+                These patterns form the foundation for 2-D DP problems like grid paths, edit distance,
+                and longest common subsequence. Keep practicing to develop the intuition for when DP applies!
+            </p>
+        </div>
+    </div>
+</body>
+</html>

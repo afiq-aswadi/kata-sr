@@ -1,0 +1,219 @@
+[workbook]
+id = "neetcode_1d_dp"
+title = "NeetCode 1-D DP: Sequential Decision Problems"
+summary = "Master 1-D dynamic programming for sequential optimization problems."
+learning_goals = [
+  "Identify optimal substructure and overlapping subproblems",
+  "Write recurrence relations for DP problems",
+  "Implement bottom-up and top-down DP approaches",
+  "Optimize space complexity from O(n) to O(1)",
+]
+prerequisites = ["neetcode_product_except_self"]
+resources = [
+  { title = "Dynamic Programming", url = "https://neetcode.io/courses/dsa-for-beginners/27" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "climbing-stairs"
+title = "1. Climbing Stairs - DP Fundamentals"
+kata = "neetcode_climbing_stairs"
+objective = "Count ways to climb n stairs, taking 1 or 2 steps at a time."
+acceptance = [
+  "Returns correct count of ways",
+  "Uses O(n) time and O(1) space (optimized)",
+  "Recognizes Fibonacci pattern",
+]
+hints = [
+  "Ways to reach step n = ways(n-1) + ways(n-2)",
+  "Base cases: 1 way to reach step 1, 2 ways for step 2",
+  "Use two variables instead of array for O(1) space",
+]
+dependencies = []
+
+[[exercises]]
+slug = "min-cost-stairs"
+title = "2. Min Cost Climbing Stairs"
+kata = "neetcode_min_cost_stairs"
+objective = "Find minimum cost to reach top, each step has a cost."
+acceptance = [
+  "Returns minimum cost",
+  "Uses O(n) time and O(1) space",
+  "Handles variable step costs",
+]
+hints = [
+  "dp[i] = cost[i] + min(dp[i-1], dp[i-2])",
+  "Can start from step 0 or 1",
+  "Optimize to use two variables",
+]
+dependencies = ["climbing-stairs"]
+
+[[exercises]]
+slug = "house-robber"
+title = "3. House Robber - Non-Adjacent Selection"
+kata = "neetcode_house_robber"
+objective = "Maximize loot without robbing adjacent houses."
+acceptance = [
+  "Returns maximum loot",
+  "Uses O(n) time and O(1) space",
+  "Correctly handles non-adjacency constraint",
+]
+hints = [
+  "dp[i] = max(rob house i + dp[i-2], skip house i = dp[i-1])",
+  "Decision: rob current or skip",
+  "Track two variables: prev1 (i-1) and prev2 (i-2)",
+]
+dependencies = ["min-cost-stairs"]
+
+[[exercises]]
+slug = "house-robber-ii"
+title = "4. House Robber II - Circular Array"
+kata = "neetcode_house_robber_ii"
+objective = "House Robber with houses in a circle (first and last are adjacent)."
+acceptance = [
+  "Returns maximum loot in circular arrangement",
+  "Handles constraint that first and last are adjacent",
+  "Uses O(n) time and O(1) space",
+]
+hints = [
+  "Can't rob both first and last house",
+  "Run House Robber twice: [0, n-2] and [1, n-1]",
+  "Return maximum of both results",
+]
+dependencies = ["house-robber"]
+
+[[exercises]]
+slug = "longest-palindrome"
+title = "5. Longest Palindromic Substring"
+kata = "neetcode_longest_palindrome"
+objective = "Find longest palindromic substring using expand-around-center or DP."
+acceptance = [
+  "Returns longest palindromic substring",
+  "Handles odd and even length palindromes",
+  "Uses O(n²) time (expand) or DP approach",
+]
+hints = [
+  "Expand around center: try each position as center",
+  "Check both odd (single center) and even (two centers)",
+  "Or use DP: dp[i][j] = is s[i:j+1] palindrome",
+]
+dependencies = ["min-cost-stairs"]
+
+[[exercises]]
+slug = "palindromic-substrings"
+title = "6. Palindromic Substrings - Count All"
+kata = "neetcode_palindromic_substrings"
+objective = "Count total number of palindromic substrings."
+acceptance = [
+  "Returns correct count",
+  "Uses expand-around-center approach",
+  "Handles all palindrome types",
+]
+hints = [
+  "Expand around each possible center",
+  "For each center, expand while characters match",
+  "Count each valid palindrome found",
+]
+dependencies = ["longest-palindrome"]
+
+[[exercises]]
+slug = "decode-ways"
+title = "7. Decode Ways - String DP"
+kata = "neetcode_decode_ways"
+objective = "Count ways to decode digit string where A=1, B=2, ..., Z=26."
+acceptance = [
+  "Returns count of valid decodings",
+  "Handles single and two-digit decodings",
+  "Uses O(n) time and O(1) space",
+]
+hints = [
+  "dp[i] = ways to decode s[0:i]",
+  "Add dp[i-1] if s[i] is valid (1-9)",
+  "Add dp[i-2] if s[i-1:i+1] is valid (10-26)",
+]
+dependencies = ["climbing-stairs"]
+
+[[exercises]]
+slug = "coin-change"
+title = "8. Coin Change - Unbounded Knapsack"
+kata = "neetcode_coin_change"
+objective = "Find minimum coins to make amount (unbounded knapsack)."
+acceptance = [
+  "Returns minimum number of coins",
+  "Returns -1 if amount cannot be made",
+  "Uses O(amount × coins) time",
+]
+hints = [
+  "dp[i] = min coins to make amount i",
+  "For each amount, try each coin",
+  "dp[i] = min(dp[i], 1 + dp[i - coin])",
+]
+dependencies = ["house-robber"]
+
+[[exercises]]
+slug = "max-product-subarray"
+title = "9. Maximum Product Subarray - Kadane's Variant"
+kata = "neetcode_max_product_subarray"
+objective = "Find contiguous subarray with maximum product."
+acceptance = [
+  "Returns maximum product",
+  "Handles negative numbers correctly",
+  "Uses O(n) time and O(1) space",
+]
+hints = [
+  "Track both max and min (negatives can flip)",
+  "At each step: max = max(num, max*num, min*num)",
+  "Update min similarly",
+]
+dependencies = ["climbing-stairs"]
+
+[[exercises]]
+slug = "word-break"
+title = "10. Word Break - String Segmentation"
+kata = "neetcode_word_break"
+objective = "Check if string can be segmented into dictionary words."
+acceptance = [
+  "Returns True if segmentation possible",
+  "Uses DP with O(n² × m) time (n=string, m=avg word length)",
+  "Checks all possible segmentations",
+]
+hints = [
+  "dp[i] = can segment s[0:i]",
+  "For each position i, check all words ending at i",
+  "dp[i] = True if any dp[i-len(word)] && s[i-len:i] == word",
+]
+dependencies = ["decode-ways"]
+
+[[exercises]]
+slug = "longest-increasing-subseq"
+title = "11. Longest Increasing Subsequence - LIS Pattern"
+kata = "neetcode_longest_increasing_subseq"
+objective = "Find length of longest strictly increasing subsequence."
+acceptance = [
+  "Returns LIS length",
+  "Uses O(n²) DP or O(n log n) binary search",
+  "Handles empty and single-element arrays",
+]
+hints = [
+  "dp[i] = length of LIS ending at index i",
+  "For each i, check all j < i where nums[j] < nums[i]",
+  "dp[i] = max(dp[j] + 1) for valid j",
+]
+dependencies = ["coin-change"]
+
+[[exercises]]
+slug = "partition-equal-subset"
+title = "12. Partition Equal Subset Sum - 0/1 Knapsack"
+kata = "neetcode_partition_equal_subset"
+objective = "Check if array can be partitioned into two equal-sum subsets."
+acceptance = [
+  "Returns True if partition possible",
+  "Uses 0/1 knapsack DP pattern",
+  "Optimizes to O(sum/2) space",
+]
+hints = [
+  "If sum is odd, impossible",
+  "Problem: can we make target = sum/2?",
+  "dp[i] = can we make sum i using subset of numbers",
+]
+dependencies = ["coin-change", "word-break"]
