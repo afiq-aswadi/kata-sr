@@ -561,6 +561,253 @@ Step 3: 0 < 1 → minimum in left (mid)
     </section>
 
     <section class="section">
+      <h2>Exercise 5: Search 2D Matrix</h2>
+      <div class="card">
+        <div class="pattern-title">Binary Search Adaptation</div>
+        <h3>Objective</h3>
+        <p>
+          Search a 2D matrix where each row is sorted and the first element of each
+          row is greater than the last element of the previous row.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Key Insight</div>
+          <p>
+            The matrix can be treated as a single sorted 1D array! Map 2D coordinates
+            to 1D index: <code>index = row × cols + col</code>. Or use two binary searches:
+            first find the row, then search within that row.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Matrix:  [ 1,  3,  5,  7]
+         [10, 11, 16, 20]
+         [23, 30, 34, 60]
+Target: 3
+
+Treat as 1D: [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+                ↑
+             Found at index 1
+             → row = 1 // 4 = 0, col = 1 % 4 = 1
+             → return True
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def searchMatrix(matrix: List[List[int]], target: int) -> bool:
+    if not matrix or not matrix[0]:
+        return False
+
+    rows, cols = len(matrix), len(matrix[0])
+    left, right = 0, rows * cols - 1
+
+    while left <= right:
+        mid = left + (right - left) // 2
+        # Convert 1D index to 2D coordinates
+        row, col = mid // cols, mid % cols
+        mid_val = matrix[row][col]
+
+        if mid_val == target:
+            return True
+        elif mid_val < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return False
+
+# Alternative: Two binary searches
+def searchMatrix(matrix: List[List[int]], target: int) -> bool:
+    # Binary search to find the row
+    top, bottom = 0, len(matrix) - 1
+    while top <= bottom:
+        mid_row = (top + bottom) // 2
+        if target < matrix[mid_row][0]:
+            bottom = mid_row - 1
+        elif target > matrix[mid_row][-1]:
+            top = mid_row + 1
+        else:
+            break  # Found the row
+
+    # Binary search within the row
+    row = (top + bottom) // 2
+    left, right = 0, len(matrix[0]) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if matrix[row][mid] == target:
+            return True
+        elif matrix[row][mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return False</code></pre>
+
+        <p><span class="complexity">Time: O(log(m×n)) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 6: Time-Based Key-Value Store</h2>
+      <div class="card">
+        <div class="pattern-title">Binary Search with Timestamps</div>
+        <h3>Objective</h3>
+        <p>
+          Design a time-based key-value store that supports <code>set(key, value, timestamp)</code>
+          and <code>get(key, timestamp)</code> returning the value at or before the given timestamp.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Pattern</div>
+          <p>
+            Store values for each key as a list of (timestamp, value) pairs. Since timestamps
+            are always increasing, the list is sorted. Use binary search to find the rightmost
+            timestamp ≤ query timestamp (lower bound pattern).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Operations:
+  set("foo", "bar", 1)
+  set("foo", "bar2", 4)
+  get("foo", 4)   → "bar2"
+  get("foo", 5)   → "bar2" (closest ≤ 5)
+  get("foo", 0)   → ""     (no value before 0)
+
+Storage:
+  store = {
+    "foo": [(1, "bar"), (4, "bar2")]
+                ↑           ↑
+    Binary search for timestamp ≤ query
+  }
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">class TimeMap:
+    def __init__(self):
+        self.store = {}  # key -> list of (timestamp, value)
+
+    def set(self, key: str, value: str, timestamp: int) -> None:
+        if key not in self.store:
+            self.store[key] = []
+        self.store[key].append((timestamp, value))
+
+    def get(self, key: str, timestamp: int) -> str:
+        if key not in self.store:
+            return ""
+
+        values = self.store[key]
+        left, right = 0, len(values) - 1
+        result = ""
+
+        # Binary search for rightmost timestamp <= query
+        while left <= right:
+            mid = left + (right - left) // 2
+
+            if values[mid][0] <= timestamp:
+                result = values[mid][1]  # Valid candidate
+                left = mid + 1   # Look for later timestamps
+            else:
+                right = mid - 1  # Too late, search earlier
+
+        return result</code></pre>
+
+        <p><span class="complexity">set: O(1) | get: O(log n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 7: Median of Two Sorted Arrays</h2>
+      <div class="card">
+        <div class="pattern-title">Advanced Binary Search</div>
+        <h3>Objective</h3>
+        <p>
+          Find the median of two sorted arrays in O(log(min(m,n))) time using
+          binary search on partition points.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Advanced Insight</div>
+          <p>
+            Median divides elements into two equal halves. Use binary search to find
+            the correct partition point in the smaller array. For valid partition:
+            all elements in left half ≤ all elements in right half. Check condition:
+            <code>maxLeft1 ≤ minRight2 AND maxLeft2 ≤ minRight1</code>
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+nums1 = [1, 3, 8, 9, 15]
+nums2 = [7, 11, 18, 19, 21, 25]
+
+Total elements: 11 (odd), median is 6th element
+
+Partition nums1:      [1, 3, 8 | 9, 15]
+Partition nums2: [7, 11, 18, 19 | 21, 25]
+
+Left half: 1,3,8,7,11,18  (6 elements, max=18)
+Right half: 9,15,19,21,25 (5 elements, min=9)
+
+Check: max(left) ≤ min(right)?
+       max(8, 18) ≤ min(9, 21)
+       18 ≤ 9? NO! → move partition
+
+Final partition: [1, 3 | 8, 9, 15]
+                 [7, 11, 18 | 19, 21, 25]
+
+Left: 1,3,7,11,18  (max=11)
+Right: 8,9,15,19,21,25 (min=8)
+Wait, 11 > 8, still wrong...
+
+Correct partition: [1, 3, 8, 9 | 15]
+                   [7, 11 | 18, 19, 21, 25]
+Left max = 11, Right min = 15 → median = 11
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def findMedianSortedArrays(nums1: List[int], nums2: List[int]) -> float:
+    # Ensure nums1 is the smaller array
+    if len(nums1) > len(nums2):
+        nums1, nums2 = nums2, nums1
+
+    m, n = len(nums1), len(nums2)
+    left, right = 0, m
+
+    while left <= right:
+        partition1 = (left + right) // 2
+        partition2 = (m + n + 1) // 2 - partition1
+
+        # Handle edge cases
+        maxLeft1 = float('-inf') if partition1 == 0 else nums1[partition1 - 1]
+        minRight1 = float('inf') if partition1 == m else nums1[partition1]
+
+        maxLeft2 = float('-inf') if partition2 == 0 else nums2[partition2 - 1]
+        minRight2 = float('inf') if partition2 == n else nums2[partition2]
+
+        # Check if we found the correct partition
+        if maxLeft1 <= minRight2 and maxLeft2 <= minRight1:
+            # Odd total length
+            if (m + n) % 2 == 1:
+                return max(maxLeft1, maxLeft2)
+            # Even total length
+            else:
+                return (max(maxLeft1, maxLeft2) + min(minRight1, minRight2)) / 2
+        elif maxLeft1 > minRight2:
+            # Too far right in nums1, move left
+            right = partition1 - 1
+        else:
+            # Too far left in nums1, move right
+            left = partition1 + 1
+
+    raise ValueError("Input arrays are not sorted")</code></pre>
+
+        <p><span class="complexity">Time: O(log(min(m,n))) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
       <h2>Binary Search Variations</h2>
       <div class="card">
         <h3>1. Different Return Values</h3>
