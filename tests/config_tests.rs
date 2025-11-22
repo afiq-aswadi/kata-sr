@@ -8,11 +8,20 @@ use tempfile::TempDir;
 
 #[test]
 fn test_config_uses_defaults_when_file_missing() {
+    // Temporarily unset EDITOR to ensure predictable default
+    let original_editor = std::env::var("EDITOR").ok();
+    std::env::remove_var("EDITOR");
+
     let config = AppConfig::default();
 
     assert_eq!(config.editor.command, "nvim");
     assert!(config.paths.database.contains("kata.db"));
     assert_eq!(config.display.heatmap_days, 90);
+
+    // Restore original EDITOR value
+    if let Some(editor) = original_editor {
+        std::env::set_var("EDITOR", editor);
+    }
 }
 
 #[test]
@@ -90,10 +99,19 @@ heatmap_days = 120
 
 #[test]
 fn test_editor_config_default() {
+    // Temporarily unset EDITOR to ensure predictable default
+    let original_editor = std::env::var("EDITOR").ok();
+    std::env::remove_var("EDITOR");
+
     let editor_config = EditorConfig::default();
 
     assert_eq!(editor_config.command, "nvim");
     assert!(editor_config.args.is_empty());
+
+    // Restore original EDITOR value
+    if let Some(editor) = original_editor {
+        std::env::set_var("EDITOR", editor);
+    }
 }
 
 #[test]
