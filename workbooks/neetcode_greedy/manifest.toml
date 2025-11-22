@@ -1,0 +1,115 @@
+[workbook]
+id = "neetcode_greedy"
+title = "NeetCode Greedy: Optimal Local Choices"
+summary = "Master greedy algorithms where local optimal choices lead to global optimum."
+learning_goals = [
+  "Recognize problems solvable by greedy approach",
+  "Prove greedy choice property",
+  "Apply sorting as preprocessing for greedy algorithms",
+  "Avoid common pitfalls where greedy fails",
+]
+prerequisites = ["neetcode_two_sum"]
+resources = [
+  { title = "Greedy Algorithms", url = "https://neetcode.io/courses/dsa-for-beginners/24" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "max-subarray"
+title = "1. Maximum Subarray - Kadane's Algorithm"
+kata = "neetcode_max_subarray"
+objective = "Find subarray with maximum sum using Kadane's algorithm."
+acceptance = [
+  "Returns maximum sum",
+  "Uses O(n) time and O(1) space",
+  "Handles all negative arrays",
+]
+hints = [
+  "Track current_sum and max_sum",
+  "Reset current_sum to 0 if it goes negative",
+]
+dependencies = []
+
+[[exercises]]
+slug = "jump-game"
+title = "2. Jump Game - Greedy Reachability"
+kata = "neetcode_jump_game"
+objective = "Check if last index is reachable with greedy approach."
+acceptance = [
+  "Returns True if reachable",
+  "Uses O(n) time and O(1) space",
+  "Tracks farthest reachable position",
+]
+hints = [
+  "Track max_reach as you iterate",
+  "Update max_reach = max(max_reach, i + nums[i])",
+  "If i > max_reach, can't proceed",
+]
+dependencies = ["max-subarray"]
+
+[[exercises]]
+slug = "jump-game-ii"
+title = "3. Jump Game II - Minimum Jumps"
+kata = "neetcode_jump_game_ii"
+objective = "Find minimum jumps to reach end."
+acceptance = [
+  "Returns minimum jump count",
+  "Uses O(n) time greedy approach",
+  "Tracks current and next jump boundaries",
+]
+hints = [
+  "Track current_end and farthest",
+  "Increment jumps when reaching current_end",
+  "Update current_end to farthest",
+]
+dependencies = ["jump-game"]
+
+[[exercises]]
+slug = "gas-station"
+title = "4. Gas Station - Circular Array Greedy"
+kata = "neetcode_gas_station"
+objective = "Find starting gas station for circular route."
+acceptance = [
+  "Returns starting index or -1",
+  "Uses O(n) time single pass",
+  "Greedy choice: restart when tank < 0",
+]
+hints = [
+  "If total_gas < total_cost, impossible",
+  "Track tank and start index",
+  "Reset start when tank goes negative",
+]
+dependencies = ["jump-game"]
+
+[[exercises]]
+slug = "hand-straights"
+title = "5. Hand of Straights - Greedy Grouping"
+kata = "neetcode_hand_straights"
+objective = "Check if cards can form consecutive groups of size k."
+acceptance = [
+  "Returns True if possible",
+  "Uses O(n log n) time",
+  "Greedy: form groups starting from smallest",
+]
+hints = [
+  "Sort and use frequency map",
+  "For each card, try to form group [card, card+1, ..., card+k-1]",
+  "Decrement frequencies",
+]
+dependencies = ["max-subarray"]
+
+[[exercises]]
+slug = "partition-labels"
+title = "6. Partition Labels - Greedy Partitioning"
+kata = "neetcode_partition_labels"
+objective = "Partition string into maximum partitions with unique characters."
+acceptance = [
+  "Returns list of partition sizes",
+  "Each character appears in at most one partition",
+  "Uses O(n) time",
+]
+hints = [
+  "Track last occurrence of each character",
+  "Expand partition until all chars in partition are done",
+]
+dependencies = ["gas-station"]

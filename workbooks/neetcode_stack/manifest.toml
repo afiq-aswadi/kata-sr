@@ -1,0 +1,132 @@
+[workbook]
+id = "neetcode_stack"
+title = "NeetCode Stack: LIFO Patterns and Monotonic Stacks"
+summary = "Master stack patterns from basic parentheses matching to monotonic stacks for optimization."
+learning_goals = [
+  "Recognize when stack (LIFO) data structure applies",
+  "Implement stack-based parsers and validators",
+  "Use monotonic stacks for O(n) optimization problems",
+  "Apply stack patterns to string and array problems",
+]
+prerequisites = ["neetcode_contains_duplicate"]
+resources = [
+  { title = "Stack Patterns Guide", url = "https://neetcode.io/courses/dsa-for-beginners/6" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "valid-parentheses"
+title = "1. Valid Parentheses - Basic Stack"
+kata = "neetcode_valid_parentheses"
+objective = "Check if parentheses are balanced using a stack."
+acceptance = [
+  "Returns True for balanced strings",
+  "Handles all three bracket types: (), {}, []",
+  "Uses O(n) time and O(n) space",
+]
+hints = [
+  "Push opening brackets to stack",
+  "For closing bracket, check if it matches stack top",
+  "Use hashmap for bracket pairs",
+]
+dependencies = []
+
+[[exercises]]
+slug = "min-stack"
+title = "2. Min Stack - Stack with O(1) Min"
+kata = "neetcode_min_stack"
+objective = "Design a stack that supports getMin() in O(1) time."
+acceptance = [
+  "All operations work in O(1) time",
+  "getMin() returns minimum element",
+  "Handles pop() of minimum element correctly",
+]
+hints = [
+  "Use two stacks: main stack and min stack",
+  "Min stack tracks minimum at each level",
+]
+dependencies = ["valid-parentheses"]
+
+[[exercises]]
+slug = "evaluate-rpn"
+title = "3. Evaluate Reverse Polish Notation"
+kata = "neetcode_evaluate_rpn"
+objective = "Evaluate arithmetic expression in RPN using a stack."
+acceptance = [
+  "Handles +, -, *, / operators",
+  "Returns correct integer result",
+  "Division truncates toward zero",
+]
+hints = [
+  "Push numbers to stack",
+  "For operator, pop two operands, compute, push result",
+]
+dependencies = ["min-stack"]
+
+[[exercises]]
+slug = "generate-parentheses"
+title = "4. Generate Parentheses - Backtracking with Stack"
+kata = "neetcode_generate_parentheses"
+objective = "Generate all valid parentheses combinations using backtracking."
+acceptance = [
+  "Returns all valid n-pair combinations",
+  "No duplicates in result",
+  "Only well-formed strings",
+]
+hints = [
+  "Backtrack with open_count and close_count",
+  "Add '(' if open_count < n",
+  "Add ')' if close_count < open_count",
+]
+dependencies = ["valid-parentheses"]
+
+[[exercises]]
+slug = "daily-temperatures"
+title = "5. Daily Temperatures - Monotonic Stack"
+kata = "neetcode_daily_temperatures"
+objective = "Find days until warmer temperature using monotonic decreasing stack."
+acceptance = [
+  "Returns array of days to wait",
+  "Uses O(n) time complexity",
+  "Each element pushed/popped once",
+]
+hints = [
+  "Stack stores indices, not temperatures",
+  "Pop indices while current temp > stack top temp",
+  "For popped index, days = current_index - popped_index",
+]
+dependencies = ["min-stack"]
+
+[[exercises]]
+slug = "car-fleet"
+title = "6. Car Fleet - Monotonic Stack Application"
+kata = "neetcode_car_fleet"
+objective = "Calculate number of car fleets reaching destination using stack."
+acceptance = [
+  "Correctly identifies fleets that merge",
+  "Handles cars at same position",
+  "Uses O(n log n) time (due to sorting)",
+]
+hints = [
+  "Calculate time for each car to reach target",
+  "Sort by position (descending)",
+  "Use stack to track fleet leaders",
+]
+dependencies = ["daily-temperatures"]
+
+[[exercises]]
+slug = "largest-rectangle"
+title = "7. Largest Rectangle in Histogram - Advanced Monotonic Stack"
+kata = "neetcode_largest_rectangle"
+objective = "Find largest rectangle area using monotonic increasing stack."
+acceptance = [
+  "Returns maximum rectangle area",
+  "Uses O(n) time complexity",
+  "Handles edge cases with single bar",
+]
+hints = [
+  "Stack stores indices of bars",
+  "Pop when current bar < stack top bar",
+  "Area = height[popped] × width (using indices)",
+]
+dependencies = ["daily-temperatures", "car-fleet"]

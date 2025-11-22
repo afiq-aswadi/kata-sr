@@ -1,0 +1,118 @@
+[workbook]
+id = "neetcode_sliding_window"
+title = "NeetCode Sliding Window: Subarray Optimization"
+summary = "Master the sliding window technique for efficient subarray and substring problems."
+learning_goals = [
+  "Recognize fixed and variable-size sliding window problems",
+  "Use two pointers to maintain window bounds",
+  "Apply frequency maps for character/element tracking",
+  "Optimize brute force O(n²) solutions to O(n)",
+]
+prerequisites = ["neetcode_two_sum", "neetcode_valid_anagram"]
+resources = [
+  { title = "Sliding Window Patterns", url = "https://neetcode.io/courses/dsa-for-beginners/29" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "best-time-stock"
+title = "1. Best Time to Buy/Sell Stock - Basic Window"
+kata = "neetcode_best_time_stock"
+objective = "Find maximum profit using expanding window (buy low, sell high)."
+acceptance = [
+  "Returns maximum profit possible",
+  "Uses O(n) time and O(1) space",
+  "Handles cases with no profit (return 0)",
+]
+hints = [
+  "Track minimum price seen so far",
+  "For each price, calculate profit if selling today",
+  "Update max profit",
+]
+dependencies = []
+
+[[exercises]]
+slug = "longest-substring"
+title = "2. Longest Substring Without Repeating Characters"
+kata = "neetcode_longest_substring"
+objective = "Find longest substring with unique characters using variable window."
+acceptance = [
+  "Returns length of longest substring",
+  "Uses O(n) time complexity",
+  "Handles empty strings and single characters",
+]
+hints = [
+  "Use set or dict to track characters in window",
+  "Expand right, shrink left when duplicate found",
+  "Update max length after each expansion",
+]
+dependencies = ["best-time-stock"]
+
+[[exercises]]
+slug = "longest-repeating"
+title = "3. Longest Repeating Character Replacement"
+kata = "neetcode_longest_repeating"
+objective = "Find longest substring with same character after k replacements."
+acceptance = [
+  "Returns maximum length achievable",
+  "Uses O(n) time complexity",
+  "Correctly handles k replacements",
+]
+hints = [
+  "Track frequency of each character in window",
+  "Window is valid if: window_size - max_freq <= k",
+  "Shrink window when invalid",
+]
+dependencies = ["longest-substring"]
+
+[[exercises]]
+slug = "permutation-string"
+title = "4. Permutation in String - Fixed Window"
+kata = "neetcode_permutation_string"
+objective = "Check if s2 contains permutation of s1 using fixed-size window."
+acceptance = [
+  "Returns True if permutation exists",
+  "Uses O(n) time complexity",
+  "Handles strings with duplicate characters",
+]
+hints = [
+  "Window size = len(s1)",
+  "Compare frequency maps of window and s1",
+  "Slide window and update frequencies incrementally",
+]
+dependencies = ["longest-substring"]
+
+[[exercises]]
+slug = "min-window-substring"
+title = "5. Minimum Window Substring - Complex Variable Window"
+kata = "neetcode_min_window_substring"
+objective = "Find smallest window in s containing all characters of t."
+acceptance = [
+  "Returns shortest substring or empty string",
+  "Uses O(n + m) time complexity",
+  "Handles characters appearing multiple times in t",
+]
+hints = [
+  "Expand right until window contains all of t",
+  "Contract left while still valid, update min length",
+  "Use two frequency maps for comparison",
+]
+dependencies = ["longest-repeating", "permutation-string"]
+
+[[exercises]]
+slug = "sliding-window-max"
+title = "6. Sliding Window Maximum - Deque Optimization"
+kata = "neetcode_sliding_window_max"
+objective = "Find maximum in each fixed-size window using monotonic deque."
+acceptance = [
+  "Returns array of window maximums",
+  "Uses O(n) time complexity",
+  "Each element added/removed once from deque",
+]
+hints = [
+  "Use deque to store indices (not values)",
+  "Maintain decreasing order (front = largest)",
+  "Remove indices outside window from front",
+  "Remove smaller elements from back",
+]
+dependencies = ["min-window-substring"]

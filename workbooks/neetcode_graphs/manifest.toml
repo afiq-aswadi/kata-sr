@@ -1,0 +1,132 @@
+[workbook]
+id = "neetcode_graphs"
+title = "NeetCode Graphs: DFS and BFS Fundamentals"
+summary = "Master graph traversal, connected components, and basic graph algorithms."
+learning_goals = [
+  "Implement DFS and BFS on graphs",
+  "Detect cycles and connected components",
+  "Apply topological sort for DAGs",
+  "Solve grid-based graph problems",
+]
+prerequisites = ["neetcode_level_order"]
+resources = [
+  { title = "Graphs", url = "https://neetcode.io/courses/dsa-for-beginners/19" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "num-islands"
+title = "1. Number of Islands - Grid DFS/BFS"
+kata = "neetcode_num_islands"
+objective = "Count connected components of land in 2D grid."
+acceptance = [
+  "Returns correct island count",
+  "Uses DFS or BFS to mark visited cells",
+  "Handles edge cases",
+]
+hints = [
+  "Iterate through grid",
+  "When finding '1', start DFS/BFS to mark entire island",
+  "Increment count for each new island",
+]
+dependencies = []
+
+[[exercises]]
+slug = "max-area-island"
+title = "2. Max Area of Island"
+kata = "neetcode_max_area_island"
+objective = "Find size of largest island in grid."
+acceptance = [
+  "Returns maximum island area",
+  "Uses DFS/BFS to compute area",
+  "Returns 0 if no islands",
+]
+hints = [
+  "For each island, count cells during DFS",
+  "Track maximum area seen",
+]
+dependencies = ["num-islands"]
+
+[[exercises]]
+slug = "clone-graph"
+title = "3. Clone Graph - Deep Copy"
+kata = "neetcode_clone_graph"
+objective = "Deep copy an undirected graph."
+acceptance = [
+  "Returns deep copy of graph",
+  "Preserves all connections",
+  "Uses DFS/BFS with hashmap",
+]
+hints = [
+  "Use hashmap: original_node → cloned_node",
+  "DFS: clone node, clone neighbors recursively",
+  "Check hashmap to avoid infinite loops",
+]
+dependencies = ["num-islands"]
+
+[[exercises]]
+slug = "pacific-atlantic"
+title = "4. Pacific Atlantic Water Flow"
+kata = "neetcode_pacific_atlantic"
+objective = "Find cells where water can flow to both oceans."
+acceptance = [
+  "Returns cells reaching both oceans",
+  "Water flows to lower/equal height",
+  "Uses reverse DFS from ocean edges",
+]
+hints = [
+  "DFS from Pacific edges, mark reachable cells",
+  "DFS from Atlantic edges, mark reachable cells",
+  "Return intersection of both sets",
+]
+dependencies = ["max-area-island"]
+
+[[exercises]]
+slug = "course-schedule"
+title = "5. Course Schedule - Cycle Detection"
+kata = "neetcode_course_schedule"
+objective = "Check if courses can be completed (detect cycle in DAG)."
+acceptance = [
+  "Returns True if no cycle exists",
+  "Uses DFS or Kahn's algorithm",
+  "Handles self-loops and cycles",
+]
+hints = [
+  "Build adjacency list from prerequisites",
+  "DFS with three states: unvisited, visiting, visited",
+  "Cycle exists if we revisit a 'visiting' node",
+]
+dependencies = ["clone-graph"]
+
+[[exercises]]
+slug = "course-schedule-ii"
+title = "6. Course Schedule II - Topological Sort"
+kata = "neetcode_course_schedule_ii"
+objective = "Return valid course order using topological sort."
+acceptance = [
+  "Returns valid ordering or empty list",
+  "Uses DFS or Kahn's algorithm",
+  "Detects impossible cases (cycles)",
+]
+hints = [
+  "Postorder DFS gives reverse topological order",
+  "Or use Kahn's: process nodes with 0 in-degree",
+]
+dependencies = ["course-schedule"]
+
+[[exercises]]
+slug = "graph-valid-tree"
+title = "7. Graph Valid Tree"
+kata = "neetcode_graph_valid_tree"
+objective = "Check if graph is a valid tree (connected + acyclic)."
+acceptance = [
+  "Returns True if valid tree",
+  "Tree has n nodes and n-1 edges",
+  "Connected + no cycles",
+]
+hints = [
+  "Valid tree: connected AND n-1 edges",
+  "Use DFS/BFS to check connectivity",
+  "Track visited to detect cycles",
+]
+dependencies = ["course-schedule"]

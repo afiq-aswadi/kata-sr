@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Linked List: Pointer Manipulation Mastery · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Pattern</div>
+      <h1>Linked List</h1>
+      <p class="summary">
+        Master linked list patterns from basic pointer manipulation to advanced techniques.
+        Pointers can be tricky, but with practice, you'll navigate and transform linked
+        lists with confidence.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Linked lists require you to think about connections (pointers) rather than positions
+          (indices). To modify structure, you must carefully update pointers. Common patterns:
+          reverse links, maintain multiple pointers (slow/fast), use dummy nodes.
+        </p>
+      </div>
+
+      <h3>Visual: Linked List Structure</h3>
+      <div class="visual-box">
+Singly Linked List:
+head → [1|•] → [2|•] → [3|•] → [4|/]
+        ↑
+      value  next
+
+Reversing pointers:
+[1|•] → [2|•] → [3|/]
+ ↑      ↑      ↑
+prev   curr   next
+
+After reversal:
+[1|/] ← [2|•] ← [3|•]
+                  ↑
+                 head
+      </div>
+
+      <h3>When to Use Linked List Patterns</h3>
+      <ul>
+        <li><strong>In-place manipulation:</strong> Reverse, reorder, remove nodes</li>
+        <li><strong>Cycle detection:</strong> Fast/slow pointers (Floyd's algorithm)</li>
+        <li><strong>Finding middle:</strong> Slow/fast pointers</li>
+        <li><strong>Merging:</strong> Combine sorted lists</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Reverse Linked List</h2>
+      <div class="card">
+        <div class="pattern-title">Basic Pointer Manipulation</div>
+        <h3>Objective</h3>
+        <p>
+          Reverse a singly linked list iteratively in O(n) time, O(1) space.
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Original: 1 → 2 → 3 → 4 → 5 → None
+
+Step-by-step:
+prev  curr next
+None   1 →  2 → 3 → 4 → 5 → None
+      Reverse: 1.next = None
+
+None ← 1    2 → 3 → 4 → 5 → None
+prev  curr next
+ 1  ←  2    3 → 4 → 5 → None
+
+None ← 1 ← 2    3 → 4 → 5 → None
+...
+
+Result: 5 → 4 → 3 → 2 → 1 → None
+        ↑
+       head
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def reverseList(head: ListNode) -> ListNode:
+    prev = None
+    curr = head
+
+    while curr:
+        # Save next node
+        next_node = curr.next
+        # Reverse link
+        curr.next = prev
+        # Move pointers forward
+        prev = curr
+        curr = next_node
+
+    return prev  # New head</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Merge Two Sorted Lists</h2>
+      <div class="card">
+        <div class="pattern-title">Dummy Node Pattern</div>
+        <h3>Objective</h3>
+        <p>
+          Merge two sorted linked lists into one sorted list.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Dummy Node Trick</div>
+          <p>
+            Use a dummy node to avoid special-casing the first element. Build the result
+            list by comparing values and attaching the smaller node.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+list1: 1 → 3 → 5
+list2: 2 → 4 → 6
+
+dummy → (start building result here)
+
+Compare 1 vs 2: attach 1
+dummy → 1
+
+Compare 3 vs 2: attach 2
+dummy → 1 → 2
+
+Compare 3 vs 4: attach 3
+dummy → 1 → 2 → 3
+
+...
+
+Result: 1 → 2 → 3 → 4 → 5 → 6
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def mergeTwoLists(list1: ListNode, list2: ListNode) -> ListNode:
+    dummy = ListNode(0)
+    tail = dummy
+
+    while list1 and list2:
+        if list1.val < list2.val:
+            tail.next = list1
+            list1 = list1.next
+        else:
+            tail.next = list2
+            list2 = list2.next
+        tail = tail.next
+
+    # Attach remaining nodes
+    tail.next = list1 if list1 else list2
+
+    return dummy.next</code></pre>
+
+        <p><span class="complexity">Time: O(n + m) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Linked List Cycle</h2>
+      <div class="card">
+        <div class="pattern-title">Floyd's Fast/Slow Pointers</div>
+        <h3>Objective</h3>
+        <p>
+          Detect if a linked list has a cycle using Floyd's algorithm.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Race Track Analogy</div>
+          <p>
+            Imagine two runners on a circular track. If one runs twice as fast, they will
+            eventually meet if there's a cycle. If there's no cycle, the fast runner
+            reaches the end (None).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+List with cycle:
+3 → 2 → 0 → -4
+    ↑________↓
+
+slow: 3 → 2 → 0 → -4 → 2 → 0 → ...
+fast: 3 → 0 → 2 → -4 → 0 → ...
+           ↑
+         They meet! Cycle detected
+
+List without cycle:
+1 → 2 → 3 → None
+
+slow: 1 → 2 → 3 → None
+fast: 1 → 3 → None (fast reaches None first)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def hasCycle(head: ListNode) -> bool:
+    slow = fast = head
+
+    while fast and fast.next:
+        slow = slow.next       # Move 1 step
+        fast = fast.next.next  # Move 2 steps
+
+        if slow == fast:
+            return True  # Cycle detected
+
+    return False  # fast reached None</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Reorder List</h2>
+      <div class="card">
+        <div class="pattern-title">Multi-Step Algorithm</div>
+        <h3>Objective</h3>
+        <p>
+          Reorder list L0→L1→...→Ln to L0→Ln→L1→Ln-1... in-place.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Three-Step Strategy</div>
+          <p>
+            1) Find middle using slow/fast pointers
+            2) Reverse second half
+            3) Merge two halves alternately
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: 1 → 2 → 3 → 4 → 5
+
+Step 1: Find middle (slow/fast)
+        1 → 2 → 3    4 → 5
+        ↑           ↑
+      first       second
+
+Step 2: Reverse second half
+        1 → 2 → 3    5 → 4
+
+Step 3: Merge alternately
+        1 → 5 → 2 → 4 → 3
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def reorderList(head: ListNode) -> None:
+    # Step 1: Find middle
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+
+    # Step 2: Reverse second half
+    second = slow.next
+    slow.next = None
+    prev = None
+    while second:
+        next_node = second.next
+        second.next = prev
+        prev = second
+        second = next_node
+    second = prev
+
+    # Step 3: Merge alternately
+    first = head
+    while second:
+        tmp1, tmp2 = first.next, second.next
+        first.next = second
+        second.next = tmp1
+        first, second = tmp1, tmp2</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Remove Nth Node From End</h2>
+      <div class="card">
+        <div class="pattern-title">Two-Pointer with Gap</div>
+        <h3>Objective</h3>
+        <p>
+          Remove the nth node from the end of the list in one pass.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Gap Trick</div>
+          <p>
+            Maintain two pointers with n-node gap between them. When fast reaches
+            the end, slow is at (n-1)th from end—perfect position to remove nth node.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Remove 2nd from end: 1 → 2 → 3 → 4 → 5, n=2
+
+Step 1: Move fast n steps ahead
+dummy → 1 → 2 → 3 → 4 → 5 → None
+ ↑              ↑
+slow          fast
+
+Step 2: Move both until fast reaches end
+dummy → 1 → 2 → 3 → 4 → 5 → None
+                ↑         ↑
+               slow      fast
+
+Step 3: Remove: slow.next = slow.next.next
+Result: 1 → 2 → 3 → 5
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def removeNthFromEnd(head: ListNode, n: int) -> ListNode:
+    dummy = ListNode(0, head)
+    slow = fast = dummy
+
+    # Move fast n steps ahead
+    for _ in range(n):
+        fast = fast.next
+
+    # Move both until fast reaches end
+    while fast.next:
+        slow = slow.next
+        fast = fast.next
+
+    # Remove nth node
+    slow.next = slow.next.next
+
+    return dummy.next</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Linked List Patterns Summary</h2>
+      <div class="card">
+        <h3>1. Pointer Patterns</h3>
+        <ul>
+          <li><strong>Single pointer:</strong> Simple traversal</li>
+          <li><strong>Prev/curr/next:</strong> Reversal, deletion</li>
+          <li><strong>Slow/fast:</strong> Find middle, detect cycle</li>
+          <li><strong>Two with gap:</strong> Nth from end</li>
+          <li><strong>Dummy node:</strong> Simplify head handling</li>
+        </ul>
+
+        <h3>2. Common Techniques</h3>
+        <pre><code class="language-python"># Find middle
+slow = fast = head
+while fast and fast.next:
+    slow = slow.next
+    fast = fast.next.next
+# slow is at middle
+
+# Reverse list
+prev, curr = None, head
+while curr:
+    next_node = curr.next
+    curr.next = prev
+    prev, curr = curr, next_node
+# prev is new head
+
+# Dummy node
+dummy = ListNode(0)
+dummy.next = head
+# ... work with dummy.next ...
+return dummy.next</code></pre>
+
+        <h3>3. Edge Cases to Always Check</h3>
+        <ul>
+          <li>Empty list: <code>head = None</code></li>
+          <li>Single node: <code>head.next = None</code></li>
+          <li>Two nodes: Test your pointer logic</li>
+          <li>Cycles: Infinite loop risks</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/7" target="_blank">NeetCode Linked List Guide</a></li>
+        <li><a href="https://leetcode.com/tag/linked-list/" target="_blank">LeetCode Linked List Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

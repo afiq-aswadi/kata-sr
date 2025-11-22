@@ -1,0 +1,100 @@
+[workbook]
+id = "neetcode_advanced_graphs"
+title = "NeetCode Advanced Graphs: Shortest Paths and MST"
+summary = "Master advanced graph algorithms including Dijkstra, topological sort variants, and graph optimization."
+learning_goals = [
+  "Implement Dijkstra's shortest path algorithm",
+  "Apply topological sort to advanced problems",
+  "Solve graph optimization problems",
+  "Handle weighted and directed graphs",
+]
+prerequisites = ["neetcode_course_schedule_ii"]
+resources = [
+  { title = "Advanced Graphs", url = "https://neetcode.io/courses/dsa-for-beginners/20" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "reconstruct-itinerary"
+title = "1. Reconstruct Itinerary - Eulerian Path"
+kata = "neetcode_reconstruct_itinerary"
+objective = "Find Eulerian path in directed graph (visit all edges once)."
+acceptance = [
+  "Returns valid itinerary",
+  "Uses all tickets exactly once",
+  "Lexicographically smallest path",
+]
+hints = [
+  "Use Hierholzer's algorithm",
+  "DFS with edge removal",
+  "Sort destinations for lexicographic order",
+]
+dependencies = []
+
+[[exercises]]
+slug = "network-delay-time"
+title = "2. Network Delay Time - Dijkstra's Algorithm"
+kata = "neetcode_network_delay_time"
+objective = "Find time for signal to reach all nodes using Dijkstra."
+acceptance = [
+  "Returns minimum time to reach all nodes",
+  "Returns -1 if unreachable nodes exist",
+  "Uses Dijkstra with min-heap",
+]
+hints = [
+  "Use min-heap with (time, node)",
+  "Track visited nodes",
+  "Update distances with relaxation",
+]
+dependencies = ["reconstruct-itinerary"]
+
+[[exercises]]
+slug = "cheapest-flights"
+title = "3. Cheapest Flights Within K Stops"
+kata = "neetcode_cheapest_flights"
+objective = "Find cheapest path with at most k stops (Bellman-Ford variant)."
+acceptance = [
+  "Returns minimum cost or -1",
+  "Respects k stops constraint",
+  "Uses BFS or Bellman-Ford with stops limit",
+]
+hints = [
+  "BFS with (cost, node, stops)",
+  "Or Bellman-Ford with k+1 iterations",
+  "Track min cost to each node",
+]
+dependencies = ["network-delay-time"]
+
+[[exercises]]
+slug = "swim-rising-water"
+title = "4. Swim in Rising Water - Binary Search + BFS"
+kata = "neetcode_swim_rising_water"
+objective = "Find minimum time to swim from top-left to bottom-right."
+acceptance = [
+  "Returns minimum maximum elevation",
+  "Uses Dijkstra or binary search + BFS",
+  "Handles grid constraints",
+]
+hints = [
+  "Binary search on answer (time)",
+  "For each time, BFS to check reachability",
+  "Or use Dijkstra with elevation as priority",
+]
+dependencies = ["network-delay-time"]
+
+[[exercises]]
+slug = "alien-dictionary"
+title = "5. Alien Dictionary - Topological Sort"
+kata = "neetcode_alien_dictionary"
+objective = "Derive alien alphabet order using topological sort."
+acceptance = [
+  "Returns valid ordering or empty string",
+  "Builds graph from word comparisons",
+  "Detects cycles (invalid ordering)",
+]
+hints = [
+  "Compare adjacent words to find char order",
+  "Build directed graph of char dependencies",
+  "Topological sort on character graph",
+]
+dependencies = ["reconstruct-itinerary"]

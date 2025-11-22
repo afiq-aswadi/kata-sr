@@ -1,0 +1,115 @@
+[workbook]
+id = "neetcode_bit_manipulation"
+title = "NeetCode Bit Manipulation: Efficient Low-Level Operations"
+summary = "Master bitwise operations for optimization and mathematical problems."
+learning_goals = [
+  "Use AND, OR, XOR, shift operators effectively",
+  "Apply XOR properties (a ^ a = 0, a ^ 0 = a)",
+  "Count set bits and manipulate individual bits",
+  "Solve array problems with bit tricks",
+]
+prerequisites = ["neetcode_contains_duplicate"]
+resources = [
+  { title = "Bit Manipulation", url = "https://neetcode.io/courses/dsa-for-beginners/23" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "single-number"
+title = "1. Single Number - XOR Property"
+kata = "neetcode_single_number"
+objective = "Find single number in array where others appear twice using XOR."
+acceptance = [
+  "Returns the single number",
+  "Uses O(n) time and O(1) space",
+  "Uses XOR property: a ^ a = 0",
+]
+hints = [
+  "XOR all numbers together",
+  "Duplicates cancel out (a ^ a = 0)",
+  "Result is the single number",
+]
+dependencies = []
+
+[[exercises]]
+slug = "hamming-weight"
+title = "2. Number of 1 Bits - Count Set Bits"
+kata = "neetcode_hamming_weight"
+objective = "Count number of 1 bits in binary representation."
+acceptance = [
+  "Returns correct count",
+  "Uses O(1) time (32 iterations max)",
+]
+hints = [
+  "Use n & 1 to check last bit",
+  "Right shift n to check next bit",
+  "Or use n = n & (n-1) trick to clear rightmost 1",
+]
+dependencies = []
+
+[[exercises]]
+slug = "counting-bits"
+title = "3. Counting Bits - DP with Bit Manipulation"
+kata = "neetcode_counting_bits"
+objective = "Count 1 bits for all numbers [0, n] using DP."
+acceptance = [
+  "Returns array of counts",
+  "Uses O(n) time",
+  "DP relation: dp[i] = dp[i >> 1] + (i & 1)",
+]
+hints = [
+  "dp[i] = count of 1s in i",
+  "i >> 1 removes last bit",
+  "i & 1 gives last bit value",
+]
+dependencies = ["hamming-weight"]
+
+[[exercises]]
+slug = "reverse-bits"
+title = "4. Reverse Bits"
+kata = "neetcode_reverse_bits"
+objective = "Reverse bits of a 32-bit unsigned integer."
+acceptance = [
+  "Returns reversed bit representation",
+  "Handles all 32 bits",
+]
+hints = [
+  "Extract bits from right, add to left of result",
+  "Use (n & 1) and left shift result",
+  "Right shift n each iteration",
+]
+dependencies = ["hamming-weight"]
+
+[[exercises]]
+slug = "missing-number"
+title = "5. Missing Number - XOR Trick"
+kata = "neetcode_missing_number"
+objective = "Find missing number in [0, n] using XOR."
+acceptance = [
+  "Returns missing number",
+  "Uses O(n) time and O(1) space",
+  "XOR approach or sum formula",
+]
+hints = [
+  "XOR all indices and all values",
+  "Missing number will remain",
+  "Or use sum: n*(n+1)/2 - actual_sum",
+]
+dependencies = ["single-number"]
+
+[[exercises]]
+slug = "sum-two-integers"
+title = "6. Sum of Two Integers - Without + Operator"
+kata = "neetcode_sum_two_integers"
+objective = "Add two integers using bitwise operations only."
+acceptance = [
+  "Returns correct sum",
+  "Uses only bitwise operators",
+  "Handles negative numbers",
+]
+hints = [
+  "XOR gives sum without carry",
+  "AND + left shift gives carry",
+  "Repeat until no carry",
+]
+dependencies = ["hamming-weight", "reverse-bits"]

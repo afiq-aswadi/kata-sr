@@ -1,0 +1,149 @@
+[workbook]
+id = "neetcode_trees"
+title = "NeetCode Trees: Binary Tree Patterns"
+summary = "Master binary tree traversals, DFS/BFS, and recursive problem-solving."
+learning_goals = [
+  "Implement DFS (preorder, inorder, postorder) and BFS traversals",
+  "Solve problems recursively with base cases and recursive cases",
+  "Apply tree properties (BST, balanced, symmetric)",
+  "Use height and depth concepts effectively",
+]
+prerequisites = ["neetcode_reverse_linked_list"]
+resources = [
+  { title = "Binary Trees Guide", url = "https://neetcode.io/courses/dsa-for-beginners/14" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "invert-tree"
+title = "1. Invert Binary Tree - Basic Recursion"
+kata = "neetcode_invert_tree"
+objective = "Invert a binary tree (swap left and right subtrees) recursively."
+acceptance = [
+  "Returns root of inverted tree",
+  "Handles empty tree and single node",
+  "Uses O(n) time and O(h) space",
+]
+hints = [
+  "Base case: null node returns null",
+  "Recursively invert left and right subtrees",
+  "Swap left and right",
+]
+dependencies = []
+
+[[exercises]]
+slug = "max-depth"
+title = "2. Maximum Depth of Binary Tree"
+kata = "neetcode_max_depth"
+objective = "Find maximum depth using recursion."
+acceptance = [
+  "Returns correct depth",
+  "Handles empty tree (depth = 0)",
+  "Uses O(n) time and O(h) space",
+]
+hints = [
+  "Base case: null node has depth 0",
+  "Depth = 1 + max(left_depth, right_depth)",
+]
+dependencies = []
+
+[[exercises]]
+slug = "same-tree"
+title = "3. Same Tree - Structural Comparison"
+kata = "neetcode_same_tree"
+objective = "Check if two trees are identical structurally and by value."
+acceptance = [
+  "Returns True if identical",
+  "Compares structure and values",
+  "Handles null trees",
+]
+hints = [
+  "Base cases: both null (True), one null (False)",
+  "Check values match AND recurse on subtrees",
+]
+dependencies = ["max-depth"]
+
+[[exercises]]
+slug = "subtree"
+title = "4. Subtree of Another Tree"
+kata = "neetcode_subtree"
+objective = "Check if tree contains given subtree."
+acceptance = [
+  "Returns True if subtree exists",
+  "Checks all possible root positions",
+  "Uses O(m*n) time in worst case",
+]
+hints = [
+  "For each node, check if subtree matches",
+  "Use isSameTree helper function",
+  "Recursively check left and right",
+]
+dependencies = ["same-tree"]
+
+[[exercises]]
+slug = "level-order"
+title = "5. Binary Tree Level Order Traversal - BFS"
+kata = "neetcode_level_order"
+objective = "Return level-by-level traversal using BFS (queue)."
+acceptance = [
+  "Returns list of lists (one per level)",
+  "Uses O(n) time and O(n) space",
+  "Correctly separates levels",
+]
+hints = [
+  "Use queue (deque) for BFS",
+  "Process one level at a time (track level size)",
+  "Add children to queue for next level",
+]
+dependencies = ["max-depth"]
+
+[[exercises]]
+slug = "validate-bst"
+title = "6. Validate Binary Search Tree"
+kata = "neetcode_validate_bst"
+objective = "Check if tree is valid BST using in-order traversal or bounds."
+acceptance = [
+  "Returns True if valid BST",
+  "Handles edge cases with INT_MIN/MAX",
+  "Uses O(n) time and O(h) space",
+]
+hints = [
+  "Pass valid range (min, max) to each node",
+  "Left subtree: (min, node.val)",
+  "Right subtree: (node.val, max)",
+]
+dependencies = ["subtree"]
+
+[[exercises]]
+slug = "kth-smallest-bst"
+title = "7. Kth Smallest in BST - In-order Traversal"
+kata = "neetcode_kth_smallest_bst"
+objective = "Find kth smallest element using in-order traversal."
+acceptance = [
+  "Returns correct kth smallest value",
+  "Uses O(k) average time",
+  "In-order traversal visits BST in sorted order",
+]
+hints = [
+  "In-order traversal gives sorted sequence",
+  "Return kth element in traversal",
+  "Can stop early after k elements",
+]
+dependencies = ["validate-bst"]
+
+[[exercises]]
+slug = "build-tree"
+title = "8. Construct Binary Tree from Preorder/Inorder"
+kata = "neetcode_build_tree"
+objective = "Reconstruct tree from preorder and inorder traversals."
+acceptance = [
+  "Returns correct tree structure",
+  "Handles trees with negative values",
+  "Uses O(n) time with hashmap optimization",
+]
+hints = [
+  "Preorder[0] is root",
+  "Find root in inorder to split left/right",
+  "Recursively build left and right subtrees",
+]
+dependencies = ["level-order", "validate-bst"]

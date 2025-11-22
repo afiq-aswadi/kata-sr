@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeetCode Trees: Binary Tree Patterns</title>
+    <style>
+        :root {
+            --cream: #FAF8F3;
+            --dark-cream: #F5F1E8;
+            --brown: #4A3F35;
+            --light-brown: #8B7355;
+            --accent: #D4A574;
+            --code-bg: #FFF9F0;
+            --border: #E8DCC8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(to bottom, var(--cream) 0%, var(--dark-cream) 100%);
+            color: var(--brown);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--cream);
+            padding: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(74, 63, 53, 0.15);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 1.5rem,
+                    rgba(212, 165, 116, 0.03) 1.5rem,
+                    rgba(212, 165, 116, 0.03) calc(1.5rem + 1px)
+                );
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--brown);
+            margin-bottom: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--light-brown);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--brown);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--brown);
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .visual-box {
+            background: var(--code-bg);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+            max-width: 100%;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border-left: 4px solid var(--accent);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block code {
+            color: var(--brown);
+        }
+
+        .keyword { color: #8B4513; font-weight: bold; }
+        .function { color: #6B4423; }
+        .string { color: #A0826D; }
+        .comment { color: #B8A890; font-style: italic; }
+        .number { color: #D4A574; }
+
+        .intuition {
+            background: linear-gradient(135deg, #FFF9F0 0%, #FAF8F3 100%);
+            border-left: 5px solid var(--accent);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: inset 0 1px 3px rgba(212, 165, 116, 0.1);
+        }
+
+        .intuition::before {
+            content: '💡 Intuition';
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .complexity {
+            background: var(--dark-cream);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .exercise-header {
+            background: linear-gradient(to right, var(--accent), var(--light-brown));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            margin: 2rem 0 1.5rem 0;
+        }
+
+        .exercise-header h2 {
+            color: white;
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--code-bg);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .back-link:hover {
+            background: var(--light-brown);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NeetCode Trees</h1>
+        <p class="subtitle">Binary Tree Patterns: Master Recursive Problem-Solving</p>
+
+        <div class="section">
+            <h2>Overview</h2>
+            <p>
+                Binary trees are fundamental data structures that appear in countless interview problems.
+                This workbook teaches you how to think recursively, implement DFS and BFS traversals,
+                and apply tree properties like BST invariants and tree height.
+            </p>
+
+            <h3>Learning Goals</h3>
+            <ul>
+                <li>Implement DFS (preorder, inorder, postorder) and BFS traversals</li>
+                <li>Solve problems recursively with clear base cases and recursive cases</li>
+                <li>Apply tree properties (BST, balanced, symmetric)</li>
+                <li>Use height and depth concepts effectively</li>
+            </ul>
+
+            <h3>Binary Tree Structure</h3>
+            <div class="visual-box">Binary Tree Node:
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+Example Tree:
+        4
+       / \
+      2   6
+     / \ / \
+    1  3 5  7
+
+Height = 3 (max depth)
+Nodes = 7</div>
+
+            <h3>Traversal Patterns</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Traversal</th>
+                        <th>Order</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Preorder</strong></td>
+                        <td>Root → Left → Right</td>
+                        <td>Tree copying, prefix expressions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Inorder</strong></td>
+                        <td>Left → Root → Right</td>
+                        <td>BST sorted order, validation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Postorder</strong></td>
+                        <td>Left → Right → Root</td>
+                        <td>Tree deletion, postfix expressions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level-order (BFS)</strong></td>
+                        <td>Level by level</td>
+                        <td>Shortest path, level-based processing</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Exercise 1: Invert Binary Tree -->
+        <div class="exercise-header">
+            <h2>Exercise 1: Invert Binary Tree - Basic Recursion</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Invert a binary tree (swap left and right subtrees) recursively.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given the root of a binary tree, invert the tree by swapping the left and right
+                children of every node. Return the root of the inverted tree.
+            </p>
+
+            <div class="visual-box">Original Tree:              Inverted Tree:
+
+     4                       4
+    / \                     / \
+   2   7      ==>          7   2
+  / \ / \                 / \ / \
+ 1  3 6  9               9  6 3  1</div>
+
+            <div class="intuition">
+                The key insight is that inverting a tree is a recursive operation. To invert a tree:
+                <ol>
+                    <li>Invert the left subtree</li>
+                    <li>Invert the right subtree</li>
+                    <li>Swap the left and right pointers</li>
+                </ol>
+                The base case is when the node is null - there's nothing to invert.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">invertTree</span>(root):
+    <span class="comment"># Base case: empty tree</span>
+    <span class="keyword">if not</span> root:
+        <span class="keyword">return</span> <span class="keyword">None</span>
+
+    <span class="comment"># Recursively invert subtrees</span>
+    left = <span class="function">invertTree</span>(root.left)
+    right = <span class="function">invertTree</span>(root.right)
+
+    <span class="comment"># Swap left and right</span>
+    root.left = right
+    root.right = left
+
+    <span class="keyword">return</span> root</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n) - visit every node once<br>
+                • Space: O(h) - recursion stack, where h is height (O(log n) balanced, O(n) worst)
+            </div>
+        </div>
+
+        <!-- Exercise 2: Maximum Depth -->
+        <div class="exercise-header">
+            <h2>Exercise 2: Maximum Depth of Binary Tree</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find the maximum depth of a binary tree using recursion.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given the root of a binary tree, return its maximum depth. The maximum depth is
+                the number of nodes along the longest path from the root node down to the farthest leaf node.
+            </p>
+
+            <div class="visual-box">Example Tree:
+
+        3
+       / \
+      9  20
+        /  \
+       15   7
+
+Depth = 3 (path: 3 → 20 → 15 or 7)</div>
+
+            <div class="intuition">
+                Think recursively: the depth of a tree is 1 (for the current node) plus the maximum
+                depth of its subtrees. If the tree is empty, the depth is 0.
+                <br><br>
+                <strong>Recurrence:</strong> depth(node) = 1 + max(depth(left), depth(right))
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">maxDepth</span>(root):
+    <span class="comment"># Base case: empty tree has depth 0</span>
+    <span class="keyword">if not</span> root:
+        <span class="keyword">return</span> <span class="number">0</span>
+
+    <span class="comment"># Recursively find depth of subtrees</span>
+    left_depth = <span class="function">maxDepth</span>(root.left)
+    right_depth = <span class="function">maxDepth</span>(root.right)
+
+    <span class="comment"># Depth is 1 + max of subtree depths</span>
+    <span class="keyword">return</span> <span class="number">1</span> + <span class="function">max</span>(left_depth, right_depth)</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n) - visit every node once<br>
+                • Space: O(h) - recursion stack depth
+            </div>
+        </div>
+
+        <!-- Exercise 3: Same Tree -->
+        <div class="exercise-header">
+            <h2>Exercise 3: Same Tree - Structural Comparison</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Check if two binary trees are identical in structure and values.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given the roots of two binary trees p and q, return true if they are identical
+                (same structure and same node values), otherwise return false.
+            </p>
+
+            <div class="visual-box">Example 1: Same Trees        Example 2: Different Trees
+
+    1       1                    1       1
+   / \     / \                  / \       \
+  2   3   2   3                2   1       2
+
+  Same = True                  Same = False</div>
+
+            <div class="intuition">
+                Two trees are identical if:
+                <ol>
+                    <li>Both roots have the same value</li>
+                    <li>Their left subtrees are identical</li>
+                    <li>Their right subtrees are identical</li>
+                </ol>
+                Base cases: if both are null, return true. If only one is null, return false.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">isSameTree</span>(p, q):
+    <span class="comment"># Both null - identical</span>
+    <span class="keyword">if not</span> p <span class="keyword">and not</span> q:
+        <span class="keyword">return</span> <span class="keyword">True</span>
+
+    <span class="comment"># One null, one not - different</span>
+    <span class="keyword">if not</span> p <span class="keyword">or not</span> q:
+        <span class="keyword">return</span> <span class="keyword">False</span>
+
+    <span class="comment"># Check value and recurse on subtrees</span>
+    <span class="keyword">return</span> (p.val == q.val <span class="keyword">and</span>
+            <span class="function">isSameTree</span>(p.left, q.left) <span class="keyword">and</span>
+            <span class="function">isSameTree</span>(p.right, q.right))</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(min(n, m)) - visit nodes until difference found<br>
+                • Space: O(min(h1, h2)) - recursion stack
+            </div>
+        </div>
+
+        <!-- Exercise 4: Subtree -->
+        <div class="exercise-header">
+            <h2>Exercise 4: Subtree of Another Tree</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Determine if a tree contains a given subtree.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given the roots of two binary trees root and subRoot, return true if there is a
+                subtree of root with the same structure and node values as subRoot.
+            </p>
+
+            <div class="visual-box">Main Tree:          SubRoot:      Result:
+
+      3                4
+     / \              / \
+    4   5            1   2          True
+   / \
+  1   2
+
+The subtree rooted at node 4 matches subRoot.</div>
+
+            <div class="intuition">
+                To check if subRoot is a subtree of root:
+                <ol>
+                    <li>Check if root and subRoot are identical (use isSameTree)</li>
+                    <li>If not, recursively check left and right subtrees of root</li>
+                </ol>
+                This explores all possible positions where subRoot could appear.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">isSubtree</span>(root, subRoot):
+    <span class="comment"># Empty main tree can't contain non-empty subtree</span>
+    <span class="keyword">if not</span> root:
+        <span class="keyword">return</span> <span class="keyword">False</span>
+
+    <span class="comment"># Check if trees are identical from this node</span>
+    <span class="keyword">if</span> <span class="function">isSameTree</span>(root, subRoot):
+        <span class="keyword">return</span> <span class="keyword">True</span>
+
+    <span class="comment"># Recursively check left and right subtrees</span>
+    <span class="keyword">return</span> (<span class="function">isSubtree</span>(root.left, subRoot) <span class="keyword">or</span>
+            <span class="function">isSubtree</span>(root.right, subRoot))
+
+<span class="keyword">def</span> <span class="function">isSameTree</span>(p, q):
+    <span class="keyword">if not</span> p <span class="keyword">and not</span> q:
+        <span class="keyword">return</span> <span class="keyword">True</span>
+    <span class="keyword">if not</span> p <span class="keyword">or not</span> q:
+        <span class="keyword">return</span> <span class="keyword">False</span>
+    <span class="keyword">return</span> (p.val == q.val <span class="keyword">and</span>
+            <span class="function">isSameTree</span>(p.left, q.left) <span class="keyword">and</span>
+            <span class="function">isSameTree</span>(p.right, q.right))</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(m × n) - worst case check subtree at every node<br>
+                • Space: O(h) - recursion stack depth
+            </div>
+        </div>
+
+        <!-- Exercise 5: Level Order Traversal -->
+        <div class="exercise-header">
+            <h2>Exercise 5: Binary Tree Level Order Traversal - BFS</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Return level-by-level traversal using BFS (queue).</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given the root of a binary tree, return the level order traversal of its nodes' values
+                (i.e., from left to right, level by level).
+            </p>
+
+            <div class="visual-box">Tree:                Output:
+
+    3                [[3],
+   / \                [9, 20],
+  9  20               [15, 7]]
+    /  \
+   15   7
+
+Level 0: [3]
+Level 1: [9, 20]
+Level 2: [15, 7]</div>
+
+            <div class="intuition">
+                Use BFS with a queue. The key insight is tracking when one level ends and the next begins:
+                <ol>
+                    <li>Start with root in queue</li>
+                    <li>For each level, process all nodes currently in queue</li>
+                    <li>Add their children to queue for next level</li>
+                </ol>
+                Track the number of nodes at current level to separate levels.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">from</span> collections <span class="keyword">import</span> deque
+
+<span class="keyword">def</span> <span class="function">levelOrder</span>(root):
+    <span class="keyword">if not</span> root:
+        <span class="keyword">return</span> []
+
+    result = []
+    queue = deque([root])
+
+    <span class="keyword">while</span> queue:
+        level_size = <span class="function">len</span>(queue)
+        level = []
+
+        <span class="comment"># Process all nodes at current level</span>
+        <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="function">range</span>(level_size):
+            node = queue.popleft()
+            level.append(node.val)
+
+            <span class="comment"># Add children for next level</span>
+            <span class="keyword">if</span> node.left:
+                queue.append(node.left)
+            <span class="keyword">if</span> node.right:
+                queue.append(node.right)
+
+        result.append(level)
+
+    <span class="keyword">return</span> result</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n) - visit every node once<br>
+                • Space: O(n) - queue can hold up to n/2 nodes at last level
+            </div>
+        </div>
+
+        <!-- Exercise 6: Validate BST -->
+        <div class="exercise-header">
+            <h2>Exercise 6: Validate Binary Search Tree</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Check if a tree is a valid BST using bounds checking.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given the root of a binary tree, determine if it is a valid binary search tree (BST).
+                A valid BST has all left descendants < node < all right descendants.
+            </p>
+
+            <div class="visual-box">Valid BST:              Invalid BST:
+
+      5                     5
+     / \                   / \
+    1   8                 1   4
+       / \                   / \
+      6   9                 3   6
+
+All nodes in left < 5    Node 4 in right subtree
+All nodes in right > 5   but 4 < 5 (violates BST)</div>
+
+            <div class="intuition">
+                The mistake: just checking node.left < node < node.right is insufficient.
+                We need to check ALL descendants, not just immediate children.
+                <br><br>
+                Solution: Pass down valid range (min, max) for each node:
+                <ul>
+                    <li>Root can be any value: (-∞, +∞)</li>
+                    <li>Left child must be in range (min, parent.val)</li>
+                    <li>Right child must be in range (parent.val, max)</li>
+                </ul>
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">isValidBST</span>(root):
+    <span class="keyword">def</span> <span class="function">validate</span>(node, min_val, max_val):
+        <span class="comment"># Empty tree is valid</span>
+        <span class="keyword">if not</span> node:
+            <span class="keyword">return</span> <span class="keyword">True</span>
+
+        <span class="comment"># Check if current node violates bounds</span>
+        <span class="keyword">if not</span> (min_val < node.val < max_val):
+            <span class="keyword">return</span> <span class="keyword">False</span>
+
+        <span class="comment"># Recursively validate subtrees with updated bounds</span>
+        <span class="keyword">return</span> (<span class="function">validate</span>(node.left, min_val, node.val) <span class="keyword">and</span>
+                <span class="function">validate</span>(node.right, node.val, max_val))
+
+    <span class="keyword">return</span> <span class="function">validate</span>(root, <span class="function">float</span>(<span class="string">'-inf'</span>), <span class="function">float</span>(<span class="string">'inf'</span>))</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n) - visit every node once<br>
+                • Space: O(h) - recursion stack depth
+            </div>
+        </div>
+
+        <!-- Exercise 7: Kth Smallest in BST -->
+        <div class="exercise-header">
+            <h2>Exercise 7: Kth Smallest in BST - In-order Traversal</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find the kth smallest element using in-order traversal.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given the root of a binary search tree and an integer k, return the kth smallest
+                value (1-indexed) in the tree.
+            </p>
+
+            <div class="visual-box">BST:                In-order traversal:
+
+      5                [1, 2, 3, 5, 6]
+     / \
+    3   6              k=1 → 1 (1st smallest)
+   / \                 k=3 → 3 (3rd smallest)
+  1   4                k=5 → 6 (5th smallest)</div>
+
+            <div class="intuition">
+                Key insight: <strong>In-order traversal of a BST visits nodes in sorted order!</strong>
+                <br><br>
+                Traversal order: Left → Root → Right
+                <br>
+                For BST with root value N:
+                <ul>
+                    <li>All left descendants are < N</li>
+                    <li>All right descendants are > N</li>
+                    <li>In-order gives sorted sequence</li>
+                </ul>
+                Simply perform in-order traversal and return the kth element.
+            </div>
+
+            <h3>Solution - Iterative with Stack</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">kthSmallest</span>(root, k):
+    stack = []
+    curr = root
+    count = <span class="number">0</span>
+
+    <span class="keyword">while</span> curr <span class="keyword">or</span> stack:
+        <span class="comment"># Go to leftmost node</span>
+        <span class="keyword">while</span> curr:
+            stack.append(curr)
+            curr = curr.left
+
+        <span class="comment"># Process node (in-order)</span>
+        curr = stack.pop()
+        count += <span class="number">1</span>
+
+        <span class="keyword">if</span> count == k:
+            <span class="keyword">return</span> curr.val
+
+        <span class="comment"># Move to right subtree</span>
+        curr = curr.right
+
+    <span class="keyword">return</span> <span class="keyword">None</span></code></div>
+
+            <h3>Solution - Recursive</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">kthSmallest</span>(root, k):
+    result = []
+
+    <span class="keyword">def</span> <span class="function">inorder</span>(node):
+        <span class="keyword">if not</span> node <span class="keyword">or</span> <span class="function">len</span>(result) >= k:
+            <span class="keyword">return</span>
+
+        <span class="function">inorder</span>(node.left)
+        result.append(node.val)
+        <span class="function">inorder</span>(node.right)
+
+    <span class="function">inorder</span>(root)
+    <span class="keyword">return</span> result[k - <span class="number">1</span>]</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(h + k) - descend to leftmost, then k iterations<br>
+                • Space: O(h) - stack depth
+            </div>
+        </div>
+
+        <!-- Exercise 8: Build Tree from Traversals -->
+        <div class="exercise-header">
+            <h2>Exercise 8: Construct Binary Tree from Preorder/Inorder</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Reconstruct a binary tree from preorder and inorder traversals.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given two integer arrays preorder and inorder, where preorder is the preorder traversal
+                and inorder is the inorder traversal of a binary tree, construct and return the binary tree.
+            </p>
+
+            <div class="visual-box">preorder = [3, 9, 20, 15, 7]
+inorder  = [9, 3, 15, 20, 7]
+
+Tree:
+      3
+     / \
+    9  20
+      /  \
+     15   7
+
+How it works:
+1. preorder[0] = 3 is root
+2. Find 3 in inorder → splits left/right
+   Left: [9]    Right: [15, 20, 7]
+3. Recursively build subtrees</div>
+
+            <div class="intuition">
+                Key insights:
+                <ol>
+                    <li><strong>Preorder</strong>: first element is always the root</li>
+                    <li><strong>Inorder</strong>: elements left of root are left subtree,
+                        elements right of root are right subtree</li>
+                    <li>Use these properties recursively to build entire tree</li>
+                </ol>
+                Optimization: use hashmap to find root position in inorder in O(1) time.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">def</span> <span class="function">buildTree</span>(preorder, inorder):
+    <span class="comment"># Build hashmap for O(1) lookup of root index</span>
+    inorder_map = {val: idx <span class="keyword">for</span> idx, val <span class="keyword">in</span> <span class="function">enumerate</span>(inorder)}
+    pre_idx = [<span class="number">0</span>]  <span class="comment"># Use list to maintain reference in nested function</span>
+
+    <span class="keyword">def</span> <span class="function">build</span>(left, right):
+        <span class="keyword">if</span> left > right:
+            <span class="keyword">return</span> <span class="keyword">None</span>
+
+        <span class="comment"># Root is current element in preorder</span>
+        root_val = preorder[pre_idx[<span class="number">0</span>]]
+        root = TreeNode(root_val)
+        pre_idx[<span class="number">0</span>] += <span class="number">1</span>
+
+        <span class="comment"># Find split point in inorder</span>
+        mid = inorder_map[root_val]
+
+        <span class="comment"># Build subtrees (order matters: left first!)</span>
+        root.left = <span class="function">build</span>(left, mid - <span class="number">1</span>)
+        root.right = <span class="function">build</span>(mid + <span class="number">1</span>, right)
+
+        <span class="keyword">return</span> root
+
+    <span class="keyword">return</span> <span class="function">build</span>(<span class="number">0</span>, <span class="function">len</span>(inorder) - <span class="number">1</span>)</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n) - visit each node once, O(1) lookups<br>
+                • Space: O(n) - hashmap and recursion stack
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Summary</h2>
+            <p>
+                You've now mastered the fundamental binary tree patterns! You can:
+            </p>
+            <ul>
+                <li>✓ Think recursively with clear base cases</li>
+                <li>✓ Implement DFS (preorder, inorder, postorder) and BFS traversals</li>
+                <li>✓ Apply BST properties for validation and search</li>
+                <li>✓ Reconstruct trees from traversal sequences</li>
+            </ul>
+            <p>
+                These patterns form the foundation for more advanced tree problems like diameter,
+                lowest common ancestor, and tree serialization.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

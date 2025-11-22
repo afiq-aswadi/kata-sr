@@ -1,0 +1,151 @@
+[workbook]
+id = "neetcode_linked_list"
+title = "NeetCode Linked List: Pointer Manipulation Mastery"
+summary = "Master linked list patterns from basic traversal to complex pointer manipulation."
+learning_goals = [
+  "Navigate and manipulate linked list pointers confidently",
+  "Use fast/slow pointer technique for cycle detection",
+  "Reverse linked lists iteratively and recursively",
+  "Handle edge cases with null pointers and empty lists",
+]
+prerequisites = ["neetcode_two_sum"]
+resources = [
+  { title = "Linked List Guide", url = "https://neetcode.io/courses/dsa-for-beginners/7" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "reverse-linked-list"
+title = "1. Reverse Linked List - Basic Pointer Manipulation"
+kata = "neetcode_reverse_linked_list"
+objective = "Reverse a singly linked list iteratively."
+acceptance = [
+  "Returns new head of reversed list",
+  "Uses O(n) time and O(1) space",
+  "Handles empty list and single node",
+]
+hints = [
+  "Use three pointers: prev, curr, next",
+  "Reverse link: curr.next = prev",
+  "Move all pointers forward",
+]
+dependencies = []
+
+[[exercises]]
+slug = "merge-two-sorted-lists"
+title = "2. Merge Two Sorted Lists"
+kata = "neetcode_merge_two_sorted_lists"
+objective = "Merge two sorted linked lists into one sorted list."
+acceptance = [
+  "Returns head of merged list",
+  "Maintains sorted order",
+  "Handles lists of different lengths",
+]
+hints = [
+  "Use dummy node to simplify head handling",
+  "Compare list1 and list2 values, attach smaller",
+  "Advance pointer in chosen list",
+]
+dependencies = ["reverse-linked-list"]
+
+[[exercises]]
+slug = "linked-list-cycle"
+title = "3. Linked List Cycle - Fast/Slow Pointers"
+kata = "neetcode_linked_list_cycle"
+objective = "Detect cycle in linked list using Floyd's algorithm."
+acceptance = [
+  "Returns True if cycle exists",
+  "Uses O(n) time and O(1) space",
+  "Handles empty list and single node",
+]
+hints = [
+  "Use two pointers: slow (1 step) and fast (2 steps)",
+  "If fast catches slow, cycle exists",
+  "If fast reaches None, no cycle",
+]
+dependencies = []
+
+[[exercises]]
+slug = "reorder-list"
+title = "4. Reorder List - Multiple Techniques"
+kata = "neetcode_reorder_list"
+objective = "Reorder list L0→L1→...→Ln to L0→Ln→L1→Ln-1... in-place."
+acceptance = [
+  "Modifies list in-place",
+  "Uses O(n) time and O(1) space",
+  "Handles odd and even length lists",
+]
+hints = [
+  "Find middle using slow/fast pointers",
+  "Reverse second half",
+  "Merge two halves alternately",
+]
+dependencies = ["reverse-linked-list", "linked-list-cycle", "merge-two-sorted-lists"]
+
+[[exercises]]
+slug = "remove-nth-node"
+title = "5. Remove Nth Node From End"
+kata = "neetcode_remove_nth_node"
+objective = "Remove nth node from end using two-pointer technique."
+acceptance = [
+  "Returns head of modified list",
+  "Uses O(n) time and O(1) space",
+  "Handles removing head node",
+]
+hints = [
+  "Use two pointers with n-node gap",
+  "Move both until fast reaches end",
+  "Slow pointer is at (n-1)th from end",
+]
+dependencies = ["linked-list-cycle"]
+
+[[exercises]]
+slug = "copy-random-list"
+title = "6. Copy List with Random Pointer"
+kata = "neetcode_copy_random_list"
+objective = "Deep copy linked list with random pointers."
+acceptance = [
+  "Creates independent deep copy",
+  "Copies both next and random pointers",
+  "Uses O(n) time and O(n) or O(1) space",
+]
+hints = [
+  "First pass: create nodes, map old→new",
+  "Second pass: set next and random using map",
+  "Or: interleave new nodes, then separate",
+]
+dependencies = ["reverse-linked-list"]
+
+[[exercises]]
+slug = "add-two-numbers"
+title = "7. Add Two Numbers - Digit Manipulation"
+kata = "neetcode_add_two_numbers"
+objective = "Add two numbers represented as linked lists (reverse order)."
+acceptance = [
+  "Returns head of sum list",
+  "Handles carry correctly",
+  "Works with lists of different lengths",
+]
+hints = [
+  "Process digit by digit with carry",
+  "Handle carry at the end",
+  "Use dummy node for result",
+]
+dependencies = ["merge-two-sorted-lists"]
+
+[[exercises]]
+slug = "find-duplicate"
+title = "8. Find Duplicate Number - Cycle Detection Application"
+kata = "neetcode_find_duplicate"
+objective = "Find duplicate in array [1,n] using linked list cycle detection."
+acceptance = [
+  "Returns the duplicate number",
+  "Uses O(n) time and O(1) space",
+  "Does not modify array",
+]
+hints = [
+  "Treat array as linked list: nums[i] points to nums[nums[i]]",
+  "Use Floyd's cycle detection",
+  "Find cycle entry point = duplicate",
+]
+dependencies = ["linked-list-cycle"]

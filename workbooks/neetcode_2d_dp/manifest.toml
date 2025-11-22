@@ -1,0 +1,133 @@
+[workbook]
+id = "neetcode_2d_dp"
+title = "NeetCode 2-D DP: Grid and String Problems"
+summary = "Master 2-D dynamic programming for grid paths, string matching, and complex state problems."
+learning_goals = [
+  "Build 2-D DP tables from recurrence relations",
+  "Solve grid path-counting problems",
+  "Apply DP to string edit distance and subsequences",
+  "Optimize space with rolling arrays",
+]
+prerequisites = ["neetcode_coin_change", "neetcode_longest_increasing_subseq"]
+resources = [
+  { title = "2-D Dynamic Programming", url = "https://neetcode.io/courses/dsa-for-beginners/28" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "unique-paths"
+title = "1. Unique Paths - Grid DP Basics"
+kata = "neetcode_unique_paths"
+objective = "Count paths from top-left to bottom-right in grid."
+acceptance = [
+  "Returns number of unique paths",
+  "Only move right or down",
+  "Uses O(m×n) or O(n) space",
+]
+hints = [
+  "dp[i][j] = paths to reach cell (i,j)",
+  "dp[i][j] = dp[i-1][j] + dp[i][j-1]",
+  "Can optimize to single row",
+]
+dependencies = []
+
+[[exercises]]
+slug = "lcs"
+title = "2. Longest Common Subsequence"
+kata = "neetcode_lcs"
+objective = "Find length of longest common subsequence of two strings."
+acceptance = [
+  "Returns LCS length",
+  "Uses 2-D DP table",
+  "Handles empty strings",
+]
+hints = [
+  "dp[i][j] = LCS of text1[0:i] and text2[0:j]",
+  "If chars match: dp[i][j] = 1 + dp[i-1][j-1]",
+  "Else: dp[i][j] = max(dp[i-1][j], dp[i][j-1])",
+]
+dependencies = ["unique-paths"]
+
+[[exercises]]
+slug = "edit-distance"
+title = "3. Edit Distance - Levenshtein Distance"
+kata = "neetcode_edit_distance"
+objective = "Find minimum edits to convert one string to another."
+acceptance = [
+  "Returns minimum edit distance",
+  "Supports insert, delete, replace",
+  "Uses O(m×n) time and space",
+]
+hints = [
+  "dp[i][j] = min edits for word1[0:i] → word2[0:j]",
+  "If match: dp[i][j] = dp[i-1][j-1]",
+  "Else: min(insert, delete, replace) + 1",
+]
+dependencies = ["lcs"]
+
+[[exercises]]
+slug = "interleaving-string"
+title = "4. Interleaving String"
+kata = "neetcode_interleaving_string"
+objective = "Check if s3 is interleaving of s1 and s2."
+acceptance = [
+  "Returns True if valid interleaving",
+  "Uses 2-D DP",
+  "Preserves order from both strings",
+]
+hints = [
+  "dp[i][j] = can form s3[0:i+j] from s1[0:i] and s2[0:j]",
+  "Check if current char matches s1 or s2",
+]
+dependencies = ["lcs"]
+
+[[exercises]]
+slug = "distinct-subsequences"
+title = "5. Distinct Subsequences"
+kata = "neetcode_distinct_subsequences"
+objective = "Count distinct subsequences of s matching t."
+acceptance = [
+  "Returns count of distinct ways",
+  "Uses 2-D DP",
+  "Handles large counts",
+]
+hints = [
+  "dp[i][j] = ways to form t[0:j] from s[0:i]",
+  "If match: dp[i][j] = dp[i-1][j-1] + dp[i-1][j]",
+  "Else: dp[i][j] = dp[i-1][j]",
+]
+dependencies = ["lcs"]
+
+[[exercises]]
+slug = "regex-matching"
+title = "6. Regular Expression Matching"
+kata = "neetcode_regex_matching"
+objective = "Implement regex matching with '.' and '*'."
+acceptance = [
+  "Returns True if string matches pattern",
+  "Supports '.' (any char) and '*' (0+ of previous)",
+  "Uses 2-D DP",
+]
+hints = [
+  "dp[i][j] = does s[0:i] match p[0:j]",
+  "Handle '.' and '*' cases separately",
+  "For '*': try 0 matches or 1+ matches",
+]
+dependencies = ["edit-distance", "distinct-subsequences"]
+
+[[exercises]]
+slug = "burst-balloons"
+title = "7. Burst Balloons - Interval DP"
+kata = "neetcode_burst_balloons"
+objective = "Maximize coins from bursting balloons optimally."
+acceptance = [
+  "Returns maximum coins",
+  "Uses interval DP",
+  "Think backwards: last balloon burst",
+]
+hints = [
+  "Add 1s at boundaries",
+  "dp[left][right] = max coins for subarray",
+  "Try each balloon as last to burst",
+]
+dependencies = ["unique-paths", "lcs"]

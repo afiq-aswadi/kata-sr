@@ -1,0 +1,65 @@
+[workbook]
+id = "neetcode_tries"
+title = "NeetCode Tries: Prefix Tree Patterns"
+summary = "Master trie (prefix tree) for efficient string search and prefix matching."
+learning_goals = [
+  "Implement trie with insert, search, and startsWith operations",
+  "Use tries for word search and autocomplete problems",
+  "Apply backtracking on tries for word search problems",
+]
+prerequisites = ["neetcode_group_anagrams"]
+resources = [
+  { title = "Trie Data Structure", url = "https://neetcode.io/courses/dsa-for-beginners/17" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "trie"
+title = "1. Implement Trie (Prefix Tree)"
+kata = "neetcode_trie"
+objective = "Implement basic trie with insert, search, and startsWith methods."
+acceptance = [
+  "insert(word) adds word to trie",
+  "search(word) returns True if word exists",
+  "startsWith(prefix) returns True if prefix exists",
+  "All operations run in O(m) where m is word length",
+]
+hints = [
+  "Each node has children dict and is_end_of_word flag",
+  "Insert: traverse/create nodes for each character",
+  "Search: traverse and check is_end_of_word",
+]
+dependencies = []
+
+[[exercises]]
+slug = "word-dictionary"
+title = "2. Design Add and Search Words Data Structure"
+kata = "neetcode_word_dictionary"
+objective = "Extend trie to support wildcard '.' searches with backtracking."
+acceptance = [
+  "addWord(word) adds word to trie",
+  "search(word) supports '.' as wildcard",
+  "Handles multiple wildcards in one word",
+]
+hints = [
+  "For '.', try all children recursively",
+  "Use DFS/backtracking for wildcard matching",
+]
+dependencies = ["trie"]
+
+[[exercises]]
+slug = "word-search-ii"
+title = "3. Word Search II - Trie + Backtracking"
+kata = "neetcode_word_search_ii"
+objective = "Find all words from dictionary in 2D board using trie and backtracking."
+acceptance = [
+  "Returns all words found in board",
+  "Uses trie to avoid checking non-words",
+  "Prunes search when prefix doesn't exist in trie",
+]
+hints = [
+  "Build trie from word list",
+  "DFS from each cell, traverse trie simultaneously",
+  "Mark cells visited during DFS (backtrack)",
+]
+dependencies = ["word-dictionary"]

@@ -1,0 +1,92 @@
+[workbook]
+id = "neetcode_heap"
+title = "NeetCode Heap: Priority Queue Mastery"
+summary = "Master heap data structure for efficient priority queue operations."
+learning_goals = [
+  "Use Python's heapq for min-heap operations",
+  "Implement max-heap using negation trick",
+  "Apply heaps to top-k and streaming problems",
+  "Combine heaps with other data structures (dict, set)",
+]
+prerequisites = ["neetcode_top_k_frequent"]
+resources = [
+  { title = "Heap/Priority Queue", url = "https://neetcode.io/courses/dsa-for-beginners/18" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "kth-largest"
+title = "1. Kth Largest Element in Array"
+kata = "neetcode_kth_largest"
+objective = "Find kth largest element using heap (quickselect or heap)."
+acceptance = [
+  "Returns correct kth largest",
+  "Uses O(n log k) with heap or O(n) average with quickselect",
+]
+hints = [
+  "Min-heap of size k: pop smallest when size > k",
+  "Final heap top is kth largest",
+]
+dependencies = []
+
+[[exercises]]
+slug = "last-stone-weight"
+title = "2. Last Stone Weight - Max Heap Simulation"
+kata = "neetcode_last_stone_weight"
+objective = "Simulate stone smashing using max-heap."
+acceptance = [
+  "Returns weight of last stone or 0",
+  "Uses heap for efficient max extraction",
+]
+hints = [
+  "Python heapq is min-heap, negate values for max-heap",
+  "Pop two largest, push difference back",
+]
+dependencies = ["kth-largest"]
+
+[[exercises]]
+slug = "k-closest-points"
+title = "3. K Closest Points to Origin"
+kata = "neetcode_k_closest_points"
+objective = "Find k closest points using heap."
+acceptance = [
+  "Returns k closest points",
+  "Uses O(n log k) time with heap",
+]
+hints = [
+  "Use max-heap of size k with distances",
+  "Maintain k smallest distances",
+]
+dependencies = ["kth-largest"]
+
+[[exercises]]
+slug = "kth-largest-stream"
+title = "4. Kth Largest Element in Stream"
+kata = "neetcode_kth_largest_stream"
+objective = "Design class to find kth largest in stream."
+acceptance = [
+  "add(val) efficiently updates stream",
+  "Returns kth largest in O(log k) per add",
+]
+hints = [
+  "Maintain min-heap of size k",
+  "Heap top is always kth largest",
+]
+dependencies = ["kth-largest"]
+
+[[exercises]]
+slug = "median-finder"
+title = "5. Find Median from Data Stream"
+kata = "neetcode_median_finder"
+objective = "Find median from stream using two heaps."
+acceptance = [
+  "addNum(num) in O(log n)",
+  "findMedian() in O(1)",
+  "Uses two heaps to maintain balance",
+]
+hints = [
+  "Max-heap for lower half, min-heap for upper half",
+  "Keep heaps balanced (size difference <= 1)",
+  "Median is top of larger heap or average of both tops",
+]
+dependencies = ["kth-largest-stream"]
