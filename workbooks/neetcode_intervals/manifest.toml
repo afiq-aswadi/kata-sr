@@ -1,0 +1,116 @@
+[workbook]
+id = "neetcode_intervals"
+title = "NeetCode Intervals: Merging and Scheduling"
+summary = "Master interval problems involving merging, intersection, and scheduling."
+learning_goals = [
+  "Sort intervals by start time for efficient processing",
+  "Merge overlapping intervals",
+  "Detect and handle interval conflicts",
+  "Apply greedy strategies for scheduling problems",
+]
+prerequisites = ["neetcode_product_except_self"]
+resources = [
+  { title = "Intervals Patterns", url = "https://neetcode.io/courses/dsa-for-beginners/25" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "insert-interval"
+title = "1. Insert Interval"
+kata = "neetcode_insert_interval"
+objective = "Insert interval and merge overlapping intervals."
+acceptance = [
+  "Returns merged intervals list",
+  "Handles all overlap cases",
+  "Maintains sorted order",
+]
+hints = [
+  "Add all intervals before new interval",
+  "Merge overlapping intervals with new interval",
+  "Add all intervals after",
+]
+dependencies = []
+
+[[exercises]]
+slug = "merge-intervals"
+title = "2. Merge Intervals"
+kata = "neetcode_merge_intervals"
+objective = "Merge all overlapping intervals."
+acceptance = [
+  "Returns minimal merged list",
+  "Sorts intervals first",
+  "Uses O(n log n) time",
+]
+hints = [
+  "Sort by start time",
+  "Compare current interval with last merged",
+  "Merge if overlapping, else add to result",
+]
+dependencies = ["insert-interval"]
+
+[[exercises]]
+slug = "non-overlapping-intervals"
+title = "3. Non-overlapping Intervals - Greedy"
+kata = "neetcode_non_overlapping_intervals"
+objective = "Find minimum removals to make intervals non-overlapping."
+acceptance = [
+  "Returns minimum count",
+  "Uses greedy approach",
+  "O(n log n) time",
+]
+hints = [
+  "Sort by end time",
+  "Keep interval with earliest end (greedy)",
+  "Remove intervals that overlap with kept interval",
+]
+dependencies = ["merge-intervals"]
+
+[[exercises]]
+slug = "meeting-rooms"
+title = "4. Meeting Rooms - Can Attend All"
+kata = "neetcode_meeting_rooms"
+objective = "Check if person can attend all meetings (no overlaps)."
+acceptance = [
+  "Returns True if no overlaps",
+  "Sorts intervals",
+  "O(n log n) time",
+]
+hints = [
+  "Sort by start time",
+  "Check each pair of consecutive intervals",
+]
+dependencies = ["merge-intervals"]
+
+[[exercises]]
+slug = "meeting-rooms-ii"
+title = "5. Meeting Rooms II - Minimum Rooms Needed"
+kata = "neetcode_meeting_rooms_ii"
+objective = "Find minimum meeting rooms needed."
+acceptance = [
+  "Returns minimum rooms required",
+  "Uses heap or sorted events",
+  "O(n log n) time",
+]
+hints = [
+  "Sort start and end times separately",
+  "Use two pointers to track concurrent meetings",
+  "Or use min-heap to track end times",
+]
+dependencies = ["meeting-rooms"]
+
+[[exercises]]
+slug = "min-interval-query"
+title = "6. Minimum Interval to Include Each Query"
+kata = "neetcode_min_interval_query"
+objective = "For each query, find smallest interval containing it."
+acceptance = [
+  "Returns size of smallest interval for each query",
+  "Handles queries not covered by any interval",
+  "Uses sorting and heap for efficiency",
+]
+hints = [
+  "Sort intervals and queries",
+  "Use heap to track active intervals",
+  "Remove intervals that end before query",
+]
+dependencies = ["meeting-rooms-ii"]

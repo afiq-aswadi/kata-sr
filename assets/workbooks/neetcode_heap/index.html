@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeetCode Heap: Priority Queue Mastery</title>
+    <style>
+        :root {
+            --cream: #FAF8F3;
+            --dark-cream: #F5F1E8;
+            --brown: #4A3F35;
+            --light-brown: #8B7355;
+            --accent: #D4A574;
+            --code-bg: #FFF9F0;
+            --border: #E8DCC8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(to bottom, var(--cream) 0%, var(--dark-cream) 100%);
+            color: var(--brown);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--cream);
+            padding: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(74, 63, 53, 0.15);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 1.5rem,
+                    rgba(212, 165, 116, 0.03) 1.5rem,
+                    rgba(212, 165, 116, 0.03) calc(1.5rem + 1px)
+                );
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--brown);
+            margin-bottom: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--light-brown);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--brown);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--brown);
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .visual-box {
+            background: var(--code-bg);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+            max-width: 100%;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border-left: 4px solid var(--accent);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block code {
+            color: var(--brown);
+        }
+
+        .keyword { color: #8B4513; font-weight: bold; }
+        .function { color: #6B4423; }
+        .string { color: #A0826D; }
+        .comment { color: #B8A890; font-style: italic; }
+        .number { color: #D4A574; }
+
+        .intuition {
+            background: linear-gradient(135deg, #FFF9F0 0%, #FAF8F3 100%);
+            border-left: 5px solid var(--accent);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: inset 0 1px 3px rgba(212, 165, 116, 0.1);
+        }
+
+        .intuition::before {
+            content: '💡 Intuition';
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .complexity {
+            background: var(--dark-cream);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .exercise-header {
+            background: linear-gradient(to right, var(--accent), var(--light-brown));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            margin: 2rem 0 1.5rem 0;
+        }
+
+        .exercise-header h2 {
+            color: white;
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--code-bg);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NeetCode Heap</h1>
+        <p class="subtitle">Priority Queue Mastery: Efficient Top-K and Streaming Problems</p>
+
+        <div class="section">
+            <h2>Overview</h2>
+            <p>
+                Heaps (priority queues) are specialized tree-based data structures that efficiently maintain
+                the minimum or maximum element. They're essential for top-k problems, streaming data,
+                and scheduling algorithms.
+            </p>
+
+            <h3>Heap Properties</h3>
+            <div class="visual-box">Binary Min-Heap:
+
+        1
+       / \
+      3   2
+     / \ / \
+    7  5 4  6
+
+Properties:
+- Parent <= Children (min-heap)
+- Complete binary tree
+- Root is minimum element
+
+Array representation: [1, 3, 2, 7, 5, 4, 6]
+  Parent of i: (i-1) // 2
+  Left child:  2*i + 1
+  Right child: 2*i + 2</div>
+
+            <h3>Python heapq Module</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Operation</th>
+                        <th>Function</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Push element</strong></td>
+                        <td>heapq.heappush(heap, item)</td>
+                        <td>O(log n)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pop minimum</strong></td>
+                        <td>heapq.heappop(heap)</td>
+                        <td>O(log n)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Peek minimum</strong></td>
+                        <td>heap[0]</td>
+                        <td>O(1)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Heapify array</strong></td>
+                        <td>heapq.heapify(list)</td>
+                        <td>O(n)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Max-heap trick</strong></td>
+                        <td>Negate values: heappush(h, -val)</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Exercise 1: Kth Largest -->
+        <div class="exercise-header">
+            <h2>Exercise 1: Kth Largest Element in Array</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find the kth largest element using a min-heap.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given an integer array and an integer k, return the kth largest element.
+                Note that it is the kth largest in sorted order, not the kth distinct element.
+            </p>
+
+            <div class="visual-box">Example: nums = [3, 2, 1, 5, 6, 4], k = 2
+
+Sorted: [6, 5, 4, 3, 2, 1]
+                ↑
+            2nd largest = 5
+
+Min-Heap approach (size k):
+[3]
+[2, 3]           → pop 2
+[1, 3, 5]        → pop 1
+[3, 5, 6]        → pop 3
+[4, 5, 6]        → heap = [4, 5, 6]
+
+Heap top (minimum of k largest) = 4... wait, no!
+
+Correct: Heap top of k-sized min-heap = 5</div>
+
+            <div class="intuition">
+                Strategy: maintain a min-heap of size k containing the k largest elements.
+                <br><br>
+                As we iterate through the array:
+                <ul>
+                    <li>Add each element to heap</li>
+                    <li>If heap size > k, pop the smallest</li>
+                    <li>Heap always contains k largest elements seen so far</li>
+                    <li>The top of this heap is the kth largest!</li>
+                </ul>
+                Why? The heap contains the k largest, and the smallest of these k is the kth largest.
+            </div>
+
+            <h3>Solution - Heap Approach</h3>
+            <div class="code-block"><code><span class="keyword">import</span> heapq
+
+<span class="keyword">def</span> <span class="function">findKthLargest</span>(nums, k):
+    heap = []
+
+    <span class="keyword">for</span> num <span class="keyword">in</span> nums:
+        <span class="function">heapq.heappush</span>(heap, num)
+
+        <span class="comment"># Keep heap size = k</span>
+        <span class="keyword">if</span> <span class="function">len</span>(heap) > k:
+            <span class="function">heapq.heappop</span>(heap)
+
+    <span class="comment"># Top of heap is kth largest</span>
+    <span class="keyword">return</span> heap[<span class="number">0</span>]</code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n log k) - push/pop for each element<br>
+                • Space: O(k) - heap size
+            </div>
+        </div>
+
+        <!-- Exercise 2: Last Stone Weight -->
+        <div class="exercise-header">
+            <h2>Exercise 2: Last Stone Weight - Max Heap Simulation</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Simulate stone smashing using a max-heap.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Given stones with weights, repeatedly smash the two heaviest stones together.
+                If weights are x and y (x ≤ y), the result is y - x. Return the weight of the
+                last remaining stone, or 0 if none remain.
+            </p>
+
+            <div class="visual-box">Example: stones = [2, 7, 4, 1, 8, 1]
+
+Max-heap: [8, 7, 4, 2, 1, 1]
+
+Round 1: Smash 8 and 7 → remain 1
+  Heap: [4, 2, 1, 1, 1]
+
+Round 2: Smash 4 and 2 → remain 2
+  Heap: [2, 1, 1, 1]
+
+Round 3: Smash 2 and 1 → remain 1
+  Heap: [1, 1, 1]
+
+Round 4: Smash 1 and 1 → remain 0
+  Heap: [1]
+
+Result: 1</div>
+
+            <div class="intuition">
+                We need to efficiently extract the two largest stones repeatedly.
+                <br><br>
+                Python's heapq is a min-heap, but we need a max-heap. Solution: <strong>negate all values!</strong>
+                <br><br>
+                Negation trick: push -weight, pop to get -max_weight, negate back to get max_weight.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">import</span> heapq
+
+<span class="keyword">def</span> <span class="function">lastStoneWeight</span>(stones):
+    <span class="comment"># Negate to create max-heap</span>
+    heap = [-stone <span class="keyword">for</span> stone <span class="keyword">in</span> stones]
+    <span class="function">heapq.heapify</span>(heap)
+
+    <span class="keyword">while</span> <span class="function">len</span>(heap) > <span class="number">1</span>:
+        <span class="comment"># Pop two largest (most negative)</span>
+        first = -<span class="function">heapq.heappop</span>(heap)
+        second = -<span class="function">heapq.heappop</span>(heap)
+
+        <span class="keyword">if</span> first != second:
+            <span class="function">heapq.heappush</span>(heap, -(first - second))
+
+    <span class="keyword">return</span> -heap[<span class="number">0</span>] <span class="keyword">if</span> heap <span class="keyword">else</span> <span class="number">0</span></code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • Time: O(n log n) - heapify + n pops/pushes<br>
+                • Space: O(n)
+            </div>
+        </div>
+
+        <!-- Exercise 5: Median Finder -->
+        <div class="exercise-header">
+            <h2>Exercise 5: Find Median from Data Stream</h2>
+        </div>
+
+        <div class="section">
+            <p><strong>Objective:</strong> Find median from stream using two heaps.</p>
+
+            <h3>Problem</h3>
+            <p>
+                Design a data structure that supports adding numbers from a stream and finding
+                the median in constant time.
+            </p>
+
+            <div class="visual-box">Example stream: [1, 2, 3, 4, 5]
+
+Two-heap approach:
+
+After adding 1, 2, 3:
+  Lower half (max-heap): [1]     (stored as [-1])
+  Upper half (min-heap): [2, 3]
+  Median = 2 (top of larger heap)
+
+After adding 4:
+  Lower half: [2, 1]             (stored as [-2, -1])
+  Upper half: [3, 4]
+  Median = (2 + 3) / 2 = 2.5
+
+After adding 5:
+  Lower half: [2, 1]
+  Upper half: [3, 4, 5]
+  Need to rebalance!
+  → Move 3 to lower
+  Lower half: [3, 2, 1]
+  Upper half: [4, 5]
+  Median = 3</div>
+
+            <div class="intuition">
+                The brilliant two-heap approach:
+                <ol>
+                    <li><strong>Max-heap</strong> for lower half of numbers</li>
+                    <li><strong>Min-heap</strong> for upper half of numbers</li>
+                    <li>Keep heaps balanced: size difference ≤ 1</li>
+                </ol>
+                <br>
+                Median is:
+                <ul>
+                    <li>If heaps equal size: average of both tops</li>
+                    <li>If one larger: top of larger heap</li>
+                </ul>
+                Add operation: choose heap based on value vs current median, then rebalance if needed.
+            </div>
+
+            <h3>Solution</h3>
+            <div class="code-block"><code><span class="keyword">import</span> heapq
+
+<span class="keyword">class</span> <span class="function">MedianFinder</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>):
+        <span class="keyword">self</span>.small = []  <span class="comment"># Max-heap (negated)</span>
+        <span class="keyword">self</span>.large = []  <span class="comment"># Min-heap</span>
+
+    <span class="keyword">def</span> <span class="function">addNum</span>(<span class="keyword">self</span>, num):
+        <span class="comment"># Add to max-heap (small)</span>
+        <span class="function">heapq.heappush</span>(<span class="keyword">self</span>.small, -num)
+
+        <span class="comment"># Ensure all elements in small <= all in large</span>
+        <span class="keyword">if</span> (<span class="keyword">self</span>.small <span class="keyword">and</span> <span class="keyword">self</span>.large <span class="keyword">and</span>
+            -<span class="keyword">self</span>.small[<span class="number">0</span>] > <span class="keyword">self</span>.large[<span class="number">0</span>]):
+            val = -<span class="function">heapq.heappop</span>(<span class="keyword">self</span>.small)
+            <span class="function">heapq.heappush</span>(<span class="keyword">self</span>.large, val)
+
+        <span class="comment"># Balance heaps (size difference <= 1)</span>
+        <span class="keyword">if</span> <span class="function">len</span>(<span class="keyword">self</span>.small) > <span class="function">len</span>(<span class="keyword">self</span>.large) + <span class="number">1</span>:
+            val = -<span class="function">heapq.heappop</span>(<span class="keyword">self</span>.small)
+            <span class="function">heapq.heappush</span>(<span class="keyword">self</span>.large, val)
+        <span class="keyword">if</span> <span class="function">len</span>(<span class="keyword">self</span>.large) > <span class="function">len</span>(<span class="keyword">self</span>.small) + <span class="number">1</span>:
+            val = <span class="function">heapq.heappop</span>(<span class="keyword">self</span>.large)
+            <span class="function">heapq.heappush</span>(<span class="keyword">self</span>.small, -val)
+
+    <span class="keyword">def</span> <span class="function">findMedian</span>(<span class="keyword">self</span>):
+        <span class="keyword">if</span> <span class="function">len</span>(<span class="keyword">self</span>.small) > <span class="function">len</span>(<span class="keyword">self</span>.large):
+            <span class="keyword">return</span> -<span class="keyword">self</span>.small[<span class="number">0</span>]
+        <span class="keyword">if</span> <span class="function">len</span>(<span class="keyword">self</span>.large) > <span class="function">len</span>(<span class="keyword">self</span>.small):
+            <span class="keyword">return</span> <span class="keyword">self</span>.large[<span class="number">0</span>]
+        <span class="keyword">return</span> (-<span class="keyword">self</span>.small[<span class="number">0</span>] + <span class="keyword">self</span>.large[<span class="number">0</span>]) / <span class="number">2.0</span></code></div>
+
+            <div class="complexity">
+                <strong>Complexity Analysis:</strong><br>
+                • addNum: O(log n) - heap operations<br>
+                • findMedian: O(1) - peek at tops<br>
+                • Space: O(n)
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Summary</h2>
+            <p>
+                You've mastered heap patterns for priority queue problems! You can now:
+            </p>
+            <ul>
+                <li>✓ Use Python's heapq for efficient min-heap operations</li>
+                <li>✓ Implement max-heap using the negation trick</li>
+                <li>✓ Solve top-k problems with O(n log k) complexity</li>
+                <li>✓ Handle streaming data with the two-heap median finder pattern</li>
+                <li>✓ Combine heaps with other data structures for complex problems</li>
+            </ul>
+            <p>
+                Heaps are essential for interview problems involving priorities, top-k elements,
+                and streaming data. Practice these patterns to build intuition!
+            </p>
+        </div>
+    </div>
+</body>
+</html>
