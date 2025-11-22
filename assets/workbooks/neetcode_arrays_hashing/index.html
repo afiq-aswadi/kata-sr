@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Arrays & Hashing: Foundation Patterns · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Arrays & Hashing</h1>
+      <p class="summary">
+        Master fundamental array and hashmap patterns that form the basis for all algorithmic
+        problem-solving. These patterns appear in 40%+ of coding interviews and are the
+        foundation upon which more advanced topics are built.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Hash tables trade space for time. By storing data in a dictionary (hash table),
+          we can achieve O(1) lookups instead of O(n) scans. This single optimization
+          unlocks solutions to countless problems.
+        </p>
+      </div>
+
+      <h3>Arrays vs Hash Tables</h3>
+      <div class="comparison">
+        <div class="comparison-item">
+          <h4>📊 Arrays</h4>
+          <ul>
+            <li>Access by index: O(1)</li>
+            <li>Search: O(n)</li>
+            <li>Insertion: O(n)</li>
+            <li>Ordered elements</li>
+          </ul>
+        </div>
+        <div class="comparison-item">
+          <h4>🗂️ Hash Tables</h4>
+          <ul>
+            <li>Access by key: O(1)</li>
+            <li>Search: O(1)</li>
+            <li>Insertion: O(1)</li>
+            <li>Unordered elements</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Common Patterns</h3>
+      <ul>
+        <li><strong>Frequency counting:</strong> Count occurrences using dict/Counter</li>
+        <li><strong>Complement lookup:</strong> Check if complement exists (Two Sum)</li>
+        <li><strong>Seen tracking:</strong> Use set to track visited elements</li>
+        <li><strong>Grouping:</strong> Use dict to group related items</li>
+        <li><strong>Index mapping:</strong> Store value→index for quick lookup</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Contains Duplicate</h2>
+      <div class="card">
+        <div class="pattern-title">Set Basics</div>
+        <h3>Objective</h3>
+        <p>
+          Determine if an array contains any duplicate values using a set.
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Array: [1, 2, 3, 1]
+
+seen = {}
+
+Step 1: Check 1 → not in seen → add to seen = {1}
+Step 2: Check 2 → not in seen → add to seen = {1, 2}
+Step 3: Check 3 → not in seen → add to seen = {1, 2, 3}
+Step 4: Check 1 → FOUND in seen! → return True ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def containsDuplicate(nums: List[int]) -> bool:
+    seen = set()
+
+    for num in nums:
+        if num in seen:
+            return True
+        seen.add(num)
+
+    return False
+
+# One-liner alternative
+def containsDuplicate(nums: List[int]) -> bool:
+    return len(nums) != len(set(nums))</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Valid Anagram</h2>
+      <div class="card">
+        <div class="pattern-title">Frequency Counting</div>
+        <h3>Objective</h3>
+        <p>
+          Check if two strings are anagrams by counting character frequencies.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Insight</div>
+          <p>
+            Two strings are anagrams if they have the exact same characters with
+            the same frequencies. We can count frequencies with a hash table and
+            compare them.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+s: "anagram"  →  {a:3, n:1, g:1, r:1, m:1}
+t: "nagaram"  →  {n:1, a:3, g:1, r:1, m:1}
+
+Frequencies match → True ✓
+        </div>
+
+        <h3>Key Patterns</h3>
+        <pre><code class="language-python"># Method 1: Using Counter (cleanest)
+from collections import Counter
+
+def isAnagram(s: str, t: str) -> bool:
+    return Counter(s) == Counter(t)
+
+# Method 2: Manual counting
+def isAnagram(s: str, t: str) -> bool:
+    if len(s) != len(t):
+        return False
+
+    count = {}
+    for char in s:
+        count[char] = count.get(char, 0) + 1
+
+    for char in t:
+        if char not in count:
+            return False
+        count[char] -= 1
+        if count[char] < 0:
+            return False
+
+    return True
+
+# Method 3: Sorting (O(n log n) but simple)
+def isAnagram(s: str, t: str) -> bool:
+    return sorted(s) == sorted(t)</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span>
+        <br><small>Space is O(1) because character set is limited (26 letters)</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Two Sum</h2>
+      <div class="card">
+        <div class="pattern-title">Complement Lookup</div>
+        <h3>Objective</h3>
+        <p>
+          Find two indices where values sum to target using a hashmap for O(1) lookups.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Classic Trick</div>
+          <p>
+            Instead of checking every pair (O(n²)), we store each number's complement
+            in a hashmap. For each number, we check if its complement (target - num)
+            exists in the map. This reduces time complexity to O(n).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Array: [2, 7, 11, 15]  Target: 9
+
+seen = {}  # value → index
+
+Step 1: num=2, complement=7
+        7 not in seen → store seen[2]=0
+
+Step 2: num=7, complement=2
+        2 IS in seen! → return [seen[2], 1] = [0, 1] ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def twoSum(nums: List[int], target: int) -> List[int]:
+    seen = {}  # value → index
+
+    for i, num in enumerate(nums):
+        complement = target - num
+
+        if complement in seen:
+            return [seen[complement], i]
+
+        seen[num] = i
+
+    return []  # No solution</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Group Anagrams</h2>
+      <div class="card">
+        <div class="pattern-title">Hash Map with Key Generation</div>
+        <h3>Objective</h3>
+        <p>
+          Group strings that are anagrams using a hashmap with sorted strings as keys.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Key Insight</div>
+          <p>
+            All anagrams have the same sorted representation! "eat", "tea", and "ate"
+            all become "aet" when sorted. Use this as the key to group them.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: ["eat", "tea", "tan", "ate", "nat", "bat"]
+
+groups = {}
+
+"eat" → sorted="aet" → groups["aet"] = ["eat"]
+"tea" → sorted="aet" → groups["aet"] = ["eat", "tea"]
+"tan" → sorted="ant" → groups["ant"] = ["tan"]
+"ate" → sorted="aet" → groups["aet"] = ["eat", "tea", "ate"]
+"nat" → sorted="ant" → groups["ant"] = ["tan", "nat"]
+"bat" → sorted="abt" → groups["abt"] = ["bat"]
+
+Output: [["eat","tea","ate"], ["tan","nat"], ["bat"]]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">from collections import defaultdict
+
+def groupAnagrams(strs: List[str]) -> List[List[str]]:
+    groups = defaultdict(list)
+
+    for s in strs:
+        # Use sorted string as key
+        key = ''.join(sorted(s))
+        groups[key].append(s)
+
+    return list(groups.values())
+
+# Alternative: Use character count as key (faster for long strings)
+def groupAnagrams(strs: List[str]) -> List[List[str]]:
+    groups = defaultdict(list)
+
+    for s in strs:
+        # Count each letter a-z
+        count = [0] * 26
+        for char in s:
+            count[ord(char) - ord('a')] += 1
+        key = tuple(count)  # Lists can't be dict keys
+        groups[key].append(s)
+
+    return list(groups.values())</code></pre>
+
+        <p><span class="complexity">Time: O(n·k·log k) | Space: O(n·k)</span>
+        <br><small>where n = number of strings, k = max string length</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Top K Frequent Elements</h2>
+      <div class="card">
+        <div class="pattern-title">Frequency + Bucket Sort</div>
+        <h3>Objective</h3>
+        <p>
+          Find k most frequent elements using bucket sort for O(n) time.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Bucket Sort Trick</div>
+          <p>
+            Instead of sorting by frequency (O(n log n)), use bucket sort! Create
+            buckets indexed by frequency (0 to n). Since max frequency is n, we only
+            need n+1 buckets. This achieves O(n) time complexity.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [1,1,1,2,2,3]  k=2
+
+Step 1: Count frequencies
+        {1:3, 2:2, 3:1}
+
+Step 2: Build frequency buckets
+        buckets[0] = []
+        buckets[1] = [3]        ← frequency 1
+        buckets[2] = [2]        ← frequency 2
+        buckets[3] = [1]        ← frequency 3
+
+Step 3: Iterate from highest frequency
+        frequency 3: [1]
+        frequency 2: [2]
+        → return [1, 2] ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">from collections import Counter
+
+def topKFrequent(nums: List[int], k: int) -> List[int]:
+    # Step 1: Count frequencies
+    count = Counter(nums)
+
+    # Step 2: Create frequency buckets
+    buckets = [[] for _ in range(len(nums) + 1)]
+    for num, freq in count.items():
+        buckets[freq].append(num)
+
+    # Step 3: Collect k most frequent
+    result = []
+    for freq in range(len(buckets) - 1, 0, -1):
+        for num in buckets[freq]:
+            result.append(num)
+            if len(result) == k:
+                return result
+
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 6: Product Except Self</h2>
+      <div class="card">
+        <div class="pattern-title">Prefix/Suffix Products</div>
+        <h3>Objective</h3>
+        <p>
+          Calculate product of array except self without division using prefix/suffix.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Clever Trick</div>
+          <p>
+            The product except self at index i equals:
+            (product of all elements to the left) × (product of all elements to the right).
+            We can compute this in two passes: left-to-right for prefix, then right-to-left
+            for suffix.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [1, 2, 3, 4]
+
+Pass 1: Calculate prefix products (left → right)
+  result = [1, 1, 2, 6]
+           ↑  ← prefix of everything before
+
+Pass 2: Multiply by suffix products (right → left)
+  suffix = 1
+  i=3: result[3] = 6 * 1 = 6,  suffix = 4
+  i=2: result[2] = 2 * 4 = 8,  suffix = 12
+  i=1: result[1] = 1 * 12 = 12, suffix = 24
+  i=0: result[0] = 1 * 24 = 24, suffix = 24
+
+Output: [24, 12, 8, 6] ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def productExceptSelf(nums: List[int]) -> List[int]:
+    n = len(nums)
+    result = [1] * n
+
+    # Pass 1: Calculate prefix products
+    prefix = 1
+    for i in range(n):
+        result[i] = prefix
+        prefix *= nums[i]
+
+    # Pass 2: Multiply by suffix products
+    suffix = 1
+    for i in range(n - 1, -1, -1):
+        result[i] *= suffix
+        suffix *= nums[i]
+
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span>
+        <br><small>Output array doesn't count toward space complexity</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 7: Longest Consecutive Sequence</h2>
+      <div class="card">
+        <div class="pattern-title">Set-Based Sequential Search</div>
+        <h3>Objective</h3>
+        <p>
+          Find length of longest consecutive sequence in O(n) time without sorting.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Optimization</div>
+          <p>
+            Key insight: only start counting from sequence starts (where num-1 doesn't
+            exist). This ensures each number is visited at most twice: once to check
+            if it's a start, and once when counted as part of a sequence.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [100, 4, 200, 1, 3, 2]
+
+num_set = {100, 4, 200, 1, 3, 2}
+
+Check 100: 99 not in set → START sequence
+           Count: 100 → length 1
+
+Check 4: 3 in set → NOT a start, skip
+
+Check 200: 199 not in set → START sequence
+           Count: 200 → length 1
+
+Check 1: 0 not in set → START sequence ✓
+         Count: 1, 2, 3, 4 → length 4
+
+Max length: 4
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def longestConsecutive(nums: List[int]) -> int:
+    num_set = set(nums)
+    max_length = 0
+
+    for num in num_set:
+        # Only start counting from sequence starts
+        if num - 1 not in num_set:
+            current = num
+            length = 1
+
+            # Count consecutive numbers
+            while current + 1 in num_set:
+                current += 1
+                length += 1
+
+            max_length = max(max_length, length)
+
+    return max_length</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>1. When to Use Each Data Structure</h3>
+        <div class="comparison">
+          <div class="comparison-item">
+            <h4>Use Set When:</h4>
+            <ul>
+              <li>Checking membership</li>
+              <li>Removing duplicates</li>
+              <li>Finding unique elements</li>
+              <li>No need for counts</li>
+            </ul>
+          </div>
+          <div class="comparison-item">
+            <h4>Use Dict When:</h4>
+            <ul>
+              <li>Counting frequencies</li>
+              <li>Storing key-value pairs</li>
+              <li>Grouping elements</li>
+              <li>Caching results</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>2. Common Hash Table Patterns</h3>
+        <pre><code class="language-python"># Pattern 1: Frequency counting
+from collections import Counter
+count = Counter(arr)
+
+# Pattern 2: Grouping with defaultdict
+from collections import defaultdict
+groups = defaultdict(list)
+
+# Pattern 3: Seen tracking
+seen = set()
+if item in seen:
+    # handle duplicate
+
+# Pattern 4: Complement/pair lookup
+complement_map = {}
+if target - num in complement_map:
+    # found pair!</code></pre>
+
+        <h3>3. Space-Time Tradeoffs</h3>
+        <ul>
+          <li><strong>No hash table:</strong> O(n²) time, O(1) space (nested loops)</li>
+          <li><strong>With hash table:</strong> O(n) time, O(n) space (optimal for most problems)</li>
+          <li><strong>Sorting first:</strong> O(n log n) time, O(1) space (sometimes acceptable)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Pitfalls & Tips</h2>
+      <div class="card">
+        <h3>1. Hash Table Gotchas</h3>
+        <ul>
+          <li><strong>Mutable keys:</strong> Lists can't be dict keys (use tuples)</li>
+          <li><strong>Default values:</strong> Use <code>.get(key, default)</code> or <code>defaultdict</code></li>
+          <li><strong>Key existence:</strong> Check with <code>in</code>, not by catching exceptions</li>
+          <li><strong>Order:</strong> Dicts maintain insertion order (Python 3.7+)</li>
+        </ul>
+
+        <h3>2. When NOT to Use Hash Tables</h3>
+        <ul>
+          <li>Need sorted order (consider sorting or balanced BST)</li>
+          <li>Range queries (use segment tree or prefix sum)</li>
+          <li>Memory is very constrained</li>
+          <li>Input is already sorted (might have better solution)</li>
+        </ul>
+
+        <h3>3. Optimization Checklist</h3>
+        <ol>
+          <li>Can I eliminate nested loops with a hash table?</li>
+          <li>Am I scanning the array multiple times unnecessarily?</li>
+          <li>Can I count frequencies in one pass?</li>
+          <li>Should I use set instead of dict if I don't need values?</li>
+          <li>Can I reuse the same hash table or do I need multiple?</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/2" target="_blank">NeetCode Arrays & Hashing Guide</a></li>
+        <li><a href="https://docs.python.org/3/library/stdtypes.html#dict" target="_blank">Python Dictionary Methods</a></li>
+        <li><a href="https://docs.python.org/3/library/collections.html" target="_blank">Python Collections Module</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

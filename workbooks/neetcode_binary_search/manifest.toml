@@ -1,0 +1,138 @@
+[workbook]
+id = "neetcode_binary_search"
+title = "NeetCode Binary Search: Logarithmic Time Mastery"
+summary = "Master binary search patterns from basic sorted arrays to complex search spaces."
+learning_goals = [
+  "Implement iterative binary search with correct boundary handling",
+  "Apply binary search to rotated and modified arrays",
+  "Use binary search on answer spaces (minimize/maximize problems)",
+  "Recognize when binary search applies to non-obvious problems",
+]
+prerequisites = ["neetcode_two_sum", "neetcode_valid_palindrome"]
+resources = [
+  { title = "Binary Search Guide", url = "https://neetcode.io/courses/dsa-for-beginners/12" },
+  { title = "Binary Search Patterns", url = "https://leetcode.com/discuss/study-guide/786126/Python-Powerful-Ultimate-Binary-Search-Template" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "binary-search"
+title = "1. Classic Binary Search"
+kata = "neetcode_binary_search"
+objective = "Implement iterative binary search on a sorted array to find a target value."
+acceptance = [
+  "Returns correct index if target exists",
+  "Returns -1 if target doesn't exist",
+  "Uses O(log n) time complexity",
+  "No off-by-one errors with left/right pointers",
+]
+hints = [
+  "Use left=0, right=len-1 (inclusive bounds)",
+  "mid = (left + right) // 2",
+  "Update left=mid+1 or right=mid-1 based on comparison",
+]
+dependencies = []
+
+[[exercises]]
+slug = "search-2d-matrix"
+title = "2. Search 2D Matrix - Binary Search Adaptation"
+kata = "neetcode_search_2d_matrix"
+objective = "Search a 2D matrix with sorted rows and columns using binary search."
+acceptance = [
+  "Correctly handles row and column navigation",
+  "Uses O(log(m*n)) or O(log m + log n) time",
+  "Returns true if target found, false otherwise",
+]
+hints = [
+  "Each row is sorted, first element of row > last element of previous row",
+  "Can treat as 1D sorted array with index mapping",
+  "Or binary search rows first, then binary search within row",
+]
+dependencies = ["binary-search"]
+
+[[exercises]]
+slug = "koko-bananas"
+title = "3. Koko Eating Bananas - Binary Search on Answer"
+kata = "neetcode_koko_bananas"
+objective = "Find minimum eating speed using binary search on the answer space."
+acceptance = [
+  "Returns minimum k where Koko can finish in h hours",
+  "Uses binary search on k range [1, max(piles)]",
+  "Correctly calculates hours needed for given speed",
+]
+hints = [
+  "Binary search on k (eating speed), not on piles",
+  "For each k, check if Koko can finish in time",
+  "hours_needed = sum(ceil(pile / k) for pile in piles)",
+]
+dependencies = ["binary-search"]
+
+[[exercises]]
+slug = "find-min-rotated"
+title = "4. Find Minimum in Rotated Sorted Array"
+kata = "neetcode_find_min_rotated"
+objective = "Find minimum element in rotated sorted array using modified binary search."
+acceptance = [
+  "Handles both rotated and non-rotated arrays",
+  "Uses O(log n) time complexity",
+  "Correctly identifies inflection point",
+]
+hints = [
+  "Compare mid with right boundary to determine sorted half",
+  "If nums[mid] > nums[right], minimum is in right half",
+  "Otherwise, minimum is in left half (including mid)",
+]
+dependencies = ["binary-search"]
+
+[[exercises]]
+slug = "search-rotated"
+title = "5. Search in Rotated Sorted Array"
+kata = "neetcode_search_rotated"
+objective = "Search for target in rotated sorted array using binary search."
+acceptance = [
+  "Returns correct index if target exists",
+  "Returns -1 if target doesn't exist",
+  "Uses O(log n) time complexity",
+  "Handles all rotation cases",
+]
+hints = [
+  "Identify which half is sorted (compare mid with left)",
+  "Check if target is in sorted half's range",
+  "If yes, search sorted half; otherwise search other half",
+]
+dependencies = ["find-min-rotated"]
+
+[[exercises]]
+slug = "time-map"
+title = "6. Time-Based Key-Value Store"
+kata = "neetcode_time_map"
+objective = "Implement a time-based key-value store with binary search for timestamp queries."
+acceptance = [
+  "set(key, value, timestamp) stores correctly",
+  "get(key, timestamp) returns value at or before timestamp",
+  "Uses binary search for O(log n) get operations",
+  "Returns empty string if no valid timestamp",
+]
+hints = [
+  "Store values for each key as list of (timestamp, value) pairs",
+  "Binary search for largest timestamp <= query timestamp",
+  "rightmost bisect pattern (find last valid element)",
+]
+dependencies = ["binary-search"]
+
+[[exercises]]
+slug = "median-two-arrays"
+title = "7. Median of Two Sorted Arrays - Advanced Binary Search"
+kata = "neetcode_median_two_arrays"
+objective = "Find median of two sorted arrays using binary search for O(log(min(m,n))) time."
+acceptance = [
+  "Handles arrays of different sizes",
+  "Correctly calculates median for odd and even total lengths",
+  "Uses O(log(min(m,n))) time complexity",
+]
+hints = [
+  "Binary search on partition point in smaller array",
+  "Ensure left partition elements <= right partition elements",
+  "Check: maxLeft1 <= minRight2 AND maxLeft2 <= minRight1",
+]
+dependencies = ["search-rotated", "time-map"]
