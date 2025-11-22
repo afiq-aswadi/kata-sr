@@ -36,6 +36,7 @@ pub struct AppConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EditorConfig {
     /// Editor command to use (e.g., "nvim", "vim", "code")
+    #[serde(default = "default_editor_command")]
     pub command: String,
 
     /// Additional arguments to pass to the editor
@@ -43,50 +44,100 @@ pub struct EditorConfig {
     pub args: Vec<String>,
 }
 
+fn default_editor_command() -> String {
+    std::env::var("EDITOR").unwrap_or_else(|_| "nvim".to_string())
+}
+
 /// File paths configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PathsConfig {
     /// Database file path
+    #[serde(default = "default_database_path")]
     pub database: String,
 
     /// Template directory for practice files
+    #[serde(default = "default_templates_path")]
     pub templates: String,
+}
+
+fn default_database_path() -> String {
+    "~/.local/share/kata-sr/kata.db".to_string()
+}
+
+fn default_templates_path() -> String {
+    "/tmp/kata_practice".to_string()
 }
 
 /// Display settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DisplayConfig {
     /// Color theme (currently only "default" supported)
+    #[serde(default = "default_theme")]
     pub theme: String,
 
     /// Number of days to show in heatmap
+    #[serde(default = "default_heatmap_days")]
     pub heatmap_days: usize,
 
     /// Date format string (strftime format)
+    #[serde(default = "default_date_format")]
     pub date_format: String,
+}
+
+fn default_theme() -> String {
+    "default".to_string()
+}
+
+fn default_heatmap_days() -> usize {
+    90
+}
+
+fn default_date_format() -> String {
+    "%Y-%m-%d".to_string()
 }
 
 /// Review behavior settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewConfig {
     /// Daily review limit (None = unlimited)
+    #[serde(default)]
     pub daily_limit: Option<usize>,
 
     /// Default rating when skipping manual selection (1-4: Again/Hard/Good/Easy)
+    #[serde(default = "default_rating")]
     pub default_rating: u8,
 
     /// Whether to persist sort/filter preferences between sessions
+    #[serde(default = "default_persist_sort_mode")]
     pub persist_sort_mode: bool,
+}
+
+fn default_rating() -> u8 {
+    3 // Good
+}
+
+fn default_persist_sort_mode() -> bool {
+    true
 }
 
 /// Library view settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryConfig {
     /// Default sort mode
+    #[serde(default = "default_sort_mode")]
     pub default_sort: String,
 
     /// Default sort direction (true = ascending)
+    #[serde(default = "default_sort_ascending")]
     pub default_sort_ascending: bool,
+}
+
+fn default_sort_mode() -> String {
+    "Name".to_string()
+}
+
+fn default_sort_ascending() -> bool {
+    true
 }
 
 impl Default for EditorConfig {

@@ -16,7 +16,6 @@ use kata_sr::config::EditorConfig;
 use kata_sr::db::repo::{KataRepository, NewKata};
 use kata_sr::runner::python_runner::run_python_tests;
 use kata_sr::tui::dashboard::Dashboard;
-use kata_sr::tui::practice::PracticeScreen;
 use std::fs;
 use std::path::PathBuf;
 
@@ -158,64 +157,73 @@ fn test_dashboard_shows_stats_after_reviews() {
 
 #[test]
 fn test_practice_screen_copies_template() {
-    // note: this test shares temp files with other tests when run in parallel
-    // the /tmp/kata_*.py files are created by PracticeScreen and may conflict
-    // running with --test-threads=1 avoids this issue
+    use tempfile::TempDir;
+
     let repo = setup_repo_with_katas();
     let katas = repo.get_all_katas().unwrap();
-
-    // find the mlp kata (ID 1) to minimize conflicts with the loop test below
     let mlp_kata = katas.iter().find(|k| k.name == "mlp").unwrap();
 
-    // create practice screen
-    let editor_config = EditorConfig::default();
-    let _practice = PracticeScreen::new(mlp_kata.clone(), editor_config).unwrap();
+    // Use isolated temp directory
+    let temp_dir = TempDir::new().unwrap();
 
-    // verify template was copied to /tmp
-    let template_path = PathBuf::from(format!("/tmp/kata_{}.py", mlp_kata.id));
+    // create practice screen with custom temp directory
+    let editor_config = EditorConfig::default();
+    let _practice = kata_sr::tui::practice::PracticeScreen::new_with_temp_dir(
+        mlp_kata.clone(),
+        editor_config,
+        Some(temp_dir.path().to_path_buf()),
+    )
+    .unwrap();
+
+    // verify template was copied to temp directory
+    let template_path = temp_dir.path().join(format!("kata_{}.py", mlp_kata.id));
     assert!(template_path.exists());
 
     // verify template contains some content
-    if let Ok(content) = fs::read_to_string(&template_path) {
-        // file might have been deleted by parallel test, skip assertion if so
-        if !content.is_empty() {
-            assert!(content.contains("mlp") || content.contains("MLP"));
-        }
-    }
+    let content = fs::read_to_string(&template_path).unwrap();
+    assert!(!content.is_empty());
+    assert!(content.contains("mlp") || content.contains("MLP"));
 
-    // cleanup
-    fs::remove_file(&template_path).ok();
+    // tempdir automatically cleans up
 }
 
 #[test]
 fn test_practice_screen_copies_correct_template_for_each_kata() {
+    use tempfile::TempDir;
+
     let repo = setup_repo_with_katas();
     let katas = repo.get_all_katas().unwrap();
 
-    // only test softmax and dfs_bfs to avoid conflicts with other test
+    // test softmax and dfs_bfs
     let test_katas: Vec<_> = katas
         .iter()
         .filter(|k| k.name == "softmax" || k.name == "dfs_bfs")
         .collect();
 
     for kata in test_katas {
-        let editor_config = EditorConfig::default();
-        let _practice = PracticeScreen::new(kata.clone(), editor_config).unwrap();
+        // Each kata gets its own isolated temp directory
+        let temp_dir = TempDir::new().unwrap();
 
-        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+        let editor_config = EditorConfig::default();
+        let _practice = kata_sr::tui::practice::PracticeScreen::new_with_temp_dir(
+            kata.clone(),
+            editor_config,
+            Some(temp_dir.path().to_path_buf()),
+        )
+        .unwrap();
+
+        let template_path = temp_dir.path().join(format!("kata_{}.py", kata.id));
         assert!(
             template_path.exists(),
             "Template should exist for kata {}",
             kata.name
         );
 
-        // read content immediately before cleanup
-        if let Ok(content) = fs::read_to_string(&template_path) {
-            assert!(!content.is_empty(), "Template should not be empty");
-        }
+        // read content
+        let content = fs::read_to_string(&template_path).unwrap();
+        assert!(!content.is_empty(), "Template should not be empty");
 
-        // cleanup
-        fs::remove_file(&template_path).ok();
+        // tempdir automatically cleans up
     }
 }
 
@@ -404,6 +412,8 @@ fn test_python_runner_handles_missing_template() {
 
 #[test]
 fn test_end_to_end_kata_workflow() {
+    use tempfile::TempDir;
+
     if !python_runner_available() {
         eprintln!("Skipping test: Python environment not available");
         return;
@@ -419,10 +429,18 @@ fn test_end_to_end_kata_workflow() {
     // select first kata
     let kata = &dashboard.katas_due[0];
 
+    // Use isolated temp directory
+    let temp_dir = TempDir::new().unwrap();
+
     // create practice screen
     let editor_config = EditorConfig::default();
-    let _practice = PracticeScreen::new(kata.clone(), editor_config).unwrap();
-    let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+    let _practice = kata_sr::tui::practice::PracticeScreen::new_with_temp_dir(
+        kata.clone(),
+        editor_config,
+        Some(temp_dir.path().to_path_buf()),
+    )
+    .unwrap();
+    let template_path = temp_dir.path().join(format!("kata_{}.py", kata.id));
     assert!(template_path.exists());
 
     // simulate user filling in the code by copying reference
@@ -467,6 +485,6 @@ fn test_end_to_end_kata_workflow() {
         assert_eq!(dashboard.katas_due.len(), 2);
         assert_eq!(dashboard.stats.total_reviews_today, 1);
 
-        fs::remove_file(&template_path).ok();
+        // tempdir automatically cleans up
     }
 }

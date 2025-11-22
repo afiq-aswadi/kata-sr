@@ -19,6 +19,7 @@ pub struct PracticeScreen {
     template_path: PathBuf,
     status: PracticeStatus,
     editor_config: EditorConfig,
+    temp_dir_override: Option<PathBuf>,
 }
 
 enum PracticeStatus {
@@ -29,7 +30,19 @@ enum PracticeStatus {
 
 impl PracticeScreen {
     pub fn new(kata: Kata, editor_config: EditorConfig) -> anyhow::Result<Self> {
-        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+        Self::new_with_temp_dir(kata, editor_config, None)
+    }
+
+    /// Creates a practice screen with a custom temp directory (for testing).
+    pub fn new_with_temp_dir(
+        kata: Kata,
+        editor_config: EditorConfig,
+        temp_dir: Option<PathBuf>,
+    ) -> anyhow::Result<Self> {
+        let template_path = match &temp_dir {
+            Some(dir) => dir.join(format!("kata_{}.py", kata.id)),
+            None => PathBuf::from(format!("/tmp/kata_{}.py", kata.id)),
+        };
 
         let katas_root = std::env::var("KATA_SR_KATAS_DIR")
             .map(PathBuf::from)
@@ -48,6 +61,7 @@ impl PracticeScreen {
             template_path,
             status: PracticeStatus::ShowingDescription,
             editor_config,
+            temp_dir_override: temp_dir,
         })
     }
 
@@ -100,7 +114,19 @@ impl PracticeScreen {
     /// # Ok::<(), anyhow::Error>(())
     /// ```
     pub fn new_retry(kata: Kata, editor_config: EditorConfig) -> anyhow::Result<Self> {
-        let template_path = PathBuf::from(format!("/tmp/kata_{}.py", kata.id));
+        Self::new_retry_with_temp_dir(kata, editor_config, None)
+    }
+
+    /// Creates a practice screen for retry with a custom temp directory (for testing).
+    pub fn new_retry_with_temp_dir(
+        kata: Kata,
+        editor_config: EditorConfig,
+        temp_dir: Option<PathBuf>,
+    ) -> anyhow::Result<Self> {
+        let template_path = match &temp_dir {
+            Some(dir) => dir.join(format!("kata_{}.py", kata.id)),
+            None => PathBuf::from(format!("/tmp/kata_{}.py", kata.id)),
+        };
 
         // verify the file exists (it should, since we're retrying)
         if !template_path.exists() {
@@ -115,6 +141,7 @@ impl PracticeScreen {
             template_path,
             status: PracticeStatus::ShowingDescription,
             editor_config,
+            temp_dir_override: temp_dir,
         })
     }
 
