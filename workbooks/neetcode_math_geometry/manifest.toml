@@ -1,0 +1,134 @@
+[workbook]
+id = "neetcode_math_geometry"
+title = "NeetCode Math & Geometry: Mathematical Problem-Solving"
+summary = "Master mathematical algorithms and geometric computations."
+learning_goals = [
+  "Apply mathematical insights to optimize solutions",
+  "Implement matrix operations and transformations",
+  "Solve geometric problems efficiently",
+  "Use mathematical properties and formulas",
+]
+prerequisites = ["neetcode_product_except_self"]
+resources = [
+  { title = "Math & Geometry", url = "https://neetcode.io/courses/dsa-for-beginners/22" },
+]
+kata_namespace = "neetcode"
+
+[[exercises]]
+slug = "rotate-image"
+title = "1. Rotate Image - Matrix Transformation"
+kata = "neetcode_rotate_image"
+objective = "Rotate n×n matrix 90 degrees clockwise in-place."
+acceptance = [
+  "Rotates matrix in-place",
+  "Uses O(1) extra space",
+  "Handles any n×n matrix",
+]
+hints = [
+  "Transpose matrix (swap [i][j] with [j][i])",
+  "Reverse each row",
+  "Or rotate layer by layer",
+]
+dependencies = []
+
+[[exercises]]
+slug = "spiral-matrix"
+title = "2. Spiral Matrix - Boundary Traversal"
+kata = "neetcode_spiral_matrix"
+objective = "Return elements of matrix in spiral order."
+acceptance = [
+  "Returns correct spiral order",
+  "Handles rectangular matrices",
+  "Uses boundary tracking",
+]
+hints = [
+  "Track top, bottom, left, right boundaries",
+  "Traverse: right, down, left, up",
+  "Shrink boundaries after each direction",
+]
+dependencies = ["rotate-image"]
+
+[[exercises]]
+slug = "plus-one"
+title = "3. Plus One - Array as Number"
+kata = "neetcode_plus_one"
+objective = "Increment large integer represented as digit array."
+acceptance = [
+  "Returns incremented array",
+  "Handles carry propagation",
+  "Handles 999...9 → 1000...0",
+]
+hints = [
+  "Start from last digit",
+  "Add 1, handle carry",
+  "If carry remains, prepend 1",
+]
+dependencies = []
+
+[[exercises]]
+slug = "pow"
+title = "4. Pow(x, n) - Fast Exponentiation"
+kata = "neetcode_pow"
+objective = "Implement pow(x, n) using binary exponentiation."
+acceptance = [
+  "Returns x raised to power n",
+  "Handles negative n",
+  "Uses O(log n) time",
+]
+hints = [
+  "Binary exponentiation: x^n = (x^2)^(n/2)",
+  "If n odd: multiply by x",
+  "Handle negative n: pow(x, n) = 1 / pow(x, -n)",
+]
+dependencies = ["plus-one"]
+
+[[exercises]]
+slug = "multiply-strings"
+title = "5. Multiply Strings - String Multiplication"
+kata = "neetcode_multiply_strings"
+objective = "Multiply two large numbers represented as strings."
+acceptance = [
+  "Returns product as string",
+  "Handles large numbers",
+  "Cannot use int() or eval()",
+]
+hints = [
+  "Simulate multiplication digit by digit",
+  "Result length <= len1 + len2",
+  "Store intermediate results in array",
+]
+dependencies = ["plus-one"]
+
+[[exercises]]
+slug = "happy-number"
+title = "6. Happy Number - Cycle Detection"
+kata = "neetcode_happy_number"
+objective = "Check if number reaches 1 by summing squares of digits."
+acceptance = [
+  "Returns True if happy number",
+  "Detects cycles (Floyd's algorithm)",
+  "Handles all edge cases",
+]
+hints = [
+  "Sum squares of digits repeatedly",
+  "Use set to detect cycles",
+  "Or Floyd's slow/fast pointers",
+]
+dependencies = []
+
+[[exercises]]
+slug = "detect-squares"
+title = "7. Detect Squares - Point Counting"
+kata = "neetcode_detect_squares"
+objective = "Count axis-aligned squares given diagonal points."
+acceptance = [
+  "add(point) adds point",
+  "count(point) returns square count",
+  "Efficient point lookups",
+]
+hints = [
+  "Store points with frequencies",
+  "For each point, check possible square sides",
+  "Use hashmap for O(1) point lookup",
+]
+dependencies = ["spiral-matrix"]
