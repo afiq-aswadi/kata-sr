@@ -5,7 +5,6 @@
 use kata_sr::core::kata_generator::{generate_kata_files, KataFormData};
 use kata_sr::core::kata_validation::{slugify_kata_name, validate_dependencies, validate_kata_name, ValidationError};
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
 use tempfile::TempDir;
 
 fn create_test_exercises_dir() -> TempDir {
@@ -118,7 +117,10 @@ fn test_generate_kata_rejects_existing_name() {
 }
 
 #[test]
+#[cfg(unix)] // Unix-only test (uses Unix file permissions)
 fn test_generate_kata_rolls_back_on_failure() {
+    use std::os::unix::fs::PermissionsExt;
+
     let temp_dir = create_test_exercises_dir();
     let exercises_dir = temp_dir.path().join("exercises");
 
