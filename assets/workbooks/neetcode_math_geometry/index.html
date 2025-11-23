@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Math & Geometry: Mathematical Problem-Solving · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Math & Geometry</h1>
+      <p class="summary">
+        Master mathematical algorithms and geometric computations. Learn to apply mathematical
+        insights for optimization, implement matrix transformations, and solve geometric problems
+        efficiently.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">The Key Insight</div>
+        <p>
+          Math problems reward pattern recognition and insight. Instead of brute force simulation,
+          look for mathematical properties (symmetry, recursion, formulas) that reduce complexity.
+          Geometry problems often benefit from coordinate transformations and boundary tracking.
+        </p>
+      </div>
+
+      <h3>Common Patterns</h3>
+      <ul>
+        <li><strong>Matrix operations:</strong> Transpose, rotate, spiral traversal</li>
+        <li><strong>Number manipulation:</strong> Treat arrays as digits, carry propagation</li>
+        <li><strong>Fast algorithms:</strong> Binary exponentiation, digit-by-digit simulation</li>
+        <li><strong>Cycle detection:</strong> Floyd's algorithm for repeated transformations</li>
+        <li><strong>Geometric properties:</strong> Coordinate systems, symmetry, distance formulas</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Rotate Image</h2>
+      <div class="card">
+        <div class="pattern-title">Matrix Transformation</div>
+        <h3>Objective</h3>
+        <p>
+          Rotate n×n matrix 90 degrees clockwise in-place.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Elegant Trick</div>
+          <p>
+            90° clockwise rotation = transpose + reverse each row.
+            This two-step approach is simpler than rotating layer-by-layer and uses no extra space.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Original:           Transposed:         Reversed rows:
+1 2 3              1 4 7               7 4 1
+4 5 6       →      2 5 8        →      8 5 2
+7 8 9              3 6 9               9 6 3
+
+Transpose: swap matrix[i][j] with matrix[j][i]
+Reverse: reverse each row
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def rotate(matrix: List[List[int]]) -> None:
+    n = len(matrix)
+
+    # Step 1: Transpose (swap across diagonal)
+    for i in range(n):
+        for j in range(i + 1, n):
+            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+
+    # Step 2: Reverse each row
+    for i in range(n):
+        matrix[i].reverse()
+
+# Alternative: rotate layer by layer
+def rotate(matrix: List[List[int]]) -> None:
+    n = len(matrix)
+    for layer in range(n // 2):
+        first, last = layer, n - layer - 1
+        for i in range(first, last):
+            offset = i - first
+            top = matrix[first][i]
+
+            # left -> top
+            matrix[first][i] = matrix[last - offset][first]
+            # bottom -> left
+            matrix[last - offset][first] = matrix[last][last - offset]
+            # right -> bottom
+            matrix[last][last - offset] = matrix[i][last]
+            # top -> right
+            matrix[i][last] = top</code></pre>
+
+        <p><span class="complexity">Time: O(n²) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Spiral Matrix</h2>
+      <div class="card">
+        <div class="pattern-title">Boundary Traversal</div>
+        <h3>Objective</h3>
+        <p>
+          Return elements of matrix in spiral order.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Boundary Approach</div>
+          <p>
+            Track four boundaries (top, bottom, left, right). Traverse in order: right, down,
+            left, up. After each direction, shrink the corresponding boundary. Stop when
+            boundaries cross.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Matrix:
+1  2  3  4
+5  6  7  8
+9  10 11 12
+
+Traversal:
+→ 1,2,3,4      (top row, then top++)
+↓ 8,12         (right col, then right--)
+← 11,10,9      (bottom row, then bottom--)
+↑ 5            (left col, then left++)
+→ 6,7          (top row, then top++)
+
+Result: [1,2,3,4,8,12,11,10,9,5,6,7]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def spiralOrder(matrix: List[List[int]]) -> List[int]:
+    if not matrix:
+        return []
+
+    result = []
+    top, bottom = 0, len(matrix) - 1
+    left, right = 0, len(matrix[0]) - 1
+
+    while top <= bottom and left <= right:
+        # Traverse right
+        for col in range(left, right + 1):
+            result.append(matrix[top][col])
+        top += 1
+
+        # Traverse down
+        for row in range(top, bottom + 1):
+            result.append(matrix[row][right])
+        right -= 1
+
+        # Traverse left (if row remains)
+        if top <= bottom:
+            for col in range(right, left - 1, -1):
+                result.append(matrix[bottom][col])
+            bottom -= 1
+
+        # Traverse up (if column remains)
+        if left <= right:
+            for row in range(bottom, top - 1, -1):
+                result.append(matrix[row][left])
+            left += 1
+
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(m·n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Pow(x, n)</h2>
+      <div class="card">
+        <div class="pattern-title">Fast Exponentiation</div>
+        <h3>Objective</h3>
+        <p>
+          Implement pow(x, n) using binary exponentiation.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Log-Time Trick</div>
+          <p>
+            Instead of multiplying x by itself n times (O(n)), use the property:
+            x^n = (x²)^(n/2). This halves n each iteration, achieving O(log n) time.
+            If n is odd, multiply by an extra x.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Compute 2^10:
+
+2^10 = (2^2)^5 = 4^5
+4^5 = 4 · (4^2)^2 = 4 · 16^2  (odd, extract one 4)
+16^2 = (16^2)^1 = 256^1
+256^1 = 256
+
+Only 4 multiplications instead of 10!
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def myPow(x: float, n: int) -> float:
+    if n == 0:
+        return 1
+
+    # Handle negative exponent
+    if n < 0:
+        x = 1 / x
+        n = -n
+
+    result = 1
+    current_product = x
+
+    while n > 0:
+        # If n is odd, multiply result by current product
+        if n % 2 == 1:
+            result *= current_product
+
+        # Square the current product
+        current_product *= current_product
+        # Halve n
+        n //= 2
+
+    return result
+
+# Recursive approach
+def myPow(x: float, n: int) -> float:
+    if n == 0:
+        return 1
+    if n < 0:
+        return 1 / myPow(x, -n)
+
+    if n % 2 == 0:
+        half = myPow(x, n // 2)
+        return half * half
+    else:
+        return x * myPow(x, n - 1)</code></pre>
+
+        <p><span class="complexity">Time: O(log n) | Space: O(1) iterative, O(log n) recursive</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Multiply Strings</h2>
+      <div class="card">
+        <div class="pattern-title">String Multiplication</div>
+        <h3>Objective</h3>
+        <p>
+          Multiply two large numbers represented as strings.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Digit-by-Digit Insight</div>
+          <p>
+            Simulate grade-school multiplication. For nums[i] * nums[j], the result
+            contributes to positions i+j and i+j+1 in the output. The maximum length
+            of the product is len(num1) + len(num2).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+    123
+  ×  45
+  -----
+    615  (123 × 5)
+   492   (123 × 4, shifted)
+  -----
+   5535
+
+Position mapping:
+123[i=0,1,2] × 45[j=0,1]
+- 3×5=15 → pos[2+1]=3, pos[2+1+1]=4
+- 2×5=10 → pos[1+1]=2, pos[1+1+1]=3
+...
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def multiply(num1: str, num2: str) -> str:
+    if num1 == "0" or num2 == "0":
+        return "0"
+
+    m, n = len(num1), len(num2)
+    result = [0] * (m + n)
+
+    # Reverse to start from least significant digit
+    num1, num2 = num1[::-1], num2[::-1]
+
+    for i in range(m):
+        for j in range(n):
+            digit1 = int(num1[i])
+            digit2 = int(num2[j])
+            product = digit1 * digit2
+
+            # Add to existing value at position i+j
+            result[i + j] += product
+            # Handle carry
+            result[i + j + 1] += result[i + j] // 10
+            result[i + j] %= 10
+
+    # Remove leading zeros
+    while len(result) > 1 and result[-1] == 0:
+        result.pop()
+
+    # Convert to string (reverse back)
+    return ''.join(map(str, result[::-1]))</code></pre>
+
+        <p><span class="complexity">Time: O(m·n) | Space: O(m+n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Happy Number</h2>
+      <div class="card">
+        <div class="pattern-title">Cycle Detection</div>
+        <h3>Objective</h3>
+        <p>
+          Check if number reaches 1 by summing squares of digits.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Cycle Insight</div>
+          <p>
+            A number either reaches 1 (happy) or enters an infinite cycle (not happy).
+            Use Floyd's cycle detection (slow/fast pointers) or a seen set to detect cycles.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+n = 19
+
+19 → 1² + 9² = 82
+82 → 8² + 2² = 68
+68 → 6² + 8² = 100
+100 → 1² + 0² + 0² = 1 ✓ (happy!)
+
+n = 2
+
+2 → 4 → 16 → 37 → 58 → 89 → 145 → 42 → 20 → 4 (cycle!)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def isHappy(n: int) -> bool:
+    def get_next(num):
+        total = 0
+        while num > 0:
+            digit = num % 10
+            total += digit * digit
+            num //= 10
+        return total
+
+    # Method 1: Using set
+    seen = set()
+    while n != 1 and n not in seen:
+        seen.add(n)
+        n = get_next(n)
+    return n == 1
+
+# Method 2: Floyd's cycle detection
+def isHappy(n: int) -> bool:
+    def get_next(num):
+        total = 0
+        while num > 0:
+            digit = num % 10
+            total += digit * digit
+            num //= 10
+        return total
+
+    slow = n
+    fast = get_next(n)
+
+    while fast != 1 and slow != fast:
+        slow = get_next(slow)
+        fast = get_next(get_next(fast))
+
+    return fast == 1</code></pre>
+
+        <p><span class="complexity">Time: O(log n) | Space: O(log n) with set, O(1) with Floyd's</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>Matrix Transformations</h3>
+        <pre><code class="language-python"># Rotate 90° clockwise: transpose + reverse rows
+for i in range(n):
+    for j in range(i + 1, n):
+        matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+for row in matrix:
+    row.reverse()
+
+# Spiral traversal: track boundaries
+top, bottom, left, right = 0, m-1, 0, n-1
+while top <= bottom and left <= right:
+    # right, down, left, up
+    # shrink boundaries after each direction</code></pre>
+
+        <h3>Fast Algorithms</h3>
+        <pre><code class="language-python"># Binary exponentiation: O(log n) instead of O(n)
+result = 1
+while n > 0:
+    if n % 2 == 1:
+        result *= x
+    x *= x
+    n //= 2
+
+# Digit manipulation
+while num > 0:
+    digit = num % 10
+    # process digit
+    num //= 10</code></pre>
+
+        <h3>Cycle Detection</h3>
+        <pre><code class="language-python"># Floyd's algorithm (slow/fast pointers)
+slow, fast = start, start
+while True:
+    slow = next(slow)
+    fast = next(next(fast))
+    if slow == fast:
+        break  # Cycle detected
+
+# Or use a seen set
+seen = set()
+while current not in seen:
+    seen.add(current)
+    current = next(current)</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Pitfalls & Tips</h2>
+      <div class="card">
+        <h3>1. Matrix Index Confusion</h3>
+        <ul>
+          <li><strong>Transpose:</strong> Loop <code>j from i+1</code> to avoid double-swapping</li>
+          <li><strong>Rotation:</strong> Remember transpose ≠ rotation (need reverse too)</li>
+          <li><strong>Boundaries:</strong> Check <code>top <= bottom</code> before traversing</li>
+        </ul>
+
+        <h3>2. Integer Overflow</h3>
+        <ul>
+          <li>Use long/bigint for large number operations</li>
+          <li>In Python, integers are arbitrary precision (no overflow)</li>
+          <li>But be careful with intermediate calculations</li>
+        </ul>
+
+        <h3>3. Edge Cases</h3>
+        <ul>
+          <li><strong>Zero:</strong> Handle 0 specially (multiply, pow)</li>
+          <li><strong>Negative:</strong> Handle negative exponents, numbers</li>
+          <li><strong>Empty:</strong> Check for empty matrices, strings</li>
+        </ul>
+
+        <h3>4. Optimization Opportunities</h3>
+        <ul>
+          <li>Look for O(log n) alternatives to O(n) (exponentiation, binary search)</li>
+          <li>Use mathematical formulas instead of simulation when possible</li>
+          <li>In-place operations save space (matrix rotation)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/22" target="_blank">NeetCode Math & Geometry Guide</a></li>
+        <li><a href="https://cp-algorithms.com/algebra/binary-exp.html" target="_blank">Binary Exponentiation Explained</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

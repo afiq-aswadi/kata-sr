@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Advanced Graphs: Shortest Paths and MST · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Advanced</div>
+      <h1>Advanced Graphs</h1>
+      <p class="summary">
+        Master advanced graph algorithms including Dijkstra's shortest path, topological sort variants,
+        and graph optimization problems. These algorithms power routing systems, dependency resolution,
+        and countless real-world applications.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Advanced graph algorithms build on basic DFS/BFS by adding weighted edges, priorities,
+          and optimization criteria. Dijkstra finds shortest paths using a greedy approach with
+          min-heap. Topological sort reveals ordering constraints in DAGs. Understanding when
+          to apply each algorithm is crucial for efficient solutions.
+        </p>
+      </div>
+
+      <h3>Algorithm Selection Guide</h3>
+      <div class="comparison">
+        <div class="comparison-item">
+          <h4>🎯 Dijkstra's Algorithm</h4>
+          <ul>
+            <li>Shortest path in weighted graph</li>
+            <li>Non-negative weights</li>
+            <li>Single source to all nodes</li>
+            <li>Uses min-heap priority queue</li>
+          </ul>
+        </div>
+        <div class="comparison-item">
+          <h4>📊 Topological Sort</h4>
+          <ul>
+            <li>Order nodes in DAG</li>
+            <li>Dependency resolution</li>
+            <li>DFS postorder or Kahn's</li>
+            <li>Detects cycles</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Common Patterns</h3>
+      <ul>
+        <li><strong>Priority-based traversal:</strong> Use heap for weighted graphs</li>
+        <li><strong>Relaxation:</strong> Update distances with better paths</li>
+        <li><strong>State tracking:</strong> visited, distances, parent pointers</li>
+        <li><strong>Cycle detection:</strong> Three-state DFS (unvisited, visiting, visited)</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Reconstruct Itinerary</h2>
+      <div class="card">
+        <div class="pattern-title">Eulerian Path (Hierholzer)</div>
+        <h3>Objective</h3>
+        <p>
+          Find Eulerian path in directed graph - visit all edges exactly once, lexicographically smallest.
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+tickets = [["JFK","SFO"],["JFK","ATL"],["SFO","ATL"],["ATL","JFK"],["ATL","SFO"]]
+
+Graph:
+JFK → [ATL, SFO]
+SFO → [ATL]
+ATL → [JFK, SFO]
+
+Eulerian Path (lexicographically smallest):
+JFK → ATL → JFK → SFO → ATL → SFO
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def findItinerary(tickets: List[List[str]]) -> List[str]:
+    graph = defaultdict(list)
+
+    # Build graph and sort destinations
+    for src, dst in sorted(tickets, reverse=True):
+        graph[src].append(dst)
+
+    route = []
+
+    def dfs(airport):
+        # Visit all outgoing edges
+        while graph[airport]:
+            next_airport = graph[airport].pop()
+            dfs(next_airport)
+        # Add to route in reverse order
+        route.append(airport)
+
+    dfs("JFK")
+    return route[::-1]</code></pre>
+
+        <p><span class="complexity">Time: O(E log E) | Space: O(E)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Network Delay Time</h2>
+      <div class="card">
+        <div class="pattern-title">Dijkstra's Algorithm</div>
+        <h3>Objective</h3>
+        <p>
+          Find minimum time for signal to reach all nodes from source node k using Dijkstra.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Dijkstra's Greedy Choice</div>
+          <p>
+            Always process the closest unvisited node. By using a min-heap, we guarantee
+            that when we visit a node, we've found the shortest path to it. Update neighbor
+            distances using relaxation: if new_dist < current_dist, update it.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+times = [[2,1,1],[2,3,1],[3,4,1]], n=4, k=2
+
+Initial: dist = {2: 0, others: ∞}
+
+Step 1: Process node 2
+        dist[1] = min(∞, 0+1) = 1
+        dist[3] = min(∞, 0+1) = 1
+
+Step 2: Process node 1 (tie, pick either)
+        No neighbors
+
+Step 3: Process node 3
+        dist[4] = min(∞, 1+1) = 2
+
+All nodes reachable → max(0,1,1,2) = 2
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def networkDelayTime(times: List[List[int]], n: int, k: int) -> int:
+    graph = defaultdict(list)
+    for u, v, w in times:
+        graph[u].append((v, w))
+
+    # Min-heap: (time, node)
+    heap = [(0, k)]
+    dist = {}
+
+    while heap:
+        time, node = heapq.heappop(heap)
+
+        if node in dist:
+            continue
+
+        dist[node] = time
+
+        for neighbor, weight in graph[node]:
+            if neighbor not in dist:
+                heapq.heappush(heap, (time + weight, neighbor))
+
+    return max(dist.values()) if len(dist) == n else -1</code></pre>
+
+        <p><span class="complexity">Time: O(E log V) | Space: O(V + E)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Cheapest Flights Within K Stops</h2>
+      <div class="card">
+        <div class="pattern-title">Bellman-Ford Variant / BFS</div>
+        <h3>Objective</h3>
+        <p>
+          Find cheapest path with at most k stops (constraint on path length, not just cost).
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Modified Dijkstra</div>
+          <p>
+            Unlike pure Dijkstra, we can't mark nodes as visited permanently. A node might
+            be revisited via a more expensive path that has fewer stops. Track both cost
+            and stops count.
+          </p>
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def findCheapestPrice(n: int, flights: List[List[int]], src: int, dst: int, k: int) -> int:
+    graph = defaultdict(list)
+    for u, v, w in flights:
+        graph[u].append((v, w))
+
+    # Min-heap: (cost, node, stops)
+    heap = [(0, src, 0)]
+    # Track minimum cost to reach each (node, stops) pair
+    visited = {}
+
+    while heap:
+        cost, node, stops = heapq.heappop(heap)
+
+        if node == dst:
+            return cost
+
+        if stops > k:
+            continue
+
+        if (node, stops) in visited:
+            continue
+        visited[(node, stops)] = cost
+
+        for neighbor, price in graph[node]:
+            heapq.heappush(heap, (cost + price, neighbor, stops + 1))
+
+    return -1</code></pre>
+
+        <p><span class="complexity">Time: O(E · K log(V · K)) | Space: O(V · K)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Swim in Rising Water</h2>
+      <div class="card">
+        <div class="pattern-title">Dijkstra on Grid / Binary Search + BFS</div>
+        <h3>Objective</h3>
+        <p>
+          Find minimum time to swim from (0,0) to (n-1,n-1) where time required equals maximum elevation on path.
+        </p>
+
+        <h3>Key Pattern (Dijkstra Approach)</h3>
+        <pre><code class="language-python">def swimInWater(grid: List[List[int]]) -> int:
+    n = len(grid)
+    # Min-heap: (max_elevation_so_far, row, col)
+    heap = [(grid[0][0], 0, 0)]
+    visited = set()
+
+    while heap:
+        elevation, r, c = heapq.heappop(heap)
+
+        if (r, c) in visited:
+            continue
+        visited.add((r, c))
+
+        if r == n - 1 and c == n - 1:
+            return elevation
+
+        for dr, dc in [(0,1), (1,0), (0,-1), (-1,0)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < n and 0 <= nc < n and (nr, nc) not in visited:
+                # Track maximum elevation on path
+                new_elevation = max(elevation, grid[nr][nc])
+                heapq.heappush(heap, (new_elevation, nr, nc))
+
+    return -1</code></pre>
+
+        <p><span class="complexity">Time: O(N² log N) | Space: O(N²)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Alien Dictionary</h2>
+      <div class="card">
+        <div class="pattern-title">Topological Sort</div>
+        <h3>Objective</h3>
+        <p>
+          Derive alien alphabet ordering by comparing adjacent words and building dependency graph.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Extract Ordering from Words</div>
+          <p>
+            Compare adjacent words to find first differing character. This creates an edge
+            in the character dependency graph. Then topological sort reveals the ordering.
+            Cycle detection is crucial - it means no valid ordering exists.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+words = ["wrt","wrf","er","ett","rftt"]
+
+Compare adjacent words:
+  "wrt" vs "wrf": t → f
+  "wrf" vs "er":  w → e
+  "er" vs "ett":  r → t
+  "ett" vs "rftt": e → r
+
+Graph: w → e → r → t → f
+
+Topological order: "wertf"
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def alienOrder(words: List[str]) -> str:
+    graph = {c: set() for word in words for c in word}
+
+    # Build graph from adjacent word pairs
+    for i in range(len(words) - 1):
+        w1, w2 = words[i], words[i + 1]
+        min_len = min(len(w1), len(w2))
+
+        # Invalid: "abc" before "ab"
+        if len(w1) > len(w2) and w1[:min_len] == w2[:min_len]:
+            return ""
+
+        # Find first differing character
+        for j in range(min_len):
+            if w1[j] != w2[j]:
+                graph[w1[j]].add(w2[j])
+                break
+
+    # Topological sort with cycle detection
+    visited = {}  # False = visiting, True = visited
+    result = []
+
+    def dfs(char):
+        if char in visited:
+            return visited[char]
+
+        visited[char] = False  # Mark as visiting
+
+        for neighbor in graph[char]:
+            if not dfs(neighbor):
+                return False
+
+        visited[char] = True  # Mark as visited
+        result.append(char)
+        return True
+
+    for char in graph:
+        if not dfs(char):
+            return ""  # Cycle detected
+
+    return ''.join(result[::-1])</code></pre>
+
+        <p><span class="complexity">Time: O(C) | Space: O(1)</span>
+        <br><small>C = total characters in all words, alphabet size is constant</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>Algorithm Selection</h3>
+        <ul>
+          <li><strong>Dijkstra:</strong> Single-source shortest path, non-negative weights, use min-heap</li>
+          <li><strong>Bellman-Ford:</strong> Handles negative weights, detects negative cycles, O(VE) time</li>
+          <li><strong>Topological Sort:</strong> Order DAG nodes, two methods (DFS postorder, Kahn's algorithm)</li>
+          <li><strong>Eulerian Path:</strong> Visit all edges once, Hierholzer's algorithm</li>
+        </ul>
+
+        <h3>Common Pitfalls</h3>
+        <ul>
+          <li>Using Dijkstra with negative weights (incorrect results)</li>
+          <li>Forgetting to handle unreachable nodes (return -1 or infinity)</li>
+          <li>Not detecting cycles in topological sort</li>
+          <li>Marking nodes visited too early in modified Dijkstra variants</li>
+        </ul>
+
+        <h3>Implementation Tips</h3>
+        <pre><code class="language-python"># Dijkstra template
+heap = [(0, start)]
+dist = {}
+while heap:
+    cost, node = heapq.heappop(heap)
+    if node in dist:
+        continue
+    dist[node] = cost
+    for neighbor, weight in graph[node]:
+        if neighbor not in dist:
+            heapq.heappush(heap, (cost + weight, neighbor))
+
+# Topological sort (DFS)
+def dfs(node):
+    if node in visited:
+        return visited[node]
+    visited[node] = False  # Visiting
+    for neighbor in graph[node]:
+        if not dfs(neighbor):
+            return False  # Cycle
+    visited[node] = True
+    result.append(node)
+    return True</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/20" target="_blank">NeetCode Advanced Graphs Guide</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm" target="_blank">Dijkstra's Algorithm - Wikipedia</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Topological_sorting" target="_blank">Topological Sorting - Wikipedia</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>
