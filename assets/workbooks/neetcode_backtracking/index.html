@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Backtracking: Exhaustive Search with Pruning · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Backtracking</h1>
+      <p class="summary">
+        Master backtracking for combinatorial problems with decision trees. Learn to generate
+        all subsets, permutations, and combinations while pruning invalid branches early for
+        optimal performance.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">The Key Insight</div>
+        <p>
+          Backtracking is exhaustive search with intelligence. At each step, you make a choice,
+          explore its consequences, then undo the choice (backtrack) to try alternatives. The power
+          comes from pruning: abandoning branches that cannot lead to valid solutions.
+        </p>
+      </div>
+
+      <h3>The Backtracking Template</h3>
+      <pre><code class="language-python">def backtrack(path, choices):
+    # Base case: found a solution
+    if is_solution(path):
+        result.append(path.copy())
+        return
+
+    # Iterate through available choices
+    for choice in choices:
+        # Prune: skip invalid choices
+        if not is_valid(choice):
+            continue
+
+        # Make choice
+        path.append(choice)
+
+        # Recurse with updated state
+        backtrack(path, get_next_choices(choice))
+
+        # Undo choice (backtrack)
+        path.pop()</code></pre>
+
+      <h3>Three Core Components</h3>
+      <ul>
+        <li><strong>Choice:</strong> What decision can we make at this step?</li>
+        <li><strong>Constraint:</strong> What makes a choice valid or invalid?</li>
+        <li><strong>Goal:</strong> When have we found a complete solution?</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Subsets</h2>
+      <div class="card">
+        <div class="pattern-title">Basic Backtracking</div>
+        <h3>Objective</h3>
+        <p>
+          Generate all possible subsets (power set) of distinct integers.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Insight</div>
+          <p>
+            For each element, you have two choices: include it or exclude it. This creates
+            a binary decision tree with 2^n leaves (all possible subsets).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [1, 2, 3]
+
+Decision Tree:
+                    []
+           /                  \
+         [1]                  []
+       /    \               /    \
+    [1,2]  [1]           [2]     []
+    /  \   /  \         /  \    /  \
+[1,2,3][1,2][1,3][1] [2,3][2] [3] []
+
+All subsets: [[], [1], [2], [3], [1,2], [1,3], [2,3], [1,2,3]]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def subsets(nums: List[int]) -> List[List[int]]:
+    result = []
+
+    def backtrack(start, path):
+        # Every path is a valid subset
+        result.append(path.copy())
+
+        # Try adding each remaining element
+        for i in range(start, len(nums)):
+            path.append(nums[i])
+            backtrack(i + 1, path)
+            path.pop()
+
+    backtrack(0, [])
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(2^n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Combination Sum</h2>
+      <div class="card">
+        <div class="pattern-title">Unbounded Backtracking</div>
+        <h3>Objective</h3>
+        <p>
+          Find all combinations that sum to target (elements can be reused).
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Pruning Trick</div>
+          <p>
+            Sort candidates first. If current sum exceeds target, all future additions
+            will also exceed (pruning entire subtree). If current candidate exceeds remaining
+            target, all larger candidates will too (break early).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [2, 3, 6, 7], target = 7
+
+              []
+          /   |   \   \
+        [2]  [3] [6] [7] ✓
+       / | \  |
+    [2,2][2,3]✓ [3,3]
+      |
+   [2,2,2]
+      |
+   [2,2,2,2] ✗ (sum > 7, prune)
+
+Valid combinations: [[2,2,3], [7]]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def combinationSum(candidates: List[int], target: int) -> List[List[int]]:
+    result = []
+    candidates.sort()  # Enable pruning
+
+    def backtrack(start, path, total):
+        if total == target:
+            result.append(path.copy())
+            return
+        if total > target:
+            return  # Prune: cannot reach target
+
+        for i in range(start, len(candidates)):
+            if total + candidates[i] > target:
+                break  # All larger candidates will exceed
+
+            path.append(candidates[i])
+            backtrack(i, path, total + candidates[i])  # i not i+1: reuse allowed
+            path.pop()
+
+    backtrack(0, [], 0)
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(2^target) | Space: O(target)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Permutations</h2>
+      <div class="card">
+        <div class="pattern-title">Full Arrangements</div>
+        <h3>Objective</h3>
+        <p>
+          Generate all possible permutations of distinct integers.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Difference from Subsets</div>
+          <p>
+            Subsets care about which elements to include. Permutations care about order.
+            Use a visited set to track which elements are already in the current path,
+            and only complete when path length equals n.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [1, 2, 3]
+
+Decision Tree (first level):
+                []
+        /       |       \
+      [1]      [2]      [3]
+     / \      / \      / \
+  [1,2][1,3][2,1][2,3][3,1][3,2]
+   |    |    |    |    |    |
+[1,2,3][1,3,2][2,1,3][2,3,1][3,1,2][3,2,1]
+
+All permutations: 6 total (3! = 6)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def permute(nums: List[int]) -> List[List[int]]:
+    result = []
+
+    def backtrack(path):
+        # Base case: permutation is complete
+        if len(path) == len(nums):
+            result.append(path.copy())
+            return
+
+        for num in nums:
+            if num in path:
+                continue  # Skip already used
+
+            path.append(num)
+            backtrack(path)
+            path.pop()
+
+    backtrack([])
+    return result
+
+# More efficient with visited set
+def permute(nums: List[int]) -> List[List[int]]:
+    result = []
+    visited = set()
+
+    def backtrack(path):
+        if len(path) == len(nums):
+            result.append(path.copy())
+            return
+
+        for num in nums:
+            if num not in visited:
+                visited.add(num)
+                path.append(num)
+                backtrack(path)
+                path.pop()
+                visited.remove(num)
+
+    backtrack([])
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n!) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: N-Queens</h2>
+      <div class="card">
+        <div class="pattern-title">Constraint Satisfaction</div>
+        <h3>Objective</h3>
+        <p>
+          Place n queens on n×n chessboard with no attacks.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Constraint Optimization</div>
+          <p>
+            Place queens row by row (ensures no row conflicts). For each row, try each column,
+            but check: column not used, diagonal not used, anti-diagonal not used. Track these
+            with sets for O(1) lookup instead of checking the entire board.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+4-Queens Solution:
+
+. Q . .    Row 0, Col 1
+. . . Q    Row 1, Col 3
+Q . . .    Row 2, Col 0
+. . Q .    Row 3, Col 2
+
+Constraints tracked:
+- cols = {0, 1, 2, 3}
+- diagonals (r-c) = {-2, -2, 2, 1}
+- anti-diagonals (r+c) = {1, 4, 2, 5}
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def solveNQueens(n: int) -> List[List[str]]:
+    result = []
+    board = [['.'] * n for _ in range(n)]
+
+    cols = set()
+    diags = set()      # r - c
+    anti_diags = set() # r + c
+
+    def backtrack(row):
+        if row == n:
+            result.append([''.join(row) for row in board])
+            return
+
+        for col in range(n):
+            if col in cols or (row - col) in diags or (row + col) in anti_diags:
+                continue  # Invalid placement
+
+            # Place queen
+            board[row][col] = 'Q'
+            cols.add(col)
+            diags.add(row - col)
+            anti_diags.add(row + col)
+
+            backtrack(row + 1)
+
+            # Remove queen (backtrack)
+            board[row][col] = '.'
+            cols.remove(col)
+            diags.remove(row - col)
+            anti_diags.remove(row + col)
+
+    backtrack(0)
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n!) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Palindrome Partitioning</h2>
+      <div class="card">
+        <div class="pattern-title">String Partitioning</div>
+        <h3>Objective</h3>
+        <p>
+          Partition string into all possible palindrome substrings.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Decision Point</div>
+          <p>
+            At each position, try all possible cut points. For each substring from start to cut,
+            check if it's a palindrome. If yes, recurse on the remaining string. This explores
+            all possible partitioning combinations.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: "aab"
+
+Decision tree:
+                "aab"
+           /            \
+        "a"|"ab"      "aa"|"b"
+         /    \           |
+    "a"|"b"  ✗          "b"
+       |
+      "b"
+
+Valid partitions: [["a","a","b"], ["aa","b"]]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def partition(s: str) -> List[List[str]]:
+    result = []
+
+    def is_palindrome(string):
+        return string == string[::-1]
+
+    def backtrack(start, path):
+        if start == len(s):
+            result.append(path.copy())
+            return
+
+        # Try all possible end positions
+        for end in range(start + 1, len(s) + 1):
+            substring = s[start:end]
+            if is_palindrome(substring):
+                path.append(substring)
+                backtrack(end, path)
+                path.pop()
+
+    backtrack(0, [])
+    return result
+
+# Optimized with DP palindrome check
+def partition(s: str) -> List[List[str]]:
+    n = len(s)
+    # Precompute palindromes
+    is_pal = [[False] * n for _ in range(n)]
+    for i in range(n):
+        is_pal[i][i] = True
+    for length in range(2, n + 1):
+        for i in range(n - length + 1):
+            j = i + length - 1
+            if s[i] == s[j]:
+                is_pal[i][j] = (length == 2) or is_pal[i + 1][j - 1]
+
+    result = []
+    def backtrack(start, path):
+        if start == n:
+            result.append(path.copy())
+            return
+
+        for end in range(start, n):
+            if is_pal[start][end]:
+                path.append(s[start:end + 1])
+                backtrack(end + 1, path)
+                path.pop()
+
+    backtrack(0, [])
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n·2^n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>When to Use Backtracking</h3>
+        <ul>
+          <li><strong>Generate all:</strong> subsets, permutations, combinations</li>
+          <li><strong>Constraint satisfaction:</strong> N-Queens, Sudoku</li>
+          <li><strong>Path finding:</strong> all paths, valid sequences</li>
+          <li><strong>Partitioning:</strong> split into valid groups</li>
+        </ul>
+
+        <h3>Optimization Techniques</h3>
+        <div class="comparison">
+          <div class="comparison-item">
+            <h4>Pruning</h4>
+            <ul>
+              <li>Check constraints before recursing</li>
+              <li>Use early termination (break vs continue)</li>
+              <li>Sort input to enable range pruning</li>
+            </ul>
+          </div>
+          <div class="comparison-item">
+            <h4>State Tracking</h4>
+            <ul>
+              <li>Use sets for O(1) membership checks</li>
+              <li>Track visited/used elements</li>
+              <li>Maintain valid state invariants</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Common Patterns</h3>
+        <pre><code class="language-python"># Pattern 1: Include/Exclude (Subsets)
+for i in range(start, len(arr)):
+    path.append(arr[i])
+    backtrack(i + 1, path)  # i+1: no reuse
+    path.pop()
+
+# Pattern 2: Reuse allowed (Combination Sum)
+for i in range(start, len(arr)):
+    path.append(arr[i])
+    backtrack(i, path)  # i: reuse allowed
+    path.pop()
+
+# Pattern 3: All choices (Permutations)
+for choice in choices:
+    if choice not in visited:
+        visited.add(choice)
+        backtrack(path + [choice])
+        visited.remove(choice)
+
+# Pattern 4: Skip duplicates (Subsets II)
+for i in range(start, len(arr)):
+    if i > start and arr[i] == arr[i-1]:
+        continue  # Skip duplicates at same level
+    backtrack(i + 1, path + [arr[i]])</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Pitfalls & Tips</h2>
+      <div class="card">
+        <h3>1. Forgetting to Backtrack</h3>
+        <ul>
+          <li><strong>Wrong:</strong> <code>backtrack(path + [choice])</code> without popping</li>
+          <li><strong>Right:</strong> <code>path.append(choice); backtrack(path); path.pop()</code></li>
+          <li><strong>Alternative:</strong> Pass <code>path.copy()</code> or slice <code>path[:]</code></li>
+        </ul>
+
+        <h3>2. Modifying vs Copying</h3>
+        <ul>
+          <li>When adding to result: always use <code>path.copy()</code></li>
+          <li>When passing to recursion: modify in-place + backtrack is faster</li>
+          <li>Copying creates O(n) overhead per call</li>
+        </ul>
+
+        <h3>3. Duplicate Handling</h3>
+        <ul>
+          <li><strong>Sort first:</strong> enables duplicate detection</li>
+          <li><strong>Skip at same level:</strong> <code>if i > start and arr[i] == arr[i-1]: continue</code></li>
+          <li><strong>Not across levels:</strong> don't skip if i == start</li>
+        </ul>
+
+        <h3>4. Time Complexity</h3>
+        <ul>
+          <li>Subsets: O(2^n) - binary choice per element</li>
+          <li>Permutations: O(n!) - n choices, then n-1, then n-2...</li>
+          <li>Combinations: O(C(n,k)) - binomial coefficient</li>
+          <li>Always exponential or factorial - backtracking is brute force</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/26" target="_blank">NeetCode Backtracking Guide</a></li>
+        <li><a href="https://leetcode.com/problemset/algorithms/?topicSlugs=backtracking" target="_blank">LeetCode Backtracking Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

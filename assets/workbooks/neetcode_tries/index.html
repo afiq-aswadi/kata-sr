@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Tries: Prefix Tree Patterns · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Tries</h1>
+      <p class="summary">
+        Master trie (prefix tree) for efficient string search and prefix matching. Learn to
+        implement basic trie operations, extend with wildcard searches, and combine tries
+        with backtracking for complex word search problems.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">The Key Insight</div>
+        <p>
+          A trie is a tree where each node represents a character. Words sharing prefixes
+          share paths from the root. This enables O(m) search/insert where m is word length,
+          independent of dictionary size. Perfect for prefix matching, autocomplete, and
+          word validation.
+        </p>
+      </div>
+
+      <h3>Trie vs Hash Table</h3>
+      <div class="comparison">
+        <div class="comparison-item">
+          <h4>Hash Table</h4>
+          <ul>
+            <li>Search word: O(m)</li>
+            <li>Prefix search: O(n·m) - scan all</li>
+            <li>Space: O(total chars)</li>
+            <li>Simple implementation</li>
+          </ul>
+        </div>
+        <div class="comparison-item">
+          <h4>Trie</h4>
+          <ul>
+            <li>Search word: O(m)</li>
+            <li>Prefix search: O(m) - direct path</li>
+            <li>Space: O(total chars, shared prefixes)</li>
+            <li>Complex but powerful</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Trie Node Structure</h3>
+      <pre><code class="language-python">class TrieNode:
+    def __init__(self):
+        self.children = {}  # char -> TrieNode
+        self.is_end_of_word = False  # Marks complete words</code></pre>
+
+      <h3>Common Use Cases</h3>
+      <ul>
+        <li><strong>Autocomplete:</strong> Find all words with given prefix</li>
+        <li><strong>Spell checker:</strong> Check if word exists, suggest corrections</li>
+        <li><strong>IP routing:</strong> Longest prefix matching</li>
+        <li><strong>Word games:</strong> Boggle, Scrabble word validation</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Implement Trie</h2>
+      <div class="card">
+        <div class="pattern-title">Basic Trie</div>
+        <h3>Objective</h3>
+        <p>
+          Implement basic trie with insert, search, and startsWith methods.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Core Operations</div>
+          <p>
+            <strong>Insert:</strong> Traverse/create nodes for each character, mark last as word end.
+            <strong>Search:</strong> Traverse path, check if end node exists and is marked.
+            <strong>StartsWith:</strong> Just traverse path, don't check word end marker.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Insert "cat", "cats", "dog":
+
+        root
+       /    \
+      c      d
+      |      |
+      a      o
+      |      |
+      t*     g*
+      |
+      s*
+
+* = is_end_of_word = True
+
+search("cat") → traverse c-a-t, found and marked → True
+search("ca")  → traverse c-a, found but not marked → False
+startsWith("ca") → traverse c-a, found → True
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end_of_word = False
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word: str) -> None:
+        node = self.root
+        for char in word:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        node.is_end_of_word = True
+
+    def search(self, word: str) -> bool:
+        node = self.root
+        for char in word:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return node.is_end_of_word
+
+    def startsWith(self, prefix: str) -> bool:
+        node = self.root
+        for char in prefix:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return True</code></pre>
+
+        <p><span class="complexity">Time: O(m) per operation | Space: O(total chars)</span>
+        <br><small>where m is word/prefix length</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Design Add and Search Words</h2>
+      <div class="card">
+        <div class="pattern-title">Trie with Wildcards</div>
+        <h3>Objective</h3>
+        <p>
+          Extend trie to support wildcard '.' searches with backtracking.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Wildcard Strategy</div>
+          <p>
+            Regular characters: traverse normally. Wildcard '.': try all children recursively
+            (DFS/backtracking). If any path succeeds, return True. This explores all possible
+            matches for the wildcard.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Trie contains: "bad", "dad", "mad"
+
+        root
+      / | \
+     b  d  m
+     |  |  |
+     a  a  a
+     |  |  |
+     d* d* d*
+
+search(".ad"):
+  '.' → try all children of root: b, d, m
+    Try 'b' → 'a' → 'd' → is_end? Yes! ✓
+    (found "bad", return True)
+
+search("..d"):
+  '.' → try all: b, d, m
+    'b' → '.' → try all: a
+      'a' → 'd' → is_end? Yes! ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end_of_word = False
+
+class WordDictionary:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def addWord(self, word: str) -> None:
+        node = self.root
+        for char in word:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        node.is_end_of_word = True
+
+    def search(self, word: str) -> bool:
+        return self._search_helper(word, 0, self.root)
+
+    def _search_helper(self, word: str, index: int, node: TrieNode) -> bool:
+        # Base case: reached end of word
+        if index == len(word):
+            return node.is_end_of_word
+
+        char = word[index]
+
+        if char == '.':
+            # Wildcard: try all children
+            for child in node.children.values():
+                if self._search_helper(word, index + 1, child):
+                    return True
+            return False
+        else:
+            # Regular character
+            if char not in node.children:
+                return False
+            return self._search_helper(word, index + 1, node.children[char])</code></pre>
+
+        <p><span class="complexity">Time: O(m) best case, O(26^m) worst case | Space: O(total chars)</span>
+        <br><small>Worst case when all characters are wildcards</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Word Search II</h2>
+      <div class="card">
+        <div class="pattern-title">Trie + Backtracking</div>
+        <h3>Objective</h3>
+        <p>
+          Find all words from dictionary in 2D board using trie and backtracking.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Optimization</div>
+          <p>
+            Without trie: check each word individually with DFS (slow).
+            With trie: build trie from words, then DFS once through board while traversing
+            trie. Prune entire branches when prefix doesn't exist in trie. This reduces
+            complexity from O(words · cells · 4^length) to O(cells · 4^max_length).
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Board:            Trie from ["oath", "pea", "eat", "rain"]:
+o a t h              root
+p e a                /  \
+        e             o    p  e  r
+a t                  |    |  |  |
+                      a    e  a  a
+                      |    |  |  |
+                      t    a* t* i
+                      |          |
+                      h*         n*
+
+DFS from each cell:
+Start at 'o' (0,0):
+  o → a → t → h (found "oath"!) ✓
+Start at 'p' (1,0):
+  p → e → a (found "pea"!) ✓
+Start at 'e' (1,1):
+  e → a → t (found "eat"!) ✓
+
+Pruning example:
+Start at 't' (0,2):
+  't' not in trie root → prune immediately (skip entire subtree)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.word = None  # Store complete word at end node
+
+class Solution:
+    def findWords(self, board: List[List[str]], words: List[str]) -> List[str]:
+        # Build trie from words
+        root = TrieNode()
+        for word in words:
+            node = root
+            for char in word:
+                if char not in node.children:
+                    node.children[char] = TrieNode()
+                node = node.children[char]
+            node.word = word
+
+        rows, cols = len(board), len(board[0])
+        result = set()
+
+        def dfs(r, c, node):
+            char = board[r][c]
+
+            # Check if character exists in trie
+            if char not in node.children:
+                return
+
+            node = node.children[char]
+
+            # Found a word
+            if node.word:
+                result.add(node.word)
+
+            # Mark cell as visited
+            board[r][c] = '#'
+
+            # Explore neighbors
+            for dr, dc in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and board[nr][nc] != '#':
+                    dfs(nr, nc, node)
+
+            # Restore cell (backtrack)
+            board[r][c] = char
+
+        # Start DFS from each cell
+        for r in range(rows):
+            for c in range(cols):
+                dfs(r, c, root)
+
+        return list(result)</code></pre>
+
+        <p><span class="complexity">Time: O(m·n·4^L) | Space: O(total chars)</span>
+        <br><small>where m×n is board size, L is max word length</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>Trie Implementation Patterns</h3>
+        <pre><code class="language-python"># Pattern 1: Basic traversal (insert/search)
+node = root
+for char in word:
+    if char not in node.children:
+        node.children[char] = TrieNode()  # Insert
+        # return False  # Search
+    node = node.children[char]
+return node.is_end_of_word  # Search
+
+# Pattern 2: Wildcard with recursion
+def search_wildcard(word, index, node):
+    if index == len(word):
+        return node.is_end_of_word
+
+    if word[index] == '.':
+        # Try all children
+        return any(search_wildcard(word, index+1, child)
+                   for child in node.children.values())
+    else:
+        # Regular character
+        if word[index] not in node.children:
+            return False
+        return search_wildcard(word, index+1, node.children[word[index]])
+
+# Pattern 3: Trie + DFS (board search)
+def dfs(cell, trie_node):
+    char = board[cell]
+    if char not in trie_node.children:
+        return  # Prune!
+
+    trie_node = trie_node.children[char]
+    if trie_node.word:
+        result.add(trie_node.word)
+
+    # Mark visited, explore, backtrack
+    board[cell] = '#'
+    for neighbor in neighbors(cell):
+        dfs(neighbor, trie_node)
+    board[cell] = char</code></pre>
+
+        <h3>When to Use Tries</h3>
+        <div class="comparison">
+          <div class="comparison-item">
+            <h4>✓ Use Trie</h4>
+            <ul>
+              <li>Prefix matching/autocomplete</li>
+              <li>Dictionary with common prefixes</li>
+              <li>Board word search (multiple words)</li>
+              <li>Longest common prefix</li>
+            </ul>
+          </div>
+          <div class="comparison-item">
+            <h4>✗ Use Hash Table</h4>
+            <ul>
+              <li>Exact word lookup only</li>
+              <li>No prefix operations needed</li>
+              <li>Few shared prefixes</li>
+              <li>Simpler implementation preferred</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Pitfalls & Tips</h2>
+      <div class="card">
+        <h3>1. Memory Management</h3>
+        <ul>
+          <li>Tries can use significant memory if many unique branches</li>
+          <li>Consider compressed tries (Patricia tries) for sparse data</li>
+          <li>Delete unused nodes after word removal (advanced)</li>
+        </ul>
+
+        <h3>2. Word End Markers</h3>
+        <ul>
+          <li><strong>Wrong:</strong> Assuming reaching a node means word exists</li>
+          <li><strong>Right:</strong> Always check <code>is_end_of_word</code> flag</li>
+          <li>Example: "car" and "card" - 'r' node isn't word end if only "card" inserted</li>
+        </ul>
+
+        <h3>3. Backtracking with Tries</h3>
+        <ul>
+          <li>Mark cells visited before recursing, restore after</li>
+          <li>Pass trie node down the recursion (don't restart from root)</li>
+          <li>Prune early: check if character exists in trie before recursing</li>
+        </ul>
+
+        <h3>4. Optimization Tricks</h3>
+        <ul>
+          <li><strong>Store words at end nodes:</strong> Avoid reconstructing from path</li>
+          <li><strong>Remove found words:</strong> Prevent duplicate results in Word Search II</li>
+          <li><strong>Use array instead of dict:</strong> For lowercase English letters only (26 children)</li>
+        </ul>
+
+        <h3>5. Time Complexity Gotchas</h3>
+        <ul>
+          <li>Wildcard search can degrade to O(n) where n is total characters in trie</li>
+          <li>Board search is exponential in word length, not board size</li>
+          <li>Insert/search are O(m) but space is O(total unique characters stored)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Advanced Variations</h2>
+      <div class="card">
+        <h3>Optimization: Array-Based Children</h3>
+        <pre><code class="language-python">class TrieNode:
+    def __init__(self):
+        self.children = [None] * 26  # For lowercase a-z only
+        self.is_end_of_word = False
+
+def char_to_index(char):
+    return ord(char) - ord('a')
+
+# Insert with array
+node = root
+for char in word:
+    idx = char_to_index(char)
+    if not node.children[idx]:
+        node.children[idx] = TrieNode()
+    node = node.children[idx]</code></pre>
+
+        <h3>Feature: Delete Words</h3>
+        <pre><code class="language-python">def delete(self, word: str) -> bool:
+    def delete_helper(node, word, index):
+        if index == len(word):
+            if not node.is_end_of_word:
+                return False  # Word not found
+            node.is_end_of_word = False
+            return len(node.children) == 0  # Delete if no children
+
+        char = word[index]
+        if char not in node.children:
+            return False
+
+        child = node.children[char]
+        should_delete_child = delete_helper(child, word, index + 1)
+
+        if should_delete_child:
+            del node.children[char]
+            return len(node.children) == 0 and not node.is_end_of_word
+
+        return False
+
+    return delete_helper(self.root, word, 0)</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/17" target="_blank">NeetCode Trie Guide</a></li>
+        <li><a href="https://leetcode.com/problemset/algorithms/?topicSlugs=trie" target="_blank">LeetCode Trie Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

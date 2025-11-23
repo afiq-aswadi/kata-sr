@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Bit Manipulation: Efficient Low-Level Operations · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Bit Manipulation</h1>
+      <p class="summary">
+        Master bitwise operations for optimization and mathematical problems. Learn to use
+        AND, OR, XOR, and shift operators effectively, apply XOR properties, count set bits,
+        and solve array problems with elegant bit tricks.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">The Key Insight</div>
+        <p>
+          Bit manipulation operates directly on binary representation, often achieving
+          O(1) space and constant-time operations. Key properties: XOR is self-inverse
+          (a ^ a = 0), AND masks bits, OR sets bits, and shifts multiply/divide by powers of 2.
+        </p>
+      </div>
+
+      <h3>Fundamental Operations</h3>
+      <pre><code class="language-python"># Basic operations
+n & 1           # Check if last bit is 1 (odd/even)
+n >> 1          # Divide by 2 (right shift)
+n << 1          # Multiply by 2 (left shift)
+n & (n - 1)     # Clear rightmost 1 bit
+n | (1 << i)    # Set bit i
+n & ~(1 << i)   # Clear bit i
+n ^ (1 << i)    # Toggle bit i
+
+# XOR properties (most powerful!)
+a ^ 0 = a       # Identity
+a ^ a = 0       # Self-inverse
+a ^ b ^ a = b   # Cancellation (order doesn't matter)</code></pre>
+
+      <h3>Common Patterns</h3>
+      <ul>
+        <li><strong>Find unique element:</strong> XOR all elements (duplicates cancel)</li>
+        <li><strong>Count set bits:</strong> Use <code>n & (n-1)</code> trick</li>
+        <li><strong>Check power of 2:</strong> <code>n & (n-1) == 0</code></li>
+        <li><strong>Swap without temp:</strong> <code>a ^= b; b ^= a; a ^= b</code></li>
+        <li><strong>Get bit at position:</strong> <code>(n >> i) & 1</code></li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Single Number</h2>
+      <div class="card">
+        <div class="pattern-title">XOR Property</div>
+        <h3>Objective</h3>
+        <p>
+          Find single number in array where others appear twice using XOR.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The XOR Magic</div>
+          <p>
+            XOR has the perfect property: a ^ a = 0 and a ^ 0 = a. If we XOR all numbers
+            together, duplicates cancel out (become 0), leaving only the single number.
+            Order doesn't matter because XOR is commutative and associative.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [4, 1, 2, 1, 2]
+
+  4 ^ 1 ^ 2 ^ 1 ^ 2
+= 4 ^ (1 ^ 1) ^ (2 ^ 2)    (regroup)
+= 4 ^ 0 ^ 0                (pairs cancel)
+= 4                        (answer!)
+
+Binary trace:
+  4:  100
+  1:  001
+  2:  010
+  1:  001
+  2:  010
+XOR: 100 → 4
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def singleNumber(nums: List[int]) -> int:
+    result = 0
+    for num in nums:
+        result ^= num
+    return result
+
+# One-liner with reduce
+from functools import reduce
+def singleNumber(nums: List[int]) -> int:
+    return reduce(lambda x, y: x ^ y, nums)</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Number of 1 Bits</h2>
+      <div class="card">
+        <div class="pattern-title">Count Set Bits</div>
+        <h3>Objective</h3>
+        <p>
+          Count number of 1 bits in binary representation.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The n & (n-1) Trick</div>
+          <p>
+            n & (n-1) clears the rightmost 1 bit. Why? (n-1) flips all bits after the
+            rightmost 1, including that 1 itself. ANDing cancels that 1. Repeat until
+            n becomes 0 - the number of iterations equals the count of 1s.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+n = 11 (binary: 1011)
+
+Iteration 1:
+  n     = 1011
+  n-1   = 1010
+  n&(n-1)=1010  (cleared rightmost 1)
+  count = 1
+
+Iteration 2:
+  n     = 1010
+  n-1   = 1001
+  n&(n-1)=1000  (cleared rightmost 1)
+  count = 2
+
+Iteration 3:
+  n     = 1000
+  n-1   = 0111
+  n&(n-1)=0000  (cleared last 1)
+  count = 3
+
+Result: 3 ones
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def hammingWeight(n: int) -> int:
+    count = 0
+    while n:
+        n &= (n - 1)  # Clear rightmost 1
+        count += 1
+    return count
+
+# Alternative: check each bit
+def hammingWeight(n: int) -> int:
+    count = 0
+    while n:
+        count += n & 1  # Check last bit
+        n >>= 1         # Shift right
+    return count
+
+# Python built-in
+def hammingWeight(n: int) -> int:
+    return bin(n).count('1')</code></pre>
+
+        <p><span class="complexity">Time: O(1) - max 32 iterations | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Counting Bits</h2>
+      <div class="card">
+        <div class="pattern-title">DP with Bit Manipulation</div>
+        <h3>Objective</h3>
+        <p>
+          Count 1 bits for all numbers [0, n] using DP.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The DP Recurrence</div>
+          <p>
+            Key insight: the count for i equals the count for i>>1 (i divided by 2) plus
+            the last bit (i & 1). Why? Shifting right removes the last bit, so we reuse
+            the count from a smaller number we've already computed.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+n = 5
+
+i=0: 0000 → dp[0] = 0
+i=1: 0001 → dp[1] = dp[0] + 1 = 1
+i=2: 0010 → dp[2] = dp[1] + 0 = 1
+i=3: 0011 → dp[3] = dp[1] + 1 = 2
+i=4: 0100 → dp[4] = dp[2] + 0 = 1
+i=5: 0101 → dp[5] = dp[2] + 1 = 2
+
+Pattern: dp[i] = dp[i >> 1] + (i & 1)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def countBits(n: int) -> List[int]:
+    dp = [0] * (n + 1)
+
+    for i in range(1, n + 1):
+        # Count for i = count for i//2 + last bit
+        dp[i] = dp[i >> 1] + (i & 1)
+
+    return dp
+
+# Alternative: using n & (n-1)
+def countBits(n: int) -> List[int]:
+    dp = [0] * (n + 1)
+
+    for i in range(1, n + 1):
+        # Count for i = count for i with rightmost 1 cleared + 1
+        dp[i] = dp[i & (i - 1)] + 1
+
+    return dp</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span>
+        <br><small>Output array doesn't count toward space complexity</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Reverse Bits</h2>
+      <div class="card">
+        <div class="pattern-title">Bit Reversal</div>
+        <h3>Objective</h3>
+        <p>
+          Reverse bits of a 32-bit unsigned integer.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Build-from-Right Strategy</div>
+          <p>
+            Extract bits from the right of input (n & 1), add them to the left of result
+            (result << 1 | bit). Process all 32 bits. This effectively reverses the bit order.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input:  00000010100101000001111010011100
+        ↑                              ↑
+        bit 31                      bit 0
+
+Process right to left:
+  Extract bit 0 (0) → add to result left
+  Extract bit 1 (0) → add to result left
+  Extract bit 2 (1) → add to result left
+  ...
+
+Output: 00111001011110000010100101000000
+        ↑                              ↑
+     (was bit 0)                  (was bit 31)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def reverseBits(n: int) -> int:
+    result = 0
+
+    for i in range(32):
+        # Extract last bit of n
+        bit = n & 1
+
+        # Add bit to left of result
+        result = (result << 1) | bit
+
+        # Move to next bit of n
+        n >>= 1
+
+    return result
+
+# Alternative: process in one expression
+def reverseBits(n: int) -> int:
+    result = 0
+    for i in range(32):
+        result = (result << 1) | (n & 1)
+        n >>= 1
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(1) - exactly 32 iterations | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Missing Number</h2>
+      <div class="card">
+        <div class="pattern-title">XOR Trick</div>
+        <h3>Objective</h3>
+        <p>
+          Find missing number in [0, n] using XOR.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Cancellation Trick</div>
+          <p>
+            XOR all indices [0, n] with all values in array. Every number appears twice
+            (once as index, once as value) except the missing number (only appears as index).
+            All duplicates cancel, leaving the missing number.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [3, 0, 1]  (n = 3, missing 2)
+
+XOR indices and values:
+  0 ^ 1 ^ 2 ^ 3 (indices)
+  ^
+  3 ^ 0 ^ 1     (values)
+
+= 0^0 ^ 1^1 ^ 2 ^ 3^3  (regroup)
+= 0 ^ 0 ^ 2 ^ 0        (cancel pairs)
+= 2                    (missing number!)
+
+Alternative: sum formula
+Expected sum: 0+1+2+3 = 6
+Actual sum:   3+0+1   = 4
+Missing:      6-4     = 2
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def missingNumber(nums: List[int]) -> int:
+    result = len(nums)  # Start with n
+
+    for i, num in enumerate(nums):
+        result ^= i ^ num  # XOR index and value
+
+    return result
+
+# Alternative: sum formula
+def missingNumber(nums: List[int]) -> int:
+    n = len(nums)
+    expected_sum = n * (n + 1) // 2
+    actual_sum = sum(nums)
+    return expected_sum - actual_sum</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 6: Sum of Two Integers</h2>
+      <div class="card">
+        <div class="pattern-title">Add Without + Operator</div>
+        <h3>Objective</h3>
+        <p>
+          Add two integers using bitwise operations only.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Half-Adder Logic</div>
+          <p>
+            XOR gives sum without carry. AND gives carry positions. Left shift carry by 1
+            to add it to next bit. Repeat until no carry remains. This mimics how hardware
+            adds numbers at the circuit level.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Add 5 + 3:
+  5: 0101
+  3: 0011
+
+Iteration 1:
+  sum   = 5 ^ 3  = 0101 ^ 0011 = 0110 (6, without carry)
+  carry = 5 & 3  = 0101 & 0011 = 0001
+  carry <<= 1    = 0010 (2, shifted)
+
+Iteration 2:
+  sum   = 6 ^ 2  = 0110 ^ 0010 = 0100 (4)
+  carry = 6 & 2  = 0110 & 0010 = 0010
+  carry <<= 1    = 0100 (4)
+
+Iteration 3:
+  sum   = 4 ^ 4  = 0100 ^ 0100 = 0000 (0)
+  carry = 4 & 4  = 0100 & 0100 = 0100
+  carry <<= 1    = 1000 (8)
+
+Iteration 4:
+  sum   = 0 ^ 8  = 0000 ^ 1000 = 1000 (8)
+  carry = 0 & 8  = 0000 & 1000 = 0000 (done!)
+
+Result: 8 = 5 + 3 ✓
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def getSum(a: int, b: int) -> int:
+    # Python-specific: handle negative numbers with mask
+    mask = 0xFFFFFFFF
+
+    while b != 0:
+        # Sum without carry
+        sum_without_carry = (a ^ b) & mask
+
+        # Carry (shifted left by 1)
+        carry = ((a & b) << 1) & mask
+
+        a = sum_without_carry
+        b = carry
+
+    # Handle negative result (convert from unsigned)
+    return a if a <= 0x7FFFFFFF else ~(a ^ mask)</code></pre>
+
+        <p><span class="complexity">Time: O(1) - max 32 iterations | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>Essential Bit Tricks</h3>
+        <pre><code class="language-python"># Check if power of 2
+(n & (n - 1)) == 0
+
+# Get/set/clear bit at position i
+get = (n >> i) & 1
+set = n | (1 << i)
+clear = n & ~(1 << i)
+toggle = n ^ (1 << i)
+
+# Count set bits (Brian Kernighan)
+count = 0
+while n:
+    n &= (n - 1)
+    count += 1
+
+# Find rightmost 1 bit
+rightmost = n & -n  # or n & (~n + 1)
+
+# XOR patterns
+unique = a ^ b ^ a  # Result: b (a cancels)
+missing = 0 ^ 1 ^ 2 ^ ... ^ n ^ (array elements)
+
+# Swap without temp
+a ^= b
+b ^= a
+a ^= b</code></pre>
+
+        <h3>Common Applications</h3>
+        <ul>
+          <li><strong>Finding unique elements:</strong> XOR cancellation property</li>
+          <li><strong>Subset generation:</strong> Use integers as bitmasks</li>
+          <li><strong>Space optimization:</strong> Pack boolean flags into integers</li>
+          <li><strong>Fast arithmetic:</strong> Multiply/divide by powers of 2 with shifts</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Pitfalls & Tips</h2>
+      <div class="card">
+        <h3>1. Python-Specific Issues</h3>
+        <ul>
+          <li>Python integers are arbitrary precision (no overflow)</li>
+          <li>Negative numbers use two's complement but extend infinitely</li>
+          <li>Use <code>& 0xFFFFFFFF</code> mask for 32-bit simulation</li>
+          <li>Right shift of negative extends sign (use mask to fix)</li>
+        </ul>
+
+        <h3>2. Operator Precedence</h3>
+        <ul>
+          <li>Comparison operators bind tighter than bitwise: <code>(n & 1) == 0</code> not <code>n & 1 == 0</code></li>
+          <li>Always use parentheses for clarity with bitwise ops</li>
+        </ul>
+
+        <h3>3. When to Use Bit Manipulation</h3>
+        <ul>
+          <li><strong>Good:</strong> Space optimization, finding unique elements, checking properties</li>
+          <li><strong>Bad:</strong> When it hurts readability and hash tables work fine</li>
+          <li>Interview bonus points but don't force it</li>
+        </ul>
+
+        <h3>4. Debugging Bit Operations</h3>
+        <ul>
+          <li>Use <code>bin(n)</code> to visualize binary representation</li>
+          <li>Test with small numbers first (0, 1, 2, powers of 2)</li>
+          <li>Draw out bit patterns for complex operations</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/23" target="_blank">NeetCode Bit Manipulation Guide</a></li>
+        <li><a href="https://graphics.stanford.edu/~seander/bithacks.html" target="_blank">Bit Twiddling Hacks</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

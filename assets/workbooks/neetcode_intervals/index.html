@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Intervals: Merging and Scheduling · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Intervals</h1>
+      <p class="summary">
+        Master interval problems involving merging, intersection, and scheduling. Learn to
+        sort intervals by start time for efficient processing, merge overlapping intervals,
+        detect conflicts, and apply greedy strategies for scheduling problems.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">The Key Insight</div>
+        <p>
+          Most interval problems become simple after sorting. Sort by start time to process
+          intervals in order, or sort by end time for greedy selection. The key question is
+          always: "Do these intervals overlap?" Check with: <code>start1 <= end2 and start2 <= end1</code>
+        </p>
+      </div>
+
+      <h3>Overlap Detection</h3>
+      <pre><code class="language-python"># Two intervals [a, b] and [c, d] overlap if:
+a <= d and c <= b
+
+# Equivalently, they DON'T overlap if:
+b < c or d < a  # One ends before the other starts</code></pre>
+
+      <h3>Common Patterns</h3>
+      <ul>
+        <li><strong>Merge overlapping:</strong> Sort by start, merge consecutive overlaps</li>
+        <li><strong>Insert interval:</strong> Handle before, overlap, and after separately</li>
+        <li><strong>Remove minimum:</strong> Greedy choice by end time (activity selection)</li>
+        <li><strong>Count concurrent:</strong> Separate start/end times or use heap</li>
+        <li><strong>Interval intersection:</strong> Two pointers on sorted intervals</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Insert Interval</h2>
+      <div class="card">
+        <div class="pattern-title">Insert and Merge</div>
+        <h3>Objective</h3>
+        <p>
+          Insert interval and merge overlapping intervals.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Three-Phase Strategy</div>
+          <p>
+            Process in three phases: (1) Add all intervals before new interval (end before new start),
+            (2) Merge all overlapping intervals with new interval, (3) Add all intervals after
+            (start after new end). This maintains sorted order without full re-sort.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+intervals = [[1,3], [6,9]]
+newInterval = [2,5]
+
+Timeline:
+  1---3     6---9     (existing)
+    2---5            (new)
+
+Phase 1: Add intervals ending before new starts
+  [1,3] ends at 3, new starts at 2 → overlaps, don't add
+
+Phase 2: Merge overlapping
+  [1,3] overlaps [2,5] → merge to [1,5]
+
+Phase 3: Add intervals starting after new ends
+  [6,9] starts at 6 > 5 → add [6,9]
+
+Result: [[1,5], [6,9]]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def insert(intervals: List[List[int]], newInterval: List[int]) -> List[List[int]]:
+    result = []
+    i = 0
+    n = len(intervals)
+
+    # Phase 1: Add all intervals before newInterval
+    while i < n and intervals[i][1] < newInterval[0]:
+        result.append(intervals[i])
+        i += 1
+
+    # Phase 2: Merge overlapping intervals
+    while i < n and intervals[i][0] <= newInterval[1]:
+        newInterval[0] = min(newInterval[0], intervals[i][0])
+        newInterval[1] = max(newInterval[1], intervals[i][1])
+        i += 1
+    result.append(newInterval)
+
+    # Phase 3: Add remaining intervals
+    while i < n:
+        result.append(intervals[i])
+        i += 1
+
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span>
+        <br><small>Input is already sorted, no need to re-sort</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Merge Intervals</h2>
+      <div class="card">
+        <div class="pattern-title">Merge Overlapping</div>
+        <h3>Objective</h3>
+        <p>
+          Merge all overlapping intervals.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Sorting Strategy</div>
+          <p>
+            Sort intervals by start time. Then scan linearly: if current interval overlaps
+            with the last merged interval, extend the last one's end. Otherwise, add current
+            as a new interval. This ensures we catch all overlaps in one pass.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [[1,3], [2,6], [8,10], [15,18]]
+
+After sorting (already sorted):
+1---3
+  2-----6
+          8--10
+                  15---18
+
+Process:
+Start with [1,3]
+[2,6] overlaps [1,3] → merge to [1,6]
+[8,10] doesn't overlap [1,6] → add [8,10]
+[15,18] doesn't overlap [8,10] → add [15,18]
+
+Result: [[1,6], [8,10], [15,18]]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def merge(intervals: List[List[int]]) -> List[List[int]]:
+    if not intervals:
+        return []
+
+    # Sort by start time
+    intervals.sort(key=lambda x: x[0])
+
+    merged = [intervals[0]]
+
+    for current in intervals[1:]:
+        last = merged[-1]
+
+        # Check if current overlaps with last merged
+        if current[0] <= last[1]:
+            # Merge: extend end time
+            last[1] = max(last[1], current[1])
+        else:
+            # No overlap: add as new interval
+            merged.append(current)
+
+    return merged</code></pre>
+
+        <p><span class="complexity">Time: O(n log n) | Space: O(1)</span>
+        <br><small>Dominated by sorting; merging is O(n)</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Non-overlapping Intervals</h2>
+      <div class="card">
+        <div class="pattern-title">Greedy Removal</div>
+        <h3>Objective</h3>
+        <p>
+          Find minimum removals to make intervals non-overlapping.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Greedy Choice</div>
+          <p>
+            Sort by end time. Greedily keep the interval with earliest end (leaves most room
+            for future intervals). When two intervals overlap, remove the one with later end.
+            This is the classic "activity selection" greedy strategy.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [[1,2], [2,3], [3,4], [1,3]]
+
+Sort by end time:
+[1,2]
+    [2,3]
+        [3,4]
+[1,3]
+
+Process:
+Keep [1,2] (earliest end)
+[2,3]: end=3 > prev_end=2 → no overlap, keep
+[3,4]: end=4 > prev_end=3 → no overlap, keep
+[1,3]: start=1 < prev_end=3 → overlaps! Remove it
+
+Removed: 1 interval
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def eraseOverlapIntervals(intervals: List[List[int]]) -> int:
+    if not intervals:
+        return 0
+
+    # Sort by end time (greedy choice)
+    intervals.sort(key=lambda x: x[1])
+
+    count = 0
+    prev_end = intervals[0][1]
+
+    for i in range(1, len(intervals)):
+        if intervals[i][0] < prev_end:
+            # Overlap: remove current (it has later end)
+            count += 1
+        else:
+            # No overlap: update prev_end
+            prev_end = intervals[i][1]
+
+    return count
+
+# Alternative: sort by start, greedy on end
+def eraseOverlapIntervals(intervals: List[List[int]]) -> int:
+    intervals.sort()
+    count = 0
+    prev_end = intervals[0][1]
+
+    for start, end in intervals[1:]:
+        if start < prev_end:
+            # Overlap: keep the one with earlier end
+            count += 1
+            prev_end = min(prev_end, end)
+        else:
+            prev_end = end
+
+    return count</code></pre>
+
+        <p><span class="complexity">Time: O(n log n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Meeting Rooms</h2>
+      <div class="card">
+        <div class="pattern-title">Can Attend All</div>
+        <h3>Objective</h3>
+        <p>
+          Check if person can attend all meetings (no overlaps).
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Simple Check</div>
+          <p>
+            Sort by start time. Check each consecutive pair: if one starts before the
+            previous ends, there's an overlap (can't attend both). If no overlaps found,
+            can attend all.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Example 1: [[0,30], [5,10], [15,20]]
+
+Sort by start:
+[0,30]
+    [5,10]
+         [15,20]
+
+Check pairs:
+[0,30] vs [5,10]: 5 < 30 → overlap! ✗
+
+Result: False (can't attend all)
+
+Example 2: [[7,10], [2,4]]
+
+Sort by start:
+  [2,4]
+       [7,10]
+
+Check pairs:
+[2,4] vs [7,10]: 7 >= 4 → no overlap! ✓
+
+Result: True (can attend all)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def canAttendMeetings(intervals: List[List[int]]) -> bool:
+    # Sort by start time
+    intervals.sort(key=lambda x: x[0])
+
+    # Check each consecutive pair
+    for i in range(1, len(intervals)):
+        if intervals[i][0] < intervals[i-1][1]:
+            return False  # Overlap found
+
+    return True
+
+# Alternative: check all pairs (less efficient)
+def canAttendMeetings(intervals: List[List[int]]) -> bool:
+    for i in range(len(intervals)):
+        for j in range(i + 1, len(intervals)):
+            # Check if [i] and [j] overlap
+            if intervals[i][0] < intervals[j][1] and intervals[j][0] < intervals[i][1]:
+                return False
+    return True</code></pre>
+
+        <p><span class="complexity">Time: O(n log n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Meeting Rooms II</h2>
+      <div class="card">
+        <div class="pattern-title">Minimum Rooms Needed</div>
+        <h3>Objective</h3>
+        <p>
+          Find minimum meeting rooms needed.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Event-Based Strategy</div>
+          <p>
+            Separate starts and ends, sort both. Use two pointers: when a meeting starts,
+            increment rooms needed. When a meeting ends, decrement. Track the maximum
+            concurrent meetings. This is like a "sweep line" algorithm.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [[0,30], [5,10], [15,20]]
+
+Timeline:
+0          10   15   20        30
+|-------------|
+     |-----|
+          |-----|
+
+Events:
+starts = [0, 5, 15]
+ends   = [10, 20, 30]
+
+Process:
+0: start → rooms=1
+5: start → rooms=2 (max so far)
+10: end  → rooms=1
+15: start → rooms=2
+20: end  → rooms=1
+30: end  → rooms=0
+
+Maximum concurrent: 2 rooms needed
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def minMeetingRooms(intervals: List[List[int]]) -> int:
+    if not intervals:
+        return 0
+
+    # Separate and sort start and end times
+    starts = sorted([interval[0] for interval in intervals])
+    ends = sorted([interval[1] for interval in intervals])
+
+    rooms = 0
+    max_rooms = 0
+    start_ptr = 0
+    end_ptr = 0
+
+    while start_ptr < len(intervals):
+        if starts[start_ptr] < ends[end_ptr]:
+            # Meeting starts before one ends
+            rooms += 1
+            max_rooms = max(max_rooms, rooms)
+            start_ptr += 1
+        else:
+            # Meeting ends, free up a room
+            rooms -= 1
+            end_ptr += 1
+
+    return max_rooms
+
+# Alternative: using min-heap
+import heapq
+
+def minMeetingRooms(intervals: List[List[int]]) -> int:
+    if not intervals:
+        return 0
+
+    intervals.sort(key=lambda x: x[0])
+    heap = []  # Min-heap of end times
+
+    for start, end in intervals:
+        # Remove meetings that have ended
+        if heap and heap[0] <= start:
+            heapq.heappop(heap)
+
+        # Add current meeting
+        heapq.heappush(heap, end)
+
+    return len(heap)  # Size of heap = concurrent meetings</code></pre>
+
+        <p><span class="complexity">Time: O(n log n) | Space: O(n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>Interval Patterns</h3>
+        <pre><code class="language-python"># Pattern 1: Merge overlapping
+intervals.sort()
+merged = [intervals[0]]
+for current in intervals[1:]:
+    if current[0] <= merged[-1][1]:
+        merged[-1][1] = max(merged[-1][1], current[1])
+    else:
+        merged.append(current)
+
+# Pattern 2: Greedy selection (activity selection)
+intervals.sort(key=lambda x: x[1])  # Sort by end
+count = 0
+prev_end = float('-inf')
+for start, end in intervals:
+    if start >= prev_end:
+        count += 1
+        prev_end = end
+
+# Pattern 3: Two-pointer sweep
+starts = sorted([i[0] for i in intervals])
+ends = sorted([i[1] for i in intervals])
+s, e = 0, 0
+while s < len(starts):
+    if starts[s] < ends[e]:
+        # Start event
+        s += 1
+    else:
+        # End event
+        e += 1
+
+# Pattern 4: Heap for concurrent tracking
+heap = []
+for start, end in sorted(intervals):
+    if heap and heap[0] <= start:
+        heapq.heappop(heap)
+    heapq.heappush(heap, end)
+max_concurrent = len(heap)</code></pre>
+
+        <h3>Sorting Strategies</h3>
+        <div class="comparison">
+          <div class="comparison-item">
+            <h4>Sort by Start</h4>
+            <ul>
+              <li>Merge intervals</li>
+              <li>Insert interval</li>
+              <li>Check no overlaps</li>
+              <li>General processing</li>
+            </ul>
+          </div>
+          <div class="comparison-item">
+            <h4>Sort by End</h4>
+            <ul>
+              <li>Activity selection</li>
+              <li>Minimum removals</li>
+              <li>Greedy scheduling</li>
+              <li>Maximize selections</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Pitfalls & Tips</h2>
+      <div class="card">
+        <h3>1. Overlap Detection</h3>
+        <ul>
+          <li><strong>Touching intervals:</strong> [1,2] and [2,3] - overlap or not? Depends on problem</li>
+          <li><strong>Inclusive vs exclusive:</strong> Check problem definition carefully</li>
+          <li><strong>Correct formula:</strong> <code>start1 <= end2 and start2 <= end1</code> not <code><</code></li>
+        </ul>
+
+        <h3>2. Sorting Choice</h3>
+        <ul>
+          <li>Default to sorting by start time unless doing greedy selection</li>
+          <li>Greedy problems often need sorting by end time</li>
+          <li>Some problems need both (two-pointer sweep)</li>
+        </ul>
+
+        <h3>3. Edge Cases</h3>
+        <ul>
+          <li>Empty input: return appropriate default</li>
+          <li>Single interval: usually just return it</li>
+          <li>All intervals overlap: merge into one</li>
+          <li>No intervals overlap: return all as-is</li>
+        </ul>
+
+        <h3>4. Space Optimization</h3>
+        <ul>
+          <li>Merging in-place is possible but tricky (need to sort first)</li>
+          <li>Two-pointer sweep uses O(n) extra space for separated arrays</li>
+          <li>Heap approach uses O(n) for heap in worst case</li>
+        </ul>
+
+        <h3>5. Time Complexity</h3>
+        <ul>
+          <li>Almost all interval problems require sorting: O(n log n) minimum</li>
+          <li>After sorting, linear scan: O(n)</li>
+          <li>Total: O(n log n) typically</li>
+          <li>Heap operations add log factor if used</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/25" target="_blank">NeetCode Intervals Guide</a></li>
+        <li><a href="https://leetcode.com/problemset/algorithms/?topicSlugs=intervals" target="_blank">LeetCode Interval Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

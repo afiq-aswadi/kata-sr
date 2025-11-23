@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Greedy: Optimal Local Choices · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Greedy</h1>
+      <p class="summary">
+        Master greedy algorithms where local optimal choices lead to global optimum. Learn to
+        recognize problems solvable by greedy approach, prove correctness, and apply sorting
+        as preprocessing for optimal solutions.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">The Key Insight</div>
+        <p>
+          Greedy algorithms make the locally optimal choice at each step, hoping to find a
+          global optimum. Unlike dynamic programming, greedy never reconsiders choices. This
+          only works when the problem has the "greedy choice property": a global optimum can
+          be reached by selecting local optimums.
+        </p>
+      </div>
+
+      <h3>When Greedy Works</h3>
+      <div class="comparison">
+        <div class="comparison-item">
+          <h4>✓ Greedy Applies</h4>
+          <ul>
+            <li>Interval scheduling</li>
+            <li>Jump game reachability</li>
+            <li>Gas station selection</li>
+            <li>Array partitioning</li>
+          </ul>
+        </div>
+        <div class="comparison-item">
+          <h4>✗ Greedy Fails</h4>
+          <ul>
+            <li>0/1 Knapsack (need DP)</li>
+            <li>Coin change (some denominations)</li>
+            <li>Longest increasing subsequence</li>
+            <li>Edit distance</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Proving Greedy Correctness</h3>
+      <ol>
+        <li><strong>Greedy choice property:</strong> Local optimum leads to global optimum</li>
+        <li><strong>Optimal substructure:</strong> Optimal solution contains optimal subsolutions</li>
+        <li><strong>Exchange argument:</strong> Swapping choices doesn't improve solution</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Maximum Subarray (Kadane's)</h2>
+      <div class="card">
+        <div class="pattern-title">Kadane's Algorithm</div>
+        <h3>Objective</h3>
+        <p>
+          Find subarray with maximum sum using Kadane's algorithm.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Greedy Insight</div>
+          <p>
+            At each position, decide: extend current subarray or start fresh? If current sum
+            is negative, it can only hurt future sums - discard it and start over. This greedy
+            choice (always keep sum if positive) leads to the optimal solution.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [-2, 1, -3, 4, -1, 2, 1, -5, 4]
+
+i=0: cur=-2, max=-2  (start: [-2])
+i=1: cur=1,  max=1   (discard negative, start: [1])
+i=2: cur=-2, max=1   (extend: [1,-3])
+i=3: cur=4,  max=4   (discard negative, start: [4])
+i=4: cur=3,  max=4   (extend: [4,-1])
+i=5: cur=5,  max=5   (extend: [4,-1,2])
+i=6: cur=6,  max=6   (extend: [4,-1,2,1])
+i=7: cur=1,  max=6   (extend: [4,-1,2,1,-5])
+i=8: cur=5,  max=6   (extend: [4,-1,2,1,-5,4])
+
+Maximum sum: 6 from subarray [4,-1,2,1]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def maxSubArray(nums: List[int]) -> int:
+    max_sum = current_sum = nums[0]
+
+    for num in nums[1:]:
+        # Greedy choice: extend or start fresh
+        current_sum = max(num, current_sum + num)
+        max_sum = max(max_sum, current_sum)
+
+    return max_sum
+
+# Alternative formulation
+def maxSubArray(nums: List[int]) -> int:
+    max_sum = float('-inf')
+    current_sum = 0
+
+    for num in nums:
+        current_sum += num
+        max_sum = max(max_sum, current_sum)
+
+        # Reset if sum goes negative
+        if current_sum < 0:
+            current_sum = 0
+
+    return max_sum</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Jump Game</h2>
+      <div class="card">
+        <div class="pattern-title">Greedy Reachability</div>
+        <h3>Objective</h3>
+        <p>
+          Check if last index is reachable with greedy approach.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Farthest-Reach Strategy</div>
+          <p>
+            Track the farthest position reachable so far. At each index, update farthest
+            based on current position + jump size. If we ever can't reach current position,
+            we can't proceed. If farthest reaches end, we're done.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [2, 3, 1, 1, 4]
+        ^           ^
+      start        goal
+
+i=0: nums[0]=2, farthest=0+2=2 ✓ (can reach indices 1,2)
+i=1: nums[1]=3, farthest=max(2,1+3)=4 ✓ (can reach end!)
+     Result: True
+
+Input: [3, 2, 1, 0, 4]
+        ^        ^  ^
+      start    gap goal
+
+i=0: farthest=3
+i=1: farthest=max(3,1+2)=3
+i=2: farthest=max(3,2+1)=3
+i=3: farthest=max(3,3+0)=3 (stuck here!)
+i=4: i > farthest, can't reach! Result: False
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def canJump(nums: List[int]) -> bool:
+    farthest = 0
+
+    for i in range(len(nums)):
+        # Can't reach current position
+        if i > farthest:
+            return False
+
+        # Update farthest reachable
+        farthest = max(farthest, i + nums[i])
+
+        # Early exit if we can reach the end
+        if farthest >= len(nums) - 1:
+            return True
+
+    return True
+
+# Alternative: work backwards
+def canJump(nums: List[int]) -> bool:
+    goal = len(nums) - 1
+
+    for i in range(len(nums) - 2, -1, -1):
+        if i + nums[i] >= goal:
+            goal = i  # Can reach from here
+
+    return goal == 0</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Jump Game II</h2>
+      <div class="card">
+        <div class="pattern-title">Minimum Jumps</div>
+        <h3>Objective</h3>
+        <p>
+          Find minimum jumps to reach end using greedy BFS-like approach.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The BFS Insight</div>
+          <p>
+            Think of it as BFS levels. Track current jump's boundary (current_end) and
+            farthest reachable from current level. When we reach current_end, we must jump
+            (increment jump count) and update current_end to farthest.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: [2, 3, 1, 1, 4]
+        ^     ^     ^
+      jump0 jump1 jump2
+
+Jump 0: i=0, reach [0,2], farthest=2
+Jump 1: i=1,2, reach [3,4], farthest=4 (reached end!)
+        Result: 2 jumps
+
+Detailed trace:
+i=0: farthest=2, current_end=0 → reach end, jumps=1, current_end=2
+i=1: farthest=4
+i=2: farthest=4, current_end=2 → reach end, jumps=2, current_end=4
+     (current_end >= last, stop)
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def jump(nums: List[int]) -> int:
+    jumps = 0
+    current_end = 0
+    farthest = 0
+
+    # Don't need to jump from last position
+    for i in range(len(nums) - 1):
+        # Update farthest reachable
+        farthest = max(farthest, i + nums[i])
+
+        # Reached end of current jump
+        if i == current_end:
+            jumps += 1
+            current_end = farthest
+
+            # Early exit if we can reach the end
+            if current_end >= len(nums) - 1:
+                break
+
+    return jumps</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Gas Station</h2>
+      <div class="card">
+        <div class="pattern-title">Circular Array Greedy</div>
+        <h3>Objective</h3>
+        <p>
+          Find starting gas station for circular route.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Key Observations</div>
+          <p>
+            1. If total gas < total cost, impossible (no solution).
+            2. If a solution exists, it's unique (only one valid start).
+            3. If you can't reach station j from i, you can't reach j from any station
+               between i and j either. So start from j+1.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+gas  = [1, 2, 3, 4, 5]
+cost = [3, 4, 5, 1, 2]
+
+Total gas=15, total cost=15 → possible ✓
+
+Try start=0:
+  tank = 1-3 = -2 (fail!)
+  → Can't start from 0, try 1
+
+Try start=1:
+  tank = 2-4 = -2 (fail!)
+  → Can't start from 0 or 1, try 2
+
+Try start=2:
+  tank = 3-5 = -2 (fail!)
+  → Can't start from 0,1,2, try 3
+
+Try start=3:
+  tank = 4-1 = 3
+  tank = 3+5-2 = 6
+  tank = 6+1-3 = 4
+  tank = 4+2-4 = 2
+  tank = 2+3-5 = 0 ✓
+
+Result: start at index 3
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def canCompleteCircuit(gas: List[int], cost: List[int]) -> int:
+    # Check if solution exists
+    if sum(gas) < sum(cost):
+        return -1
+
+    start = 0
+    tank = 0
+
+    for i in range(len(gas)):
+        tank += gas[i] - cost[i]
+
+        # Can't reach next station from current start
+        if tank < 0:
+            start = i + 1  # Try starting from next station
+            tank = 0       # Reset tank
+
+    return start</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Partition Labels</h2>
+      <div class="card">
+        <div class="pattern-title">Greedy Partitioning</div>
+        <h3>Objective</h3>
+        <p>
+          Partition string into maximum partitions with unique characters.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">The Last-Occurrence Strategy</div>
+          <p>
+            Track the last occurrence of each character. Start a partition. As you scan,
+            extend the partition's end to include the last occurrence of each character seen.
+            When you reach the partition's end, cut there and start a new partition.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+Input: "ababcbacadefegdehijhklij"
+
+Last occurrence: {a:8, b:5, c:7, d:14, e:15, ...}
+
+Scan:
+i=0: 'a', last[a]=8, end=8
+i=1: 'b', last[b]=5, end=8
+...
+i=8: reached end=8 → partition "ababcbaca" (size 9)
+
+i=9: 'c', last[c]=7... wait, already passed!
+     Actually: recalculate last positions correctly
+
+Better trace:
+"ababcbacadefegdehijhklij"
+ ^^^^^^^^^ partition 1 (0-8, size 9)
+          ^^^^^^^ partition 2 (9-15, size 7)
+                 ^^^^^^^^ partition 3 (16-23, size 8)
+
+Result: [9, 7, 8]
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def partitionLabels(s: str) -> List[int]:
+    # Record last occurrence of each character
+    last = {char: i for i, char in enumerate(s)}
+
+    result = []
+    start = 0
+    end = 0
+
+    for i, char in enumerate(s):
+        # Extend partition to include last occurrence of char
+        end = max(end, last[char])
+
+        # Reached the end of current partition
+        if i == end:
+            result.append(end - start + 1)
+            start = i + 1
+
+    return result</code></pre>
+
+        <p><span class="complexity">Time: O(n) | Space: O(1)</span>
+        <br><small>Space is O(1) because alphabet is limited (26 letters)</small></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>Recognizing Greedy Problems</h3>
+        <ul>
+          <li><strong>Sorting helps:</strong> If sorting enables a simple greedy strategy</li>
+          <li><strong>Local → global:</strong> Locally optimal choices build global optimum</li>
+          <li><strong>No backtracking:</strong> Never need to reconsider earlier choices</li>
+          <li><strong>Optimal substructure:</strong> Problem breaks into similar subproblems</li>
+        </ul>
+
+        <h3>Common Greedy Patterns</h3>
+        <pre><code class="language-python"># Pattern 1: Kadane's (max subarray)
+current = max(num, current + num)
+result = max(result, current)
+
+# Pattern 2: Reachability (jump game)
+farthest = max(farthest, i + nums[i])
+if i > farthest: return False
+
+# Pattern 3: Reset on failure (gas station)
+if condition_failed:
+    start = i + 1
+    reset_state()
+
+# Pattern 4: Expand to boundary (partition labels)
+end = max(end, last_occurrence[char])
+if i == end:
+    create_partition()</code></pre>
+
+        <h3>Sorting as Preprocessing</h3>
+        <ul>
+          <li>Interval problems: sort by start time or end time</li>
+          <li>Meeting rooms: sort to process in order</li>
+          <li>Activity selection: sort by finish time (greedy choice)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Common Pitfalls & Tips</h2>
+      <div class="card">
+        <h3>1. Proving Correctness</h3>
+        <ul>
+          <li>Greedy seems obvious but may be wrong - always verify</li>
+          <li>Use exchange argument: show swapping doesn't improve solution</li>
+          <li>Counter-examples quickly disprove greedy approaches</li>
+        </ul>
+
+        <h3>2. When Greedy Fails</h3>
+        <ul>
+          <li><strong>Need lookahead:</strong> Local choice needs future information (use DP)</li>
+          <li><strong>Multiple objectives:</strong> Optimizing for multiple criteria (use DP/backtracking)</li>
+          <li><strong>Reversible choices:</strong> Can benefit from undoing decisions (use backtracking)</li>
+        </ul>
+
+        <h3>3. Optimization Tricks</h3>
+        <ul>
+          <li>Track boundaries/endpoints instead of full ranges</li>
+          <li>Use single pass when possible (Kadane's, gas station)</li>
+          <li>Precompute values (last occurrence, prefix sums)</li>
+          <li>Early exit when answer is found</li>
+        </ul>
+
+        <h3>4. Common Mistakes</h3>
+        <ul>
+          <li>Forgetting to check if solution exists (gas station total check)</li>
+          <li>Off-by-one errors in boundary tracking</li>
+          <li>Not resetting state after failure (gas station tank reset)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/24" target="_blank">NeetCode Greedy Guide</a></li>
+        <li><a href="https://leetcode.com/problemset/algorithms/?topicSlugs=greedy" target="_blank">LeetCode Greedy Problems</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>

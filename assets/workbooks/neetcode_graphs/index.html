@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeetCode Graphs: DFS and BFS Fundamentals · Workbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Fira+Code:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --cream: #faf8f3;
+      --paper: #f5f2ea;
+      --ink: #2a2520;
+      --rust: #c85a4e;
+      --navy: #344955;
+      --sage: #7a9d8b;
+      --gold: #d4a574;
+      --shadow: rgba(42, 37, 32, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--paper) 100%);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          rgba(52, 73, 85, 0.02) 31px,
+          rgba(52, 73, 85, 0.02) 32px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    header {
+      margin-bottom: 64px;
+      animation: fadeSlideIn 0.8s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: var(--rust);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .summary {
+      font-size: 18px;
+      color: var(--ink);
+      max-width: 700px;
+      line-height: 1.8;
+      opacity: 0.85;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      animation: fadeSlideIn 0.8s ease-out;
+      animation-fill-mode: both;
+    }
+
+    h2 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-family: 'Crimson Pro', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(52, 73, 85, 0.12);
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(42, 37, 32, 0.12);
+    }
+
+    .visual-box {
+      background: var(--paper);
+      border: 2px solid var(--sage);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      max-width: 100%;
+    }
+
+    .intuition {
+      background: linear-gradient(135deg, rgba(122, 157, 139, 0.15), rgba(212, 165, 116, 0.15));
+      border-left: 4px solid var(--sage);
+      border-radius: 4px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .intuition-title {
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    pre {
+      background: var(--navy);
+      color: var(--cream);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 20px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(52, 73, 85, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      background: var(--sage);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .pattern-title {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .complexity {
+      font-family: 'Fira Code', monospace;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom-color: var(--rust);
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .comparison-item {
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 73, 85, 0.1);
+    }
+
+    .comparison-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="subtitle">NeetCode Foundation</div>
+      <h1>Graphs: DFS & BFS</h1>
+      <p class="summary">
+        Master graph traversal algorithms that form the foundation for all graph problems.
+        DFS and BFS are fundamental patterns that appear in 30%+ of coding interviews
+        and power countless real-world applications from social networks to route planning.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Core Intuition</h2>
+      <div class="intuition">
+        <div class="intuition-title">💡 The Key Insight</div>
+        <p>
+          Graphs are collections of nodes (vertices) connected by edges. Trees are special
+          graphs (acyclic, connected). The two fundamental traversal strategies - DFS (go deep)
+          and BFS (go wide) - solve different classes of problems. DFS uses recursion/stack,
+          BFS uses queue. Understanding when to use each is crucial.
+        </p>
+      </div>
+
+      <h3>DFS vs BFS</h3>
+      <div class="comparison">
+        <div class="comparison-item">
+          <h4>🌲 DFS (Depth-First Search)</h4>
+          <ul>
+            <li>Uses stack (recursion)</li>
+            <li>Explores one path fully</li>
+            <li>Good for: paths, cycles, backtracking</li>
+            <li>Space: O(h) where h=depth</li>
+          </ul>
+        </div>
+        <div class="comparison-item">
+          <h4>🌊 BFS (Breadth-First Search)</h4>
+          <ul>
+            <li>Uses queue</li>
+            <li>Explores level by level</li>
+            <li>Good for: shortest paths, levels</li>
+            <li>Space: O(w) where w=width</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Common Graph Representations</h3>
+      <pre><code class="language-python"># Adjacency List (most common)
+graph = {
+    1: [2, 3],
+    2: [4],
+    3: [4],
+    4: []
+}
+
+# Edge List
+edges = [(1,2), (1,3), (2,4), (3,4)]
+
+# 2D Grid (implicit graph)
+grid = [
+    [1, 1, 0],
+    [1, 0, 0],
+    [0, 0, 1]
+]</code></pre>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 1: Number of Islands</h2>
+      <div class="card">
+        <div class="pattern-title">Grid DFS/BFS</div>
+        <h3>Objective</h3>
+        <p>
+          Count connected components of land (1s) in 2D grid using DFS or BFS.
+        </p>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+grid = [
+  ["1","1","0","0","0"],
+  ["1","1","0","0","0"],
+  ["0","0","1","0","0"],
+  ["0","0","0","1","1"]
+]
+
+Islands marked:
+  [A, A, 0, 0, 0]
+  [A, A, 0, 0, 0]
+  [0, 0, B, 0, 0]
+  [0, 0, 0, C, C]
+
+Count: 3 islands (A, B, C)
+        </div>
+
+        <h3>Key Pattern (DFS)</h3>
+        <pre><code class="language-python">def numIslands(grid: List[List[str]]) -> int:
+    if not grid:
+        return 0
+
+    rows, cols = len(grid), len(grid[0])
+    count = 0
+
+    def dfs(r, c):
+        # Mark current cell as visited
+        if (r < 0 or r >= rows or c < 0 or c >= cols or
+            grid[r][c] != '1'):
+            return
+
+        grid[r][c] = '0'  # Mark as visited
+
+        # Explore 4 directions
+        dfs(r + 1, c)
+        dfs(r - 1, c)
+        dfs(r, c + 1)
+        dfs(r, c - 1)
+
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == '1':
+                count += 1
+                dfs(r, c)  # Mark entire island
+
+    return count</code></pre>
+
+        <p><span class="complexity">Time: O(m × n) | Space: O(m × n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 2: Clone Graph</h2>
+      <div class="card">
+        <div class="pattern-title">DFS/BFS with HashMap</div>
+        <h3>Objective</h3>
+        <p>
+          Create a deep copy of an undirected graph using DFS/BFS and hashmap to track cloned nodes.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 The Clone Pattern</div>
+          <p>
+            Use hashmap to map original nodes to cloned nodes. This prevents infinite loops
+            (cycles) and ensures each node is cloned exactly once. DFS/BFS traverses the
+            graph while building the clone.
+          </p>
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def cloneGraph(node: 'Node') -> 'Node':
+    if not node:
+        return None
+
+    # Map original node to cloned node
+    clones = {}
+
+    def dfs(node):
+        if node in clones:
+            return clones[node]
+
+        # Clone current node
+        clone = Node(node.val)
+        clones[node] = clone
+
+        # Clone neighbors recursively
+        for neighbor in node.neighbors:
+            clone.neighbors.append(dfs(neighbor))
+
+        return clone
+
+    return dfs(node)</code></pre>
+
+        <p><span class="complexity">Time: O(V + E) | Space: O(V)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 3: Course Schedule</h2>
+      <div class="card">
+        <div class="pattern-title">Cycle Detection (DFS)</div>
+        <h3>Objective</h3>
+        <p>
+          Determine if all courses can be completed given prerequisites. Detect cycles in directed graph.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Three-State DFS</div>
+          <p>
+            Use three states: unvisited (0), visiting (1), visited (2). If we encounter a
+            "visiting" node during DFS, we've found a cycle. This is the standard cycle
+            detection algorithm for directed graphs.
+          </p>
+        </div>
+
+        <h3>Visual Example</h3>
+        <div class="visual-box">
+prerequisites = [[1,0],[2,1],[3,2]]
+
+Graph:
+0 → 1 → 2 → 3
+
+No cycles → return True
+
+
+prerequisites = [[1,0],[0,1]]
+
+Graph:
+0 ⇄ 1
+
+Cycle detected → return False
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def canFinish(numCourses: int, prerequisites: List[List[int]]) -> bool:
+    # Build adjacency list
+    graph = defaultdict(list)
+    for course, prereq in prerequisites:
+        graph[course].append(prereq)
+
+    # 0 = unvisited, 1 = visiting, 2 = visited
+    state = [0] * numCourses
+
+    def has_cycle(course):
+        if state[course] == 1:
+            return True  # Cycle found!
+        if state[course] == 2:
+            return False  # Already checked
+
+        state[course] = 1  # Mark as visiting
+
+        for prereq in graph[course]:
+            if has_cycle(prereq):
+                return True
+
+        state[course] = 2  # Mark as visited
+        return False
+
+    for course in range(numCourses):
+        if has_cycle(course):
+            return False
+
+    return True</code></pre>
+
+        <p><span class="complexity">Time: O(V + E) | Space: O(V + E)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 4: Course Schedule II</h2>
+      <div class="card">
+        <div class="pattern-title">Topological Sort</div>
+        <h3>Objective</h3>
+        <p>
+          Return a valid course ordering using topological sort (postorder DFS or Kahn's algorithm).
+        </p>
+
+        <h3>Key Pattern (Postorder DFS)</h3>
+        <pre><code class="language-python">def findOrder(numCourses: int, prerequisites: List[List[int]]) -> List[int]:
+    graph = defaultdict(list)
+    for course, prereq in prerequisites:
+        graph[course].append(prereq)
+
+    state = [0] * numCourses
+    order = []
+
+    def dfs(course):
+        if state[course] == 1:
+            return False  # Cycle
+        if state[course] == 2:
+            return True
+
+        state[course] = 1
+
+        for prereq in graph[course]:
+            if not dfs(prereq):
+                return False
+
+        state[course] = 2
+        order.append(course)  # Postorder
+        return True
+
+    for course in range(numCourses):
+        if not dfs(course):
+            return []
+
+    return order  # Already in correct order</code></pre>
+
+        <p><span class="complexity">Time: O(V + E) | Space: O(V + E)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Exercise 5: Pacific Atlantic Water Flow</h2>
+      <div class="card">
+        <div class="pattern-title">Reverse DFS from Boundaries</div>
+        <h3>Objective</h3>
+        <p>
+          Find cells where rain water can flow to both Pacific and Atlantic oceans.
+        </p>
+
+        <div class="intuition">
+          <div class="intuition-title">💡 Reverse the Problem</div>
+          <p>
+            Instead of checking "can I reach ocean from here?", ask "which cells can reach
+            THIS ocean?" Run DFS from ocean edges inward (water flows to equal/lower height).
+            Return intersection of both sets.
+          </p>
+        </div>
+
+        <h3>Key Pattern</h3>
+        <pre><code class="language-python">def pacificAtlantic(heights: List[List[int]]) -> List[List[int]]:
+    if not heights:
+        return []
+
+    rows, cols = len(heights), len(heights[0])
+    pacific = set()
+    atlantic = set()
+
+    def dfs(r, c, visited):
+        visited.add((r, c))
+
+        for dr, dc in [(0,1), (1,0), (0,-1), (-1,0)]:
+            nr, nc = r + dr, c + dc
+            if (0 <= nr < rows and 0 <= nc < cols and
+                (nr, nc) not in visited and
+                heights[nr][nc] >= heights[r][c]):
+                dfs(nr, nc, visited)
+
+    # DFS from Pacific edges (top and left)
+    for c in range(cols):
+        dfs(0, c, pacific)
+    for r in range(rows):
+        dfs(r, 0, pacific)
+
+    # DFS from Atlantic edges (bottom and right)
+    for c in range(cols):
+        dfs(rows - 1, c, atlantic)
+    for r in range(rows):
+        dfs(r, cols - 1, atlantic)
+
+    # Return intersection
+    return [[r, c] for r, c in pacific & atlantic]</code></pre>
+
+        <p><span class="complexity">Time: O(m × n) | Space: O(m × n)</span></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core Patterns Summary</h2>
+      <div class="card">
+        <h3>1. When to Use DFS vs BFS</h3>
+        <div class="comparison">
+          <div class="comparison-item">
+            <h4>Use DFS for:</h4>
+            <ul>
+              <li>Finding any path</li>
+              <li>Detecting cycles</li>
+              <li>Topological sort</li>
+              <li>Connected components</li>
+              <li>Backtracking problems</li>
+            </ul>
+          </div>
+          <div class="comparison-item">
+            <h4>Use BFS for:</h4>
+            <ul>
+              <li>Shortest path (unweighted)</li>
+              <li>Level-order traversal</li>
+              <li>Minimum steps</li>
+              <li>Nearest neighbor</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>2. Essential Templates</h3>
+        <pre><code class="language-python"># DFS Template (Recursive)
+def dfs(node, visited):
+    if node in visited:
+        return
+    visited.add(node)
+    for neighbor in graph[node]:
+        dfs(neighbor, visited)
+
+# BFS Template
+def bfs(start):
+    queue = deque([start])
+    visited = {start}
+
+    while queue:
+        node = queue.popleft()
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+# Cycle Detection (Directed Graph)
+state = {}  # 0=unvisited, 1=visiting, 2=visited
+def has_cycle(node):
+    if state[node] == 1:
+        return True  # Back edge found
+    if state[node] == 2:
+        return False
+    state[node] = 1
+    for neighbor in graph[node]:
+        if has_cycle(neighbor):
+            return True
+    state[node] = 2
+    return False</code></pre>
+
+        <h3>3. Common Pitfalls</h3>
+        <ul>
+          <li><strong>Forgetting visited set:</strong> Leads to infinite loops in graphs with cycles</li>
+          <li><strong>Wrong cycle detection:</strong> Use 3 states for directed graphs, simple visited for undirected</li>
+          <li><strong>Grid boundaries:</strong> Always check bounds before accessing grid[r][c]</li>
+          <li><strong>Modifying during iteration:</strong> Be careful when modifying graph while traversing</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Learning Resources</h2>
+      <ul>
+        <li><a href="https://neetcode.io/courses/dsa-for-beginners/19" target="_blank">NeetCode Graphs Guide</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Depth-first_search" target="_blank">DFS - Wikipedia</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Breadth-first_search" target="_blank">BFS - Wikipedia</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+</body>
+</html>
